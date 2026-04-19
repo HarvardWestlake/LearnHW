@@ -18,9 +18,9 @@ export default function Home() {
 
           <Link className="widget-card" to="/code">
             <div className="title-row">
-              <h3>Code</h3>
+              <h3>Computer Science</h3>
             </div>
-            <p>Programming visualizations, data structures, and crypto demos.</p>
+            <p>Programming visualizations, data structures, binary, and crypto demos.</p>
             <span className="button">Open</span>
           </Link>
 
