@@ -50,6 +50,14 @@ export default function Code() {
             Classic and modern cryptographic primitives with visual demonstrations of how they work.
           </p>
           <div className="widgets-grid" style={{ marginTop: '1.25rem' }}>
+            <Link className="widget-card" to="/code/sha1-flow-explorer">
+              <div className="title-row">
+                <h3>SHA-1 Flow Explorer</h3>
+              </div>
+              <p>Native React component. Watch text turn into bits, then move through padding, chunks, 80 rounds, and the final fingerprint.</p>
+              <span className="button">Open</span>
+            </Link>
+
             {['rsa-encryption', 'shamir'].map(slug => {
               const w = CODE_WIDGETS[slug as keyof typeof CODE_WIDGETS]
               return (

@@ -8,6 +8,7 @@ import Stats from './pages/Stats.tsx'
 import StaticEmbed from './pages/StaticEmbed.tsx'
 import WidgetRoute from './pages/WidgetRoute.tsx'
 import BinaryExplorer from './pages/BinaryExplorer.tsx'
+import Sha1FlowExplorer from './pages/Sha1FlowExplorer.tsx'
 import { CODE_WIDGETS, HISTORY_WIDGETS, MATH_WIDGETS, STATS_WIDGETS } from './pages/widgetMaps'
 import History from './history/History.tsx'
 import WorldGlobe from './history/WorldGlobe.tsx'
@@ -41,6 +42,7 @@ export default function App() {
         <Route path="math/:widget" element={<WidgetRoute widgets={MATH_WIDGETS} backTo="/math" backLabel="Math" />} />
         <Route path="code" element={<Code />} />
         <Route path="code/binary-explorer" element={<BinaryExplorer />} />
+        <Route path="code/sha1-flow-explorer" element={<Sha1FlowExplorer />} />
         <Route path="code/:widget" element={<WidgetRoute widgets={CODE_WIDGETS} backTo="/code" backLabel="Computer Science" />} />
         <Route path="stats" element={<Stats />} />
         <Route path="stats/:widget" element={<WidgetRoute widgets={STATS_WIDGETS} backTo="/stats" backLabel="Statistics" />} />
