@@ -1,3 +1,5 @@
+import { OverviewPage, OverviewGroup, OverviewSection, OverviewConnector } from '../components/overview'
+
 export default function StyleGuide() {
   return (
     <main className="page">
@@ -230,6 +232,107 @@ export default function StyleGuide() {
               </tr>
             </tbody>
           </table>
+        </section>
+
+        {/* Overview Page Type */}
+        <section className="panel">
+          <h2 className="h5 eyebrow">Page type · Overview</h2>
+          <p className="muted">
+            Reusable template for subject-level introduction pages (e.g. <code>/code/overview</code>).
+            Composed of <code>OverviewPage</code> → <code>OverviewGroup</code> →
+            <code> OverviewSection</code> with an optional <code>OverviewConnector</code> between sections.
+            Each section accepts its own <code>hero</code> and <code>watermark</code> as React nodes, so
+            the per-topic graphics live inline in the page that renders them and are trivial to swap.
+          </p>
+
+          <h3 className="h6" style={{ marginTop: '1rem' }}>Minimal live example</h3>
+          <div style={{
+            border: '1px dashed var(--hw-gray-400)',
+            borderRadius: 'var(--hw-radius-sm)',
+            padding: '.5rem',
+            background: 'var(--hw-gray-100)',
+          }}>
+            <OverviewPage eyebrow="Example subject" title="Topic title" blurb="One-paragraph intro to the topic; frames why it matters and what the sections cover.">
+              <OverviewGroup label="Group A · shared concept" accent="gray">
+                <OverviewSection
+                  eyebrow="01"
+                  title="First idea"
+                  blurb="Short description; what this section introduces and how it sets up the next one."
+                  takeaways={[<>Key takeaway one.</>, <>Key takeaway two.</>]}
+                  links={[{ to: '#', label: 'Example lesson' }]}
+                  hero={
+                    <svg viewBox="0 0 200 120" role="img" aria-label="placeholder hero">
+                      <rect x="10" y="10" width="180" height="100" rx="8" fill="var(--hw-gray-100)" stroke="var(--hw-border)" />
+                      <text x="100" y="66" textAnchor="middle" fontSize="14" fontWeight="700" fill="var(--hw-gray-700)">hero goes here</text>
+                    </svg>
+                  }
+                  watermark={
+                    <svg viewBox="0 0 300 300" preserveAspectRatio="xMidYMid slice"><g fill="currentColor" fontFamily="monospace" fontSize="60" fontWeight="900"><text x="20" y="80">◆</text><text x="120" y="160">◆</text><text x="220" y="240">◆</text></g></svg>
+                  }
+                  accent="gray"
+                />
+                <OverviewConnector />
+                <OverviewSection
+                  eyebrow="02"
+                  title="Second idea"
+                  blurb="Follows from the first; this is where a connector often helps."
+                  hero={<svg viewBox="0 0 200 120" role="img"><circle cx="100" cy="60" r="36" fill="var(--hw-red)" opacity=".25" /><text x="100" y="66" textAnchor="middle" fontSize="13" fontWeight="700" fill="var(--hw-red)">hero slot</text></svg>}
+                  accent="gray"
+                />
+              </OverviewGroup>
+
+              <OverviewGroup label="Group B · sibling concept" accent="gold">
+                <OverviewSection
+                  eyebrow="03"
+                  title="Related idea"
+                  blurb="Sits alongside the previous group as a parallel concept; no connector needed."
+                  accent="gold"
+                  hero={<svg viewBox="0 0 200 120" role="img"><rect x="40" y="30" width="120" height="60" rx="8" fill="var(--hw-gold)" opacity=".3" /><text x="100" y="66" textAnchor="middle" fontSize="13" fontWeight="700" fill="#7a4c00">hero slot</text></svg>}
+                />
+              </OverviewGroup>
+            </OverviewPage>
+          </div>
+
+          <h3 className="h6" style={{ marginTop: '1.25rem' }}>Component API</h3>
+          <table className="table table--sm">
+            <thead>
+              <tr><th>Component</th><th>Role</th><th>Key props</th></tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><code>OverviewPage</code></td>
+                <td>Shell — title, eyebrow, intro paragraph, optional back button.</td>
+                <td className="muted"><code>title</code>, <code>eyebrow</code>, <code>blurb</code>, <code>backTo</code>, <code>backLabel</code></td>
+              </tr>
+              <tr>
+                <td><code>OverviewGroup</code></td>
+                <td>Visually bands related sections together with a labeled accent bar.</td>
+                <td className="muted"><code>label</code>, <code>accent</code>: <code>gray</code> | <code>red</code> | <code>gold</code> | <code>black</code></td>
+              </tr>
+              <tr>
+                <td><code>OverviewSection</code></td>
+                <td>One two-column section: copy left, hero right, faded watermark behind.</td>
+                <td className="muted"><code>eyebrow</code>, <code>title</code>, <code>blurb</code>, <code>takeaways</code>, <code>links</code>, <code>hero</code>, <code>watermark</code>, <code>accent</code></td>
+              </tr>
+              <tr>
+                <td><code>OverviewConnector</code></td>
+                <td>Drop between sections where the narrative genuinely chains (not between siblings).</td>
+                <td className="muted"><code>accent</code> to tint the arrow</td>
+              </tr>
+            </tbody>
+          </table>
+
+          <h3 className="h6" style={{ marginTop: '1.25rem' }}>Routing convention</h3>
+          <p className="muted" style={{ marginTop: 0 }}>
+            Each subject's overview lives at <code>/&lt;subject&gt;/overview</code>. If that subject has no
+            overview yet, the route redirects back to <code>/#subject-&lt;key&gt;</code> and the Home page
+            scrolls to the matching card. Clicking a subject title on the Home page navigates to its
+            overview; clicking the rest of the card opens the subject's widget index as before. Overviews
+            aren't advertised as separate cards.
+          </p>
+          <p className="muted">
+            Live example: <a className="link" href="/code/overview">/code/overview</a> (Cryptography).
+          </p>
         </section>
       </div>
     </main>

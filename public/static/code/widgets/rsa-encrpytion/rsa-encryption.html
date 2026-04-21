@@ -174,6 +174,18 @@
     }
     .card .out.ok { background: #e6f4ea; border-color: #b7dfc4; color: #0f5132; }
     .card .out.err { background: #fde8ea; border-color: #f3bcc2; color: #8a1c2a; }
+    .card .out.big {
+      background: linear-gradient(135deg, #fff4d0, #ffeaaf);
+      border-color: var(--hw-gold);
+      color: #7a4c00;
+      font-weight: 700;
+      animation: outPulse .9s ease-out;
+    }
+    @keyframes outPulse {
+      0%   { box-shadow: 0 0 0 0 rgba(240,179,35,.8); }
+      40%  { box-shadow: 0 0 0 6px rgba(240,179,35,.18); }
+      100% { box-shadow: 0 0 0 0 rgba(240,179,35,0); }
+    }
     .card .miniViz {
       flex: 1; min-height: 0;
       background: #fff; border: 1px solid var(--hw-border);
@@ -258,6 +270,36 @@
     }
     .edTitle { margin: 0; font-size: 1rem; font-weight: 900; display: flex; align-items: center; gap: .4rem; }
     .edSub { font-size: .75rem; color: var(--hw-gray-600); margin: -.3rem 0 0; }
+
+    /* Legend: shows each letter in the formula with its current value */
+    .edLegend {
+      display: flex; flex-wrap: wrap; gap: .35rem;
+      padding: .45rem .5rem;
+      background: var(--hw-gray-100);
+      border: 1px solid var(--hw-border);
+      border-radius: var(--hw-radius-sm);
+    }
+    .edChip {
+      display: inline-flex; align-items: center; gap: .3rem;
+      padding: .18rem .55rem;
+      background: #fff; border: 1px solid var(--hw-border);
+      border-radius: 999px;
+      font-size: .8rem;
+    }
+    .edChip .k {
+      font-family: var(--hw-mono);
+      font-style: italic;
+      font-weight: 800;
+      color: var(--hw-red);
+      font-size: .95em;
+    }
+    .edChip .eq { color: var(--hw-gray-500); font-weight: 400; }
+    .edChip .v  {
+      font-family: var(--hw-mono);
+      font-weight: 700;
+      color: #000;
+    }
+    .edChip.muted .v { color: var(--hw-gray-700); font-style: italic; font-family: var(--hw-font-sans); font-weight: 600; font-size: .78rem; }
     .edStream {
       display: flex; flex-wrap: wrap; gap: .25rem;
       padding: .4rem; min-height: 2.3em;
@@ -562,6 +604,14 @@
           <h3 class="edTitle">🔒 Encrypt <span class="badge badge--red">public key</span></h3>
           <p class="edSub">C<sub>i</sub> = M<sub>i</sub><sup>e</sup> mod n — one character at a time.</p>
 
+          <div class="edLegend" aria-label="Letters and their values">
+            <span class="edChip muted" title="M varies each step — the Unicode codepoint of the current character">
+              <span class="k">M</span><span class="eq">=</span><span class="v" id="encMLegend">each character's codepoint</span>
+            </span>
+            <span class="edChip" title="Public exponent"><span class="k">e</span><span class="eq">=</span><span class="v" id="encELegend">—</span></span>
+            <span class="edChip" title="Modulus"><span class="k">n</span><span class="eq">=</span><span class="v" id="encNLegend">—</span></span>
+          </div>
+
           <div>
             <div class="edLabel">Message (per character)</div>
             <div class="edStream" id="encMsgStream"></div>
@@ -590,6 +640,14 @@
         <div class="edCard">
           <h3 class="edTitle">🔓 Decrypt <span class="badge badge--gold">private key</span></h3>
           <p class="edSub">M<sub>i</sub> = C<sub>i</sub><sup>d</sup> mod n — Euler's theorem closes the loop.</p>
+
+          <div class="edLegend" aria-label="Letters and their values">
+            <span class="edChip muted" title="C varies each step — one ciphertext number per character">
+              <span class="k">C</span><span class="eq">=</span><span class="v" id="decCLegend">each ciphertext number</span>
+            </span>
+            <span class="edChip" title="Private exponent"><span class="k">d</span><span class="eq">=</span><span class="v" id="decDLegend">—</span></span>
+            <span class="edChip" title="Modulus"><span class="k">n</span><span class="eq">=</span><span class="v" id="decNLegend">—</span></span>
+          </div>
 
           <div>
             <div class="edLabel">Ciphertext</div>
@@ -691,6 +749,33 @@ function refreshPills(){
   setPill('phiPill','φ(n)', phi??'—', phi!=null);
   setPill('ePill','e', e??'—', e!=null);
   setPill('dPill','d', d??'—', d!=null);
+  // Per-card legend values mirror the top-bar pills
+  refreshLegends();
+}
+
+function refreshLegends(){
+  const set = (id, val) => {
+    const el = document.getElementById(id);
+    if (el) el.textContent = (val == null ? '—' : String(val));
+  };
+  set('encELegend', e);
+  set('encNLegend', n);
+  set('decDLegend', d);
+  set('decNLegend', n);
+}
+
+// During per-character animations, briefly show the current M (or C) value in the legend.
+function setEncMLegend(val){
+  const el = document.getElementById('encMLegend');
+  if (!el) return;
+  if (val == null) { el.textContent = "each character's codepoint"; el.parentElement?.classList.add('muted'); }
+  else { el.textContent = String(val); el.parentElement?.classList.remove('muted'); }
+}
+function setDecCLegend(val){
+  const el = document.getElementById('decCLegend');
+  if (!el) return;
+  if (val == null) { el.textContent = 'each ciphertext number'; el.parentElement?.classList.add('muted'); }
+  else { el.textContent = String(val); el.parentElement?.classList.remove('muted'); }
 }
 function setCardState(num, state){
   const c=document.getElementById('card'+num);
@@ -939,22 +1024,68 @@ function drawBgEasy(){
 }
 
 /* ===================== Step handlers ===================== */
+// Counter for the Use/Randomize button. Every 10th click uses much larger primes.
+let primeClickCount = 0;
+// Remember the last auto-generated values so we can tell whether the user has
+// actually edited the inputs since the last click. If they haven't, we randomize;
+// if they have, we use what they typed (after validation).
+let lastGenP = null, lastGenQ = null;
+
 function choosePrimes(){
-  const pEl=document.getElementById('pInput'), qEl=document.getElementById('qInput');
-  const pTxt=pEl.value.trim(), qTxt=qEl.value.trim();
-  let np, nq;
-  if(!pTxt){ np=generatePrime(11,200); pEl.value=np; }
-  else {
-    np=parseInt(pTxt,10);
-    if(!isPrime(np)){ setOut('out1',`${pTxt} isn't prime — randomized instead`,'err'); np=generatePrime(11,200); pEl.value=np; }
+  primeClickCount++;
+
+  const pEl = document.getElementById('pInput'), qEl = document.getElementById('qInput');
+  const pTxt = pEl.value.trim(), qTxt = qEl.value.trim();
+
+  const userEditedP = (pTxt !== '' && pTxt !== String(lastGenP));
+  const userEditedQ = (qTxt !== '' && qTxt !== String(lastGenQ));
+
+  // Every 10th click — and only when we're actually randomizing — jumps to
+  // much bigger primes so n leaps from ~5-digit to ~12-digit.
+  const bigRound = (primeClickCount % 10 === 0);
+  const [lo, hi] = bigRound ? [10000, 1000000] : [11, 500];
+
+  let np, nq, usedCustom = false;
+  let warn = '';
+
+  if (userEditedP) {
+    np = parseInt(pTxt, 10);
+    if (!isPrime(np)) {
+      warn = `${pTxt} isn't prime — randomized`;
+      np = generatePrime(lo, hi);
+    } else {
+      usedCustom = true;
+    }
+  } else {
+    np = generatePrime(lo, hi);
   }
-  if(!qTxt){ do{ nq=generatePrime(11,200);}while(nq===np); qEl.value=nq; }
-  else {
-    nq=parseInt(qTxt,10);
-    if(!isPrime(nq)||nq===np){ setOut('out1',`${qTxt} isn't prime or = p — randomized`,'err'); do{ nq=generatePrime(11,200);}while(nq===np); qEl.value=nq; }
+  pEl.value = np;
+
+  if (userEditedQ) {
+    nq = parseInt(qTxt, 10);
+    if (!isPrime(nq) || nq === np) {
+      warn = `${qTxt} isn't prime or = p — randomized`;
+      do { nq = generatePrime(lo, hi); } while (nq === np);
+    } else {
+      usedCustom = true;
+    }
+  } else {
+    do { nq = generatePrime(lo, hi); } while (nq === np);
   }
-  p=np; q=nq; n=phi=e=d=null;
-  setOut('out1', `p=${p}, q=${q} ✓`,'ok');
+  qEl.value = nq;
+
+  lastGenP = np; lastGenQ = nq;
+  p = np; q = nq; n = phi = e = d = null;
+
+  const nextBigAt = Math.ceil((primeClickCount + 1) / 10) * 10;
+  if (warn) {
+    setOut('out1', warn, 'err');
+  } else if (bigRound && !usedCustom) {
+    setOut('out1', `✨ big-primes round · p=${p}, q=${q}`, 'big');
+  } else {
+    setOut('out1', `p=${p}, q=${q}  ·  click ${primeClickCount}  ·  big round at ${nextBigAt}`, 'ok');
+  }
+
   refreshPills(); cascadeEnable();
   drawPrimes(); drawN(); drawPhi(); drawE(); drawD(); drawClock();
   refreshEncDecBanner();
@@ -1024,6 +1155,9 @@ async function encryptMessage(){
     const tiles=msgStream.querySelectorAll('.charTile');
     tiles.forEach((t,k)=>t.classList.toggle('active',k===i));
 
+    // Live-update the legend so 'M' shows the current character's codepoint
+    setEncMLegend(code);
+
     // Build equation with code on LHS, e as exponent, n as modulus, result pending
     eq.innerHTML = `<span class="bigNum">${code}</span><sup>${e}</sup> &nbsp;mod&nbsp; <span class="bigNum">${n}</span> &nbsp;=&nbsp; <span class="bigNum pending">?</span>`;
     await sleep(260);
@@ -1041,6 +1175,8 @@ async function encryptMessage(){
     tiles[i].classList.remove('active'); tiles[i].classList.add('done');
     await sleep(120);
   }
+  // Restore legend to its abstract description once the animation finishes
+  setEncMLegend(null);
   // Also fill the decrypt input automatically for continuity
   document.getElementById('cipherInput').value = results.join(' ');
   drawClock();
@@ -1068,6 +1204,9 @@ async function decryptMessage(){
     const tiles=inStream.querySelectorAll('.charTile');
     tiles.forEach((t,k)=>t.classList.toggle('active',k===i));
 
+    // Live-update the legend so 'C' shows the current ciphertext number
+    setDecCLegend(c);
+
     eq.innerHTML = `<span class="bigNum">${c}</span><sup>${d}</sup> &nbsp;mod&nbsp; <span class="bigNum">${n}</span> &nbsp;=&nbsp; <span class="bigNum pending">?</span>`;
     await sleep(260);
     eq.lastElementChild.classList.remove('pending');
@@ -1083,6 +1222,7 @@ async function decryptMessage(){
     tiles[i].classList.remove('active'); tiles[i].classList.add('done');
     await sleep(120);
   }
+  setDecCLegend(null);
   drawClock();
 }
 

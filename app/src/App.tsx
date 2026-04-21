@@ -1,4 +1,4 @@
-import { Routes, Route, Link, NavLink } from 'react-router-dom'
+import { Routes, Route, Link, NavLink, Navigate } from 'react-router-dom'
 import Home from './pages/Home.tsx'
 import Chem from './pages/Chem.tsx'
 import Econ from './pages/Econ.tsx'
@@ -15,6 +15,7 @@ import WorldGlobe from './history/WorldGlobe.tsx'
 import LectureViewer from './history/LectureViewer.tsx'
 import StyleGuide from './admin/StyleGuide.tsx'
 import MobileFullscreen from './pages/MobileFullscreen.tsx'
+import Cryptography from './pages/overviews/Cryptography.tsx'
 
 function TopNav() {
   return (
@@ -39,21 +40,27 @@ export default function App() {
       <Routes>
         <Route path="/" element={<Home />} />
         <Route path="math" element={<Math />} />
+        <Route path="math/overview" element={<Navigate to="/#subject-math" replace />} />
         <Route path="math/:widget" element={<WidgetRoute widgets={MATH_WIDGETS} backTo="/math" backLabel="Math" />} />
         <Route path="code" element={<Code />} />
+        <Route path="code/overview" element={<Cryptography />} />
         <Route path="code/binary-explorer" element={<BinaryExplorer />} />
         <Route path="code/sha1-flow-explorer" element={<Sha1FlowExplorer />} />
         <Route path="code/:widget" element={<WidgetRoute widgets={CODE_WIDGETS} backTo="/code" backLabel="Computer Science" />} />
         <Route path="stats" element={<Stats />} />
+        <Route path="stats/overview" element={<Navigate to="/#subject-stats" replace />} />
         <Route path="stats/:widget" element={<WidgetRoute widgets={STATS_WIDGETS} backTo="/stats" backLabel="Statistics" />} />
         <Route path="chem" element={<Chem />} />
+        <Route path="chem/overview" element={<Navigate to="/#subject-chem" replace />} />
         <Route path="chem/crystallization" element={<StaticEmbed title="Crystallization Explorer" src="/static/chem/crystallization/crystallization.html" backTo="/chem" backLabel="Chemistry" />} />
         <Route path="econ" element={<Econ />} />
+        <Route path="econ/overview" element={<Navigate to="/#subject-econ" replace />} />
         <Route path="econ/imperfect-competitor" element={<StaticEmbed title="Imperfect Competitor" src="/static/econ/widgets/imperfect-competitor/imperfect-competitor.html" backTo="/econ" backLabel="Economics" />} />
         <Route path="econ/production-cost" element={<StaticEmbed title="Production Cost" src="/static/econ/widgets/production-cost/production-cost.html" backTo="/econ" backLabel="Economics" />} />
         <Route path="admin" element={<StyleGuide />} />
         <Route path="mobile" element={<MobileFullscreen />} />
         <Route path="history" element={<History />} />
+        <Route path="history/overview" element={<Navigate to="/#subject-history" replace />} />
         <Route path="history/world" element={<WorldGlobe />} />
         <Route path="history/lecture" element={<LectureViewer />} />
         <Route path="history/widgets/:widget" element={<WidgetRoute widgets={HISTORY_WIDGETS} backTo="/history" backLabel="History" />} />
