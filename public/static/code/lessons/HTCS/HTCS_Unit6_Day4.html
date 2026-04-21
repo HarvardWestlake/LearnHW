@@ -1,0 +1,1750 @@
+<!DOCTYPE html>
+<!--
+  HTCS Day 04 — Bitcoin Wallets & Multi-Signatures
+  Generated from: Day 4 - Bitcoin Wallets and Multi Signatures.pptx
+  Source slides were entirely image-based; content reconstructed from speaker notes.
+-->
+<html lang="en">
+
+  <head>
+    <meta charset="UTF-8" />
+    <title>HTCS · Day 04 · Bitcoin Wallets &amp; Multi-Signatures</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Source+Serif+4:ital,opsz,wght@0,8..60,300..700;1,8..60,300..700&family=Inter+Tight:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap"
+      rel="stylesheet">
+    <style>
+      html,
+      body {
+        margin: 0;
+        padding: 0;
+        background: #000;
+        overflow: hidden;
+        height: 100%;
+      }
+
+      body {
+        font-family: "Source Serif 4", Georgia, serif;
+      }
+
+      textarea {
+        font-family: "JetBrains Mono", monospace;
+      }
+
+      button {
+        font-family: "Inter Tight", sans-serif;
+      }
+
+      * {
+        -webkit-font-smoothing: antialiased;
+      }
+    </style>
+
+    <script type="application/json" id="speaker-notes">
+[
+  "Cover slide. Day 4 continues from blockchain basics: we know how Bitcoin works — now, how do you securely hold it? Today's central question: what happens when a single secret isn't enough to protect serious value?",
+  "Today has four parts. First we examine why a single private key is a liability. Then we define multi-signature wallets. Third, we trace a real transaction step by step. Finally, we evaluate what multi-sig actually protects against — and what it doesn't.",
+  "Part 1 transition. We've been assuming Bitcoin security is simple — just don't lose your key. That assumption hides a serious problem. Let's look at what the problem actually is.",
+  "Bitcoin is a very valuable currency worth protecting. But there's a huge security flaw: it's only protected by 12 words that must be stored securely. If anyone has access to these 12 words, you risk losing everything — instantly and irreversibly.",
+  "Using your private key in third-party services makes it open to attacks from hackers. You're trusting companies like Coinbase to store these keys and maintain enough security to prevent your funds from being stolen.",
+  "Part 2 transition. The custodial model just relocates the trust problem — you haven't solved it, you've delegated it. What if instead of making the key harder to steal, we required multiple keys to authorize any transaction at all?",
+  "Each signer generates their own seed phrase independently — Alice, Bob, and Carol each have 12 words that no one else sees. That seed deterministically produces their private key, which is then used to derive their public key via elliptic curve multiplication. The wallet's spending script is assembled from the three public keys. No co-signer ever shares a seed or private key; only public keys are combined.",
+  "Interactive: ask students to try each combination. Use the threshold selector to change between 1-of-3, 2-of-3, and 3-of-3 and observe how the required count changes. Key idea — the wallet script names specific public keys. Eve's signature fails not because it is weak, but because her public key is not registered in the spending script.",
+  "To store these keys, it makes sense to put them in different locations. The first key in a phone or hardware wallet for daily use. The second in an offline safe as a cold backup. The third on a multi-sig provider server as a remote co-signer.",
+  "Part 3 transition. We understand the structure — now let's trace what actually happens when you spend bitcoin from a multi-sig wallet, step by step.",
+  "When you buy a cup of coffee, you initiate the transaction and sign it with the key on your phone. But one signature isn't enough — the transaction is only partially signed at this point and cannot broadcast to the network.",
+  "Once the transaction passes all checks, the provider signs on their own behalf. This satisfies the two-key rule. Two signatures, threshold met — the transaction is broadcast to the Bitcoin network.",
+  "Part 4 transition. We've seen how multi-sig works mechanically. Now let's stress-test it: what threats does it actually defend against?",
+  "If you lose your phone, someone could have access to one private key. In a standard single-key Bitcoin wallet, that would be catastrophic. In a multi-sig wallet — would that be enough?",
+  "No. You can still access your own money with your other two keys. The attacker holds one signature — the threshold requires two. Your offline safe and provider server hold the others, unreachable by the thief.",
+  "Multi-sig allows you to recreate credit card fraud protection for crypto wallets. Every transaction requires a co-signature from a party that can independently verify and flag suspicious activity.",
+  "A person with a single key won't be enough to confirm and sign any transactions without another key. No single key has full authority over the wallet — that's the fundamental security guarantee.",
+  "The core insight: multi-sig distributes trust the same way a bank vault requires two officers to open. Bitcoin enforces this natively, in the protocol, without any middleman.",
+  "Next class preview. Ask students: Bitcoin scripts verify signatures — what if the script could verify anything a programming language can express? That's the leap Ethereum made."
+]
+</script>
+  </head>
+
+  <body>
+    <deck-stage width="1920" height="1080"></deck-stage>
+    <div id="deck-root"></div>
+
+    <script>
+      (() => {
+        const DESIGN_W_DEFAULT = 1920;
+        const DESIGN_H_DEFAULT = 1080;
+        const STORAGE_PREFIX = 'deck-stage:slide:';
+        const OVERLAY_HIDE_MS = 1800;
+        const VALIDATE_ATTR = 'no_overflowing_text,no_overlapping_text,slide_sized_text';
+
+        const pad2 = (n) => String(n).padStart(2, '0');
+
+        const stylesheet = `
+    :host {
+      position: fixed;
+      inset: 0;
+      display: block;
+      background: #000;
+      color: #fff;
+      font-family: -apple-system, BlinkMacSystemFont, "Helvetica Neue", Helvetica, Arial, sans-serif;
+      overflow: hidden;
+    }
+
+    .stage {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .canvas {
+      position: relative;
+      transform-origin: center center;
+      flex-shrink: 0;
+      background: #fff;
+      will-change: transform;
+    }
+
+    ::slotted(*) {
+      position: absolute !important;
+      inset: 0 !important;
+      width: 100% !important;
+      height: 100% !important;
+      box-sizing: border-box !important;
+      overflow: hidden;
+      opacity: 0;
+      pointer-events: none;
+      visibility: hidden;
+    }
+    ::slotted([data-deck-active]) {
+      opacity: 1;
+      pointer-events: auto;
+      visibility: visible;
+    }
+
+    .tapzones {
+      position: fixed;
+      inset: 0;
+      display: flex;
+      z-index: 2147482000;
+      pointer-events: none;
+    }
+    .tapzone {
+      flex: 1;
+      pointer-events: auto;
+      -webkit-tap-highlight-color: transparent;
+    }
+    @media (hover: hover) and (pointer: fine) {
+      .tapzones { display: none; }
+    }
+
+    .overlay {
+      position: fixed;
+      left: 50%;
+      bottom: 22px;
+      transform: translate(-50%, 6px) scale(0.92);
+      filter: blur(6px);
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      padding: 4px;
+      background: #000;
+      color: #fff;
+      border-radius: 999px;
+      font-size: 12px;
+      font-feature-settings: "tnum" 1;
+      letter-spacing: 0.01em;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 260ms ease, transform 260ms cubic-bezier(.2,.8,.2,1), filter 260ms ease;
+      transform-origin: center bottom;
+      z-index: 2147483000;
+      user-select: none;
+    }
+    .overlay[data-visible] {
+      opacity: 1;
+      pointer-events: auto;
+      transform: translate(-50%, 0) scale(1);
+      filter: blur(0);
+    }
+
+    .btn {
+      appearance: none;
+      -webkit-appearance: none;
+      background: transparent;
+      border: 0;
+      margin: 0;
+      padding: 0;
+      color: inherit;
+      font: inherit;
+      cursor: default;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      height: 28px;
+      min-width: 28px;
+      border-radius: 999px;
+      color: rgba(255,255,255,0.72);
+      transition: background 140ms ease, color 140ms ease;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .btn:hover { background: rgba(255,255,255,0.12); color: #fff; }
+    .btn:active { background: rgba(255,255,255,0.18); }
+    .btn:focus { outline: none; }
+    .btn:focus-visible { outline: none; }
+    .btn::-moz-focus-inner { border: 0; }
+    .btn svg { width: 14px; height: 14px; display: block; }
+    .btn.reset,
+    .btn.presenter {
+      font-size: 11px;
+      font-weight: 500;
+      letter-spacing: 0.02em;
+      padding: 0 10px 0 12px;
+      gap: 6px;
+      color: rgba(255,255,255,0.72);
+    }
+    .btn.reset .kbd,
+    .btn.presenter .kbd {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 16px;
+      height: 16px;
+      padding: 0 4px;
+      font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+      font-size: 10px;
+      line-height: 1;
+      color: rgba(255,255,255,0.88);
+      background: rgba(255,255,255,0.12);
+      border-radius: 4px;
+    }
+
+    .count {
+      font-variant-numeric: tabular-nums;
+      color: #fff;
+      font-weight: 500;
+      padding: 0 8px;
+      min-width: 42px;
+      text-align: center;
+      font-size: 12px;
+    }
+    .count .sep { color: rgba(255,255,255,0.45); margin: 0 3px; font-weight: 400; }
+    .count .total { color: rgba(255,255,255,0.55); }
+
+    .divider {
+      width: 1px;
+      height: 14px;
+      background: rgba(255,255,255,0.18);
+      margin: 0 2px;
+    }
+
+    @media print {
+      :host {
+        position: static;
+        inset: auto;
+        background: none;
+        overflow: visible;
+        color: inherit;
+      }
+      .stage { position: static; display: block; }
+      .canvas {
+        transform: none !important;
+        width: auto !important;
+        height: auto !important;
+        background: none;
+        will-change: auto;
+      }
+      ::slotted(*) {
+        position: relative !important;
+        inset: auto !important;
+        width: var(--deck-design-w) !important;
+        height: var(--deck-design-h) !important;
+        box-sizing: border-box !important;
+        opacity: 1 !important;
+        visibility: visible !important;
+        pointer-events: auto;
+        break-after: page;
+        page-break-after: always;
+        break-inside: avoid;
+        overflow: hidden;
+      }
+      ::slotted(*:last-child) {
+        break-after: auto;
+        page-break-after: auto;
+      }
+      .overlay, .tapzones { display: none !important; }
+    }
+  `;
+
+        class DeckStage extends HTMLElement {
+          static get observedAttributes() { return ['width', 'height', 'noscale']; }
+
+          constructor() {
+            super();
+            this._root = this.attachShadow({ mode: 'open' });
+            this._index = 0;
+            this._slides = [];
+            this._notes = [];
+            this._hideTimer = null;
+            this._mouseIdleTimer = null;
+            this._storageKey = STORAGE_PREFIX + (location.pathname || '/');
+
+            this._onKey = this._onKey.bind(this);
+            this._onResize = this._onResize.bind(this);
+            this._onSlotChange = this._onSlotChange.bind(this);
+            this._onMouseMove = this._onMouseMove.bind(this);
+            this._onTapBack = this._onTapBack.bind(this);
+            this._onTapForward = this._onTapForward.bind(this);
+          }
+
+          get designWidth() {
+            return parseInt(this.getAttribute('width'), 10) || DESIGN_W_DEFAULT;
+          }
+          get designHeight() {
+            return parseInt(this.getAttribute('height'), 10) || DESIGN_H_DEFAULT;
+          }
+
+          connectedCallback() {
+            this._render();
+            this._loadNotes();
+            this._syncPrintPageRule();
+            window.addEventListener('keydown', this._onKey);
+            window.addEventListener('resize', this._onResize);
+            window.addEventListener('mousemove', this._onMouseMove, { passive: true });
+          }
+
+          disconnectedCallback() {
+            window.removeEventListener('keydown', this._onKey);
+            window.removeEventListener('resize', this._onResize);
+            window.removeEventListener('mousemove', this._onMouseMove);
+            if (this._hideTimer) clearTimeout(this._hideTimer);
+            if (this._mouseIdleTimer) clearTimeout(this._mouseIdleTimer);
+          }
+
+          attributeChangedCallback() {
+            if (this._canvas) {
+              this._canvas.style.width = this.designWidth + 'px';
+              this._canvas.style.height = this.designHeight + 'px';
+              this._canvas.style.setProperty('--deck-design-w', this.designWidth + 'px');
+              this._canvas.style.setProperty('--deck-design-h', this.designHeight + 'px');
+              this._fit();
+              this._syncPrintPageRule();
+            }
+          }
+
+          _render() {
+            const style = document.createElement('style');
+            style.textContent = stylesheet;
+
+            const stage = document.createElement('div');
+            stage.className = 'stage';
+
+            const canvas = document.createElement('div');
+            canvas.className = 'canvas';
+            canvas.style.width = this.designWidth + 'px';
+            canvas.style.height = this.designHeight + 'px';
+            canvas.style.setProperty('--deck-design-w', this.designWidth + 'px');
+            canvas.style.setProperty('--deck-design-h', this.designHeight + 'px');
+
+            const slot = document.createElement('slot');
+            slot.addEventListener('slotchange', this._onSlotChange);
+            canvas.appendChild(slot);
+            stage.appendChild(canvas);
+
+            const tapzones = document.createElement('div');
+            tapzones.className = 'tapzones export-hidden';
+            tapzones.setAttribute('aria-hidden', 'true');
+            const tzBack = document.createElement('div');
+            tzBack.className = 'tapzone tapzone--back';
+            const tzMid = document.createElement('div');
+            tzMid.className = 'tapzone tapzone--mid';
+            tzMid.style.pointerEvents = 'none';
+            const tzFwd = document.createElement('div');
+            tzFwd.className = 'tapzone tapzone--fwd';
+            tzBack.addEventListener('click', this._onTapBack);
+            tzFwd.addEventListener('click', this._onTapForward);
+            tapzones.append(tzBack, tzMid, tzFwd);
+
+            const overlay = document.createElement('div');
+            overlay.className = 'overlay export-hidden';
+            overlay.setAttribute('role', 'toolbar');
+            overlay.setAttribute('aria-label', 'Deck controls');
+            overlay.innerHTML = `
+        <button class="btn prev" type="button" aria-label="Previous slide" title="Previous (←)">
+          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 3L5 8l5 5"/></svg>
+        </button>
+        <span class="count" aria-live="polite"><span class="current">1</span><span class="sep">/</span><span class="total">1</span></span>
+        <button class="btn next" type="button" aria-label="Next slide" title="Next (→)">
+          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 3l5 5-5 5"/></svg>
+        </button>
+        <span class="divider"></span>
+        <button class="btn reset" type="button" aria-label="Reset to first slide" title="Reset (R)">Reset<span class="kbd">R</span></button>
+        <button class="btn presenter" type="button" aria-label="Open presenter view" title="Presenter view (P)">Presenter<span class="kbd">P</span></button>
+      `;
+
+            overlay.querySelector('.prev').addEventListener('click', () => this._go(this._index - 1, 'click'));
+            overlay.querySelector('.next').addEventListener('click', () => this._go(this._index + 1, 'click'));
+            overlay.querySelector('.reset').addEventListener('click', () => this._go(0, 'click'));
+            overlay.querySelector('.presenter').addEventListener('click', () => {
+              window.dispatchEvent(new KeyboardEvent('keydown', { key: 'p', bubbles: true }));
+            });
+
+            this._root.append(style, stage, tapzones, overlay);
+            this._canvas = canvas;
+            this._slot = slot;
+            this._overlay = overlay;
+            this._countEl = overlay.querySelector('.current');
+            this._totalEl = overlay.querySelector('.total');
+          }
+
+          _syncPrintPageRule() {
+            const id = 'deck-stage-print-page';
+            let tag = document.getElementById(id);
+            if (!tag) {
+              tag = document.createElement('style');
+              tag.id = id;
+              document.head.appendChild(tag);
+            }
+            tag.textContent =
+              '@page { size: ' + this.designWidth + 'px ' + this.designHeight + 'px; margin: 0; } ' +
+              '@media print { html, body { margin: 0 !important; padding: 0 !important; background: none !important; overflow: visible !important; height: auto !important; } ' +
+              '* { -webkit-print-color-adjust: exact; print-color-adjust: exact; } }';
+          }
+
+          _onSlotChange() {
+            this._collectSlides();
+            this._restoreIndex();
+            this._applyIndex({ showOverlay: false, broadcast: true, reason: 'init' });
+            this._fit();
+          }
+
+          _collectSlides() {
+            const assigned = this._slot.assignedElements({ flatten: true });
+            this._slides = assigned.filter((el) => {
+              const tag = el.tagName;
+              return tag !== 'TEMPLATE' && tag !== 'SCRIPT' && tag !== 'STYLE';
+            });
+
+            this._slides.forEach((slide, i) => {
+              const n = i + 1;
+              let label = slide.getAttribute('data-label');
+              if (!label) {
+                const existing = slide.getAttribute('data-screen-label');
+                if (existing) {
+                  label = existing.replace(/^\s*\d+\s*/, '').trim() || existing;
+                }
+              }
+              if (!label) {
+                const h = slide.querySelector('h1, h2, h3, [data-title]');
+                if (h) label = (h.textContent || '').trim().slice(0, 40);
+              }
+              if (!label) label = 'Slide';
+              slide.setAttribute('data-screen-label', `${pad2(n)} ${label}`);
+
+              if (!slide.hasAttribute('data-om-validate')) {
+                slide.setAttribute('data-om-validate', VALIDATE_ATTR);
+              }
+
+              slide.setAttribute('data-deck-slide', String(i));
+            });
+
+            if (this._totalEl) this._totalEl.textContent = String(this._slides.length || 1);
+            if (this._index >= this._slides.length) this._index = Math.max(0, this._slides.length - 1);
+          }
+
+          _loadNotes() {
+            const tag = document.getElementById('speaker-notes');
+            if (!tag) { this._notes = []; return; }
+            try {
+              const parsed = JSON.parse(tag.textContent || '[]');
+              if (Array.isArray(parsed)) this._notes = parsed;
+            } catch (e) {
+              console.warn('[deck-stage] Failed to parse #speaker-notes JSON:', e);
+              this._notes = [];
+            }
+          }
+
+          _restoreIndex() {
+            try {
+              const raw = localStorage.getItem(this._storageKey);
+              if (raw != null) {
+                const n = parseInt(raw, 10);
+                if (Number.isFinite(n) && n >= 0 && n < this._slides.length) {
+                  this._index = n;
+                }
+              }
+            } catch (e) { /* ignore */ }
+          }
+
+          _persistIndex() {
+            try { localStorage.setItem(this._storageKey, String(this._index)); }
+            catch (e) { /* ignore */ }
+          }
+
+          _applyIndex({ showOverlay = true, broadcast = true, reason = 'init' } = {}) {
+            if (!this._slides.length) return;
+            const prev = this._prevIndex == null ? -1 : this._prevIndex;
+            const curr = this._index;
+            this._slides.forEach((s, i) => {
+              if (i === curr) s.setAttribute('data-deck-active', '');
+              else s.removeAttribute('data-deck-active');
+            });
+            if (this._countEl) this._countEl.textContent = String(curr + 1);
+            this._persistIndex();
+
+            if (broadcast) {
+              try { window.postMessage({ slideIndexChanged: curr }, '*'); } catch (e) { }
+
+              const detail = {
+                index: curr,
+                previousIndex: prev,
+                total: this._slides.length,
+                slide: this._slides[curr] || null,
+                previousSlide: prev >= 0 ? (this._slides[prev] || null) : null,
+                reason: reason,
+              };
+              this.dispatchEvent(new CustomEvent('slidechange', {
+                detail,
+                bubbles: true,
+                composed: true,
+              }));
+            }
+
+            this._prevIndex = curr;
+            if (showOverlay) this._flashOverlay();
+          }
+
+          _flashOverlay() {
+            if (!this._overlay) return;
+            this._overlay.setAttribute('data-visible', '');
+            if (this._hideTimer) clearTimeout(this._hideTimer);
+            this._hideTimer = setTimeout(() => {
+              this._overlay.removeAttribute('data-visible');
+            }, OVERLAY_HIDE_MS);
+          }
+
+          _fit() {
+            if (!this._canvas) return;
+            if (this.hasAttribute('noscale')) {
+              this._canvas.style.transform = 'none';
+              return;
+            }
+            const vw = window.innerWidth;
+            const vh = window.innerHeight;
+            const s = Math.min(vw / this.designWidth, vh / this.designHeight);
+            this._canvas.style.transform = `scale(${s})`;
+          }
+
+          _onResize() { this._fit(); }
+          _onMouseMove() { this._flashOverlay(); }
+
+          _onTapBack(e) {
+            e.preventDefault();
+            this._go(this._index - 1, 'tap');
+          }
+
+          _onTapForward(e) {
+            e.preventDefault();
+            this._go(this._index + 1, 'tap');
+          }
+
+          _onKey(e) {
+            const t = e.target;
+            if (t && (t.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName))) return;
+            if (e.metaKey || e.ctrlKey || e.altKey) return;
+
+            const key = e.key;
+            let handled = true;
+
+            if (key === 'ArrowRight' || key === 'PageDown' || key === ' ' || key === 'Spacebar') {
+              this._go(this._index + 1, 'keyboard');
+            } else if (key === 'ArrowLeft' || key === 'PageUp') {
+              this._go(this._index - 1, 'keyboard');
+            } else if (key === 'Home') {
+              this._go(0, 'keyboard');
+            } else if (key === 'End') {
+              this._go(this._slides.length - 1, 'keyboard');
+            } else if (key === 'r' || key === 'R') {
+              this._go(0, 'keyboard');
+            } else if (/^[0-9]$/.test(key)) {
+              const n = key === '0' ? 9 : parseInt(key, 10) - 1;
+              if (n < this._slides.length) this._go(n, 'keyboard');
+            } else {
+              handled = false;
+            }
+
+            if (handled) {
+              e.preventDefault();
+              this._flashOverlay();
+            }
+          }
+
+          _go(i, reason = 'api') {
+            if (!this._slides.length) return;
+            const clamped = Math.max(0, Math.min(this._slides.length - 1, i));
+            if (clamped === this._index) {
+              this._flashOverlay();
+              return;
+            }
+            this._index = clamped;
+            this._applyIndex({ showOverlay: true, broadcast: true, reason });
+          }
+
+          get index() { return this._index; }
+          get length() { return this._slides.length; }
+          goTo(i) { this._go(i, 'api'); }
+          next() { this._go(this._index + 1, 'api'); }
+          prev() { this._go(this._index - 1, 'api'); }
+          reset() { this._go(0, 'api'); }
+        }
+
+        if (!customElements.get('deck-stage')) {
+          customElements.define('deck-stage', DeckStage);
+        }
+      })();
+
+    </script>
+    <script src="https://unpkg.com/react@18.3.1/umd/react.development.js"
+      integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L"
+      crossorigin="anonymous"></script>
+    <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js"
+      integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm"
+      crossorigin="anonymous"></script>
+    <script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js"
+      integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y"
+      crossorigin="anonymous"></script>
+
+    <script>
+      (() => {
+        const COLORS = {
+          cream: '#F5EFE3', creamDark: '#ECE4D2', paper: '#FBF7EE',
+          ink: '#0F1F3A', inkSoft: '#2B3A5B',
+          rule: '#C9BFA7', ruleFaint: '#E2D9C3',
+          accent: '#A8341E', accentSoft: '#C96A52', gold: '#B8893B',
+          muted: '#7E7560', danger: '#9B2A1B', ok: '#3B6E4A',
+        };
+        const TYPE_SCALE = { eyebrow: 26, small: 26, body: 32, bodyLg: 36, subtitle: 44, titleSm: 56, title: 72, titleLg: 96, display: 140 };
+        const SPACING = { paddingTop: 100, paddingBottom: 90, paddingX: 120, titleGap: 52, itemGap: 28, sectionGap: 64 };
+        const FONTS = {
+          serif: '"Source Serif 4", "Source Serif Pro", "Iowan Old Style", Georgia, "Times New Roman", serif',
+          sans: '"Inter Tight", "Söhne", "Helvetica Neue", Helvetica, Arial, sans-serif',
+          mono: '"JetBrains Mono", "IBM Plex Mono", "SF Mono", Menlo, Consolas, monospace',
+        };
+        window.HTCS_TOKENS = { COLORS, TYPE_SCALE, SPACING, FONTS };
+      })();
+    </script>
+
+    <script type="text/babel" data-presets="react">
+      {
+        /* global React */
+        const { COLORS, TYPE_SCALE, SPACING, FONTS } = window.HTCS_TOKENS;
+
+        function SlideFrame({ variant = 'page', pad = true, footer = true, slideNo, children, style = {} }) {
+          const bg = variant === 'ink' ? COLORS.ink
+            : variant === 'paper' ? COLORS.paper
+              : variant === 'bleed' ? COLORS.cream
+                : COLORS.cream;
+          const fg = variant === 'ink' ? COLORS.paper : COLORS.ink;
+
+          return (
+            <div style={{
+              width: '100%', height: '100%', background: bg, color: fg,
+              fontFamily: FONTS.serif, position: 'relative', overflow: 'hidden', ...style,
+            }}>
+              <div style={{
+                position: 'absolute', inset: 0,
+                padding: pad ? `${SPACING.paddingTop}px ${SPACING.paddingX}px ${SPACING.paddingBottom}px` : 0,
+                display: 'flex', flexDirection: 'column',
+              }}>
+                {children}
+              </div>
+              {footer && <SlideFooter variant={variant} slideNo={slideNo} />}
+            </div>
+          );
+        }
+
+        function SlideFooter({ variant }) {
+          const dim = variant === 'ink' ? 'rgba(245,239,227,0.45)' : COLORS.muted;
+          const rule = variant === 'ink' ? 'rgba(245,239,227,0.18)' : COLORS.ruleFaint;
+          return (
+            <div style={{
+              position: 'absolute', left: SPACING.paddingX, right: SPACING.paddingX, bottom: 36,
+              display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+              fontFamily: FONTS.sans, fontSize: 24, letterSpacing: '0.16em',
+              textTransform: 'uppercase', color: dim,
+              borderTop: `1px solid ${rule}`, paddingTop: 18,
+            }}>
+              <span>HTCS &middot; Unit 6 &middot; Day 04</span>
+              <span>Bitcoin Wallets &amp; Multi-Signatures</span>
+            </div>
+          );
+        }
+
+        function Eyebrow({ children, color, style = {} }) {
+          return (
+            <div style={{
+              fontFamily: FONTS.sans, fontSize: TYPE_SCALE.eyebrow, letterSpacing: '0.24em',
+              textTransform: 'uppercase', fontWeight: 500,
+              color: color || COLORS.accent, marginBottom: 24, ...style,
+            }}>{children}</div>
+          );
+        }
+
+        function Title({ children, size = 'title', color, style = {} }) {
+          const fs = TYPE_SCALE[size] || TYPE_SCALE.title;
+          return (
+            <h1 style={{
+              fontFamily: FONTS.serif, fontWeight: 500, fontSize: fs,
+              lineHeight: 1.05, letterSpacing: '-0.015em',
+              color: color || COLORS.ink, margin: 0, textWrap: 'balance', ...style,
+            }}>{children}</h1>
+          );
+        }
+
+        function Subtitle({ children, color, style = {} }) {
+          return (
+            <div style={{
+              fontFamily: FONTS.serif, fontStyle: 'italic',
+              fontSize: TYPE_SCALE.subtitle, lineHeight: 1.2,
+              color: color || COLORS.inkSoft, margin: 0, marginTop: 20,
+              textWrap: 'balance', ...style,
+            }}>{children}</div>
+          );
+        }
+
+        function Body({ children, size = 'body', color, style = {} }) {
+          return (
+            <div style={{
+              fontFamily: FONTS.serif,
+              fontSize: TYPE_SCALE[size] || TYPE_SCALE.body,
+              lineHeight: 1.38, color: color || COLORS.inkSoft, textWrap: 'pretty', ...style,
+            }}>{children}</div>
+          );
+        }
+
+        function Rule({ color, style = {} }) {
+          return <div style={{ height: 1, background: color || COLORS.rule, width: '100%', ...style }} />;
+        }
+
+        function Mono({ children, style = {} }) {
+          return (
+            <span style={{
+              fontFamily: FONTS.mono, fontSize: '0.88em',
+              letterSpacing: '-0.01em', color: COLORS.ink, ...style,
+            }}>{children}</span>
+          );
+        }
+
+        function Numeral({ n, color, style = {} }) {
+          return (
+            <div style={{
+              fontFamily: FONTS.serif, fontStyle: 'italic', fontWeight: 400,
+              fontSize: 56, color: color || COLORS.accent, lineHeight: 1, ...style,
+            }}>{String(n).padStart(2, '0')}</div>
+          );
+        }
+
+        function Callout({ kicker, children, tone = 'default', style = {} }) {
+          const c = tone === 'danger' ? COLORS.danger : tone === 'ok' ? COLORS.ok : COLORS.accent;
+          return (
+            <div style={{
+              borderTop: `1px solid ${COLORS.rule}`, borderBottom: `1px solid ${COLORS.rule}`,
+              padding: '28px 0', ...style,
+            }}>
+              {kicker && <Eyebrow color={c} style={{ marginBottom: 14 }}>{kicker}</Eyebrow>}
+              <div style={{ fontFamily: FONTS.serif, fontSize: TYPE_SCALE.bodyLg, color: COLORS.ink, lineHeight: 1.3 }}>
+                {children}
+              </div>
+            </div>
+          );
+        }
+
+        Object.assign(window, { SlideFrame, SlideFooter, Eyebrow, Title, Subtitle, Body, Rule, Mono, Numeral, Callout });
+      }
+    </script>
+
+    <script type="text/babel" data-presets="react">
+      {
+        /* global React */
+        const { COLORS, TYPE_SCALE, SPACING, FONTS } = window.HTCS_TOKENS;
+        const { SlideFrame, Eyebrow, Title, Subtitle, Body, Rule, Mono, Numeral, Callout } = window;
+
+        // ── 01 · Cover ──────────────────────────────────────────────────────────────
+        function SlideCover() {
+          return (
+            <SlideFrame variant="bleed" footer={false} pad={false}>
+              <div style={{ position: 'absolute', inset: 0, display: 'grid', gridTemplateColumns: '1fr 1fr' }}>
+                {/* LEFT — cream panel */}
+                <div style={{ padding: '100px 120px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+                  <div>
+                    <div style={{ fontFamily: FONTS.sans, fontSize: 24, letterSpacing: '0.28em', textTransform: 'uppercase', color: COLORS.accent, marginBottom: 32 }}>Honors Topics in Computer Science</div>
+                    <div style={{ fontFamily: FONTS.serif, fontStyle: 'italic', fontSize: 40, color: COLORS.inkSoft, marginBottom: 28 }}>Day 04</div>
+                    <Title size="titleLg" style={{ fontSize: 108, lineHeight: 0.97 }}>
+                      Bitcoin Wallets<br />
+                      <span style={{ fontStyle: 'italic', color: COLORS.accent }}>&amp;</span> Multi-Signatures
+                    </Title>
+                    <Subtitle style={{ fontSize: 36, marginTop: 40 }}>
+                      When one secret isn&rsquo;t enough to protect serious value.
+                    </Subtitle>
+                  </div>
+                  <div style={{ display: 'flex', gap: 48, fontFamily: FONTS.sans, fontSize: 24, letterSpacing: '0.2em', textTransform: 'uppercase', color: COLORS.muted }}>
+                    <span>HTCS &middot; Unit 6 &middot; Day 04</span>
+                    <span>lecture + demo</span>
+                  </div>
+                </div>
+
+                {/* RIGHT — ink panel with 2-of-3 typographic feature */}
+                <div style={{ background: COLORS.ink, position: 'relative', overflow: 'hidden' }}>
+                  <div style={{ position: 'absolute', top: 80, left: 64, right: 64, bottom: 260 }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 10, fontFamily: FONTS.mono, fontSize: 80, lineHeight: 0.95, letterSpacing: '-0.02em' }}>
+                      <span style={{ color: 'rgba(245,239,227,0.20)' }}>KEY_01</span>
+                      <span style={{ color: 'rgba(245,239,227,0.20)' }}>KEY_02</span>
+                      <span style={{ color: 'rgba(245,239,227,0.07)' }}>KEY_03</span>
+                    </div>
+                    <div style={{ marginTop: 52, fontFamily: FONTS.sans, fontSize: 72, color: COLORS.gold, letterSpacing: '-0.02em', fontWeight: 600, lineHeight: 1 }}>
+                      2 of 3
+                    </div>
+                    <div style={{ marginTop: 12, fontFamily: FONTS.sans, fontSize: 22, color: 'rgba(245,239,227,0.45)', letterSpacing: '0.22em', textTransform: 'uppercase' }}>
+                      threshold
+                    </div>
+                  </div>
+                  <div style={{ position: 'absolute', bottom: 60, left: 64, right: 64, borderTop: `1px solid rgba(245,239,227,0.35)`, paddingTop: 24, color: COLORS.paper, fontFamily: FONTS.serif, fontStyle: 'italic', fontSize: 30, lineHeight: 1.35, background: COLORS.ink }}>
+                    &ldquo;Your keys, your bitcoin &mdash; until your keys are someone else&rsquo;s problem.&rdquo;
+                  </div>
+                </div>
+              </div>
+            </SlideFrame>
+          );
+        }
+
+        // ── 02 · Agenda ─────────────────────────────────────────────────────────────
+        function SlideAgenda() {
+          const items = [
+            ['01', 'The single-key problem', 'Why protecting one secret is harder than it sounds.'],
+            ['02', 'Multi-sig wallets', 'How multiple keys share control over one address.'],
+            ['03', 'Signing transactions', 'What happens step by step when you spend.'],
+            ['04', 'Security trade-offs', 'What multi-sig protects against — and what it doesn\'t.'],
+          ];
+          return (
+            <SlideFrame>
+              <Eyebrow>Today&rsquo;s agenda</Eyebrow>
+              <Title>Four questions about <em style={{ fontStyle: 'italic', color: COLORS.accent }}>securing Bitcoin.</em></Title>
+              <div style={{ marginTop: 44, flex: 1 }}>
+                {items.map(([n, t, d], i) => (
+                  <div key={n} style={{ display: 'grid', gridTemplateColumns: '90px 1.2fr 2fr', gap: 32, padding: '18px 0', borderTop: `1px solid ${COLORS.ruleFaint}`, borderBottom: i === items.length - 1 ? `1px solid ${COLORS.ruleFaint}` : 'none' }}>
+                    <Numeral n={n} />
+                    <div style={{ fontFamily: FONTS.serif, fontSize: 38, lineHeight: 1.1, alignSelf: 'center' }}>{t}</div>
+                    <Body size="bodyLg" style={{ alignSelf: 'center' }}>{d}</Body>
+                  </div>
+                ))}
+              </div>
+            </SlideFrame>
+          );
+        }
+
+        // ── 03 · Part 01 Divider ────────────────────────────────────────────────────
+        function SlidePart1Divider() {
+          return (
+            <SlideFrame variant="ink" footer={false}>
+              <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+                <div style={{ fontFamily: FONTS.sans, fontSize: 26, letterSpacing: '0.32em', textTransform: 'uppercase', color: COLORS.gold, marginBottom: 36 }}>Part 01</div>
+                <Title color={COLORS.paper} size="display" style={{ lineHeight: 0.95, fontSize: 180 }}>
+                  One Key.
+                </Title>
+                <Subtitle color="rgba(245,239,227,0.75)" style={{ fontSize: 40, marginTop: 48, maxWidth: 1100 }}>
+                  Why is a single private key a single point of failure?
+                </Subtitle>
+              </div>
+            </SlideFrame>
+          );
+        }
+
+        // ── 04 · Seed Phrase ────────────────────────────────────────────────────────
+        function SlideSeedPhrase() {
+          const words = ['witch', 'collapse', 'practice', 'feed', 'shame', 'open',
+                         'despair', 'creek', 'road', 'again', 'ice', 'least'];
+          return (
+            <SlideFrame>
+              <Eyebrow>The vulnerability</Eyebrow>
+              <Title style={{ maxWidth: 1100 }}>
+                twelve words stand between you and <em style={{ fontStyle: 'italic', color: COLORS.accent }}>everything.</em>
+              </Title>
+              <div style={{ marginTop: 48, background: COLORS.ink, borderRadius: 12, padding: '36px 48px' }}>
+                <div style={{ fontFamily: FONTS.sans, fontSize: 20, letterSpacing: '0.22em', textTransform: 'uppercase', color: COLORS.gold, marginBottom: 20 }}>Seed phrase (example only)</div>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', gap: '14px 24px' }}>
+                  {words.map((w, i) => (
+                    <div key={i} style={{ fontFamily: FONTS.mono, fontSize: 28, color: COLORS.paper }}>
+                      <span style={{ color: 'rgba(245,239,227,0.4)', fontSize: 20, marginRight: 8 }}>{String(i + 1).padStart(2, '0')}</span>{w}
+                    </div>
+                  ))}
+                </div>
+              </div>
+              <Body size="bodyLg" style={{ marginTop: 36, maxWidth: 1300 }}>
+                Your private key is derived from this seed phrase. Whoever holds these words controls your wallet &mdash; instantly, irreversibly, with no appeals process.
+              </Body>
+            </SlideFrame>
+          );
+        }
+
+        // ── 05 · Custodial Risk ─────────────────────────────────────────────────────
+        function SlideCustodialRisk() {
+          return (
+            <SlideFrame>
+              <Eyebrow>The custodial trade-off</Eyebrow>
+              <Title style={{ maxWidth: 1200 }}>
+                trusting a service means <em style={{ fontStyle: 'italic', color: COLORS.accent }}>trusting their security.</em>
+              </Title>
+              <div style={{ marginTop: 48, flex: 1, display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 32 }}>
+                {/* Self-custody */}
+                <div style={{ border: `1px solid ${COLORS.ruleFaint}`, borderRadius: 12, padding: '36px 44px' }}>
+                  <div style={{ fontFamily: FONTS.sans, fontSize: 22, letterSpacing: '0.22em', textTransform: 'uppercase', color: COLORS.inkSoft, marginBottom: 20 }}>Self-custody</div>
+                  <div style={{ fontFamily: FONTS.serif, fontSize: 44, lineHeight: 1.05, marginBottom: 28 }}>You hold the key.</div>
+                  <Body>No third party can freeze, seize, or lose your funds. But if you lose the seed phrase &mdash; or someone finds it &mdash; there is no recovery.</Body>
+                </div>
+                {/* Custodial */}
+                <div style={{ border: `1px solid ${COLORS.ruleFaint}`, borderRadius: 12, padding: '36px 44px', background: COLORS.creamDark }}>
+                  <div style={{ fontFamily: FONTS.sans, fontSize: 22, letterSpacing: '0.22em', textTransform: 'uppercase', color: COLORS.inkSoft, marginBottom: 20 }}>Custodial (Coinbase, etc.)</div>
+                  <div style={{ fontFamily: FONTS.serif, fontSize: 44, lineHeight: 1.05, marginBottom: 28 }}>They hold the key.</div>
+                  <Body>Convenient to use, easier to recover. But you are trusting the company&rsquo;s security engineers to protect your funds from hackers, insiders, and regulators.</Body>
+                </div>
+              </div>
+            </SlideFrame>
+          );
+        }
+
+        // ── 06 · Part 02 Divider ────────────────────────────────────────────────────
+        function SlidePart2Divider() {
+          return (
+            <SlideFrame variant="ink" footer={false}>
+              <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+                <div style={{ fontFamily: FONTS.sans, fontSize: 26, letterSpacing: '0.32em', textTransform: 'uppercase', color: COLORS.gold, marginBottom: 36 }}>Part 02</div>
+                <Title color={COLORS.paper} size="display" style={{ lineHeight: 0.95, fontSize: 180 }}>
+                  Multi-Sig.
+                </Title>
+                <Subtitle color="rgba(245,239,227,0.75)" style={{ fontSize: 40, marginTop: 48, maxWidth: 1100 }}>
+                  What if ownership required more than one signature?
+                </Subtitle>
+              </div>
+            </SlideFrame>
+          );
+        }
+
+        // ── 07 · Multiple Keys ──────────────────────────────────────────────────────
+        function SlideMultipleKeys() {
+          const signers = [
+            { initial: 'A', name: 'Alice', seed: 'witch collapse…', priv: '5KJvsn…e8Wz', pub: '02a3f8…d91c4e' },
+            { initial: 'B', name: 'Bob',   seed: 'vessel ladder…', priv: 'KwDiBf…n7Pm', pub: '03c72b…a5f019' },
+            { initial: 'C', name: 'Carol', seed: 'olympic cricket…', priv: 'L4rK21…qPm9', pub: '0291de…7b3c82' },
+          ];
+          const rowStyle = (top) => ({
+            fontFamily: FONTS.mono, fontSize: 22, color: top ? COLORS.inkSoft : COLORS.muted,
+            background: top ? COLORS.creamDark : 'transparent',
+            border: `1px solid ${COLORS.ruleFaint}`, borderRadius: 6,
+            padding: '10px 14px', lineHeight: 1.3,
+          });
+          const arrowStyle = { textAlign: 'center', fontFamily: FONTS.mono, fontSize: 20, color: COLORS.rule, margin: '4px 0' };
+          return (
+            <SlideFrame>
+              <Eyebrow>Where the keys come from</Eyebrow>
+              <Title style={{ maxWidth: 1300 }}>
+                three signers, <em style={{ fontStyle: 'italic', color: COLORS.accent }}>three independent</em> key pairs.
+              </Title>
+              <div style={{ marginTop: 36, display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 24 }}>
+                {signers.map(({ initial, name, seed, priv, pub }) => (
+                  <div key={name} style={{ display: 'flex', flexDirection: 'column', gap: 0, border: `1px solid ${COLORS.ruleFaint}`, borderRadius: 10, overflow: 'hidden' }}>
+                    <div style={{ background: COLORS.ink, padding: '16px 20px', display: 'flex', alignItems: 'center', gap: 14 }}>
+                      <div style={{ width: 40, height: 40, borderRadius: '50%', background: COLORS.gold, display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: FONTS.sans, fontWeight: 700, fontSize: 20, color: COLORS.ink, flexShrink: 0 }}>{initial}</div>
+                      <div style={{ fontFamily: FONTS.serif, fontSize: 32, color: COLORS.paper }}>{name}</div>
+                    </div>
+                    <div style={{ padding: '16px 18px', display: 'flex', flexDirection: 'column', gap: 0, background: COLORS.paper }}>
+                      <div style={{ fontFamily: FONTS.mono, fontSize: 13, letterSpacing: '0.12em', textTransform: 'uppercase', color: COLORS.muted, marginBottom: 6 }}>Own seed phrase</div>
+                      <div style={rowStyle(true)}>{seed}</div>
+                      <div style={arrowStyle}>↓ hashed once</div>
+                      <div style={{ fontFamily: FONTS.mono, fontSize: 13, letterSpacing: '0.12em', textTransform: 'uppercase', color: COLORS.muted, marginBottom: 6 }}>Private key <span style={{ color: COLORS.danger, fontSize: 11 }}>— never shared</span></div>
+                      <div style={rowStyle(false)}>{priv}</div>
+                      <div style={arrowStyle}>↓ elliptic curve multiply</div>
+                      <div style={{ fontFamily: FONTS.mono, fontSize: 13, letterSpacing: '0.12em', textTransform: 'uppercase', color: COLORS.muted, marginBottom: 6 }}>Public key <span style={{ color: COLORS.ok, fontSize: 11 }}>— shared openly</span></div>
+                      <div style={{ ...rowStyle(false), color: COLORS.ok, borderColor: COLORS.ok }}>{pub}</div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+              <div style={{ marginTop: 24, background: COLORS.ink, borderRadius: 8, padding: '14px 24px', display: 'flex', alignItems: 'center', gap: 20 }}>
+                <div style={{ fontFamily: FONTS.mono, fontSize: 14, letterSpacing: '0.16em', textTransform: 'uppercase', color: COLORS.gold, flexShrink: 0 }}>Wallet script</div>
+                <div style={{ fontFamily: FONTS.mono, fontSize: 20, color: COLORS.paper }}>
+                  OP_2 &nbsp;<span style={{ color: COLORS.gold }}>02a3f8…</span> &nbsp;<span style={{ color: COLORS.gold }}>03c72b…</span> &nbsp;<span style={{ color: COLORS.gold }}>0291de…</span> &nbsp;OP_3 &nbsp;OP_CHECKMULTISIG
+                </div>
+                <div style={{ fontFamily: FONTS.sans, fontSize: 18, color: 'rgba(245,239,227,0.6)', marginLeft: 'auto', flexShrink: 0 }}>three public keys baked in; 2-of-3 to spend</div>
+              </div>
+            </SlideFrame>
+          );
+        }
+
+        // ── 08 · Multisig Verification (interactive demo — inline React, no iframe) ──
+        const MULTISIG_SIGNERS = [
+          { id: 'alice', label: 'Alice', initial: 'A', role: 'authorized signer', pub: 'PK: 02a3f8…d91c4e', auth: true },
+          { id: 'bob',   label: 'Bob',   initial: 'B', role: 'authorized signer', pub: 'PK: 03c72b…a5f019', auth: true },
+          { id: 'carol', label: 'Carol', initial: 'C', role: 'authorized signer', pub: 'PK: 0291de…7b3c82', auth: true },
+          { id: 'eve',   label: 'Eve',   initial: '?', role: 'unknown — not registered', pub: 'PK: 04ff39…2a9b00', auth: false, intruder: true },
+        ];
+        const THRESHOLD_DESCS = {
+          1: ['Any ', '1', ' of the 3 registered keys can authorize this transaction.'],
+          2: ['At least ', '2', ' of the 3 registered keys must sign — neither alone is enough.'],
+          3: ['All ', '3', ' registered keys must sign — unanimous approval required.'],
+        };
+
+        function SlideMultisigVerification() {
+          const { COLORS, FONTS } = window.HTCS_TOKENS;
+          const [threshold, setThreshold] = React.useState(2);
+          const [selected, setSelected] = React.useState(new Set());
+
+          const toggle = (id) => setSelected(prev => {
+            const next = new Set(prev);
+            next.has(id) ? next.delete(id) : next.add(id);
+            return next;
+          });
+
+          const validCount = [...selected].filter(id => MULTISIG_SIGNERS.find(s => s.id === id)?.auth).length;
+          const hasEve = selected.has('eve');
+          const approved = validCount >= threshold;
+          const anySelected = selected.size > 0;
+
+          // ── style atoms ──────────────────────────────────────────────────────
+          const OK   = COLORS.ok   || '#3B6E4A';
+          const ERR  = COLORS.danger || '#9B2A1B';
+          const GOLD = COLORS.gold;
+
+          const resultState = !anySelected ? 'idle' : approved ? 'success' : 'failure';
+          const resultBorder = resultState === 'success' ? OK : resultState === 'failure' ? ERR : 'transparent';
+          const resultBg     = resultState === 'success' ? 'rgba(59,110,74,0.10)' : resultState === 'failure' ? 'rgba(155,42,27,0.10)' : 'rgba(15,31,58,0.05)';
+
+          let resultTitle = 'Select signers to begin';
+          let resultSub   = 'Watch the checks update in real time';
+          if (anySelected) {
+            if (approved) {
+              resultTitle = 'Approved — threshold met';
+              resultSub   = `${validCount} valid signature${validCount !== 1 ? 's' : ''} from registered keys. Threshold: ${threshold}. Broadcasting to the network.`;
+            } else {
+              if (validCount === 0 && hasEve) {
+                resultTitle = "Rejected — Eve's key is not in the wallet script";
+                resultSub   = "The network only checks against the public keys registered at wallet creation.";
+              } else if (hasEve && validCount > 0) {
+                resultTitle = "Rejected — Eve's key cannot substitute for a registered signer";
+                resultSub   = `${validCount} valid signature${validCount !== 1 ? 's' : ''} found, but Eve's public key isn't registered.`;
+              } else {
+                resultTitle = `Rejected — need ${threshold} signature${threshold !== 1 ? 's' : ''}, have ${validCount}`;
+                resultSub   = `${threshold - validCount} more valid signature${threshold - validCount !== 1 ? 's' : ''} required.`;
+              }
+            }
+          }
+
+          const desc = THRESHOLD_DESCS[threshold];
+
+          return (
+            <SlideFrame>
+              <Eyebrow style={{ marginBottom: 10 }}>Multi-signature verification</Eyebrow>
+              <Title style={{ marginBottom: 14 }}>
+                how does the network verify the <em>right keys</em> signed?
+              </Title>
+              {/* ── Spending-rule bar ─────────────────────────────────────────── */}
+              <div style={{
+                display: 'flex', alignItems: 'center', gap: 20, flexShrink: 0,
+                background: COLORS.ink, borderRadius: 10, padding: '12px 28px', marginBottom: 12,
+              }}>
+                <div style={{
+                  fontFamily: FONTS.mono, fontSize: 24, fontWeight: 600,
+                  letterSpacing: '0.18em', textTransform: 'uppercase', color: GOLD, whiteSpace: 'nowrap',
+                }}>Spending rule</div>
+                <div style={{ fontFamily: FONTS.sans, fontSize: 20, color: 'rgba(245,239,227,0.65)', flex: 1, lineHeight: 1.3 }}>
+                  {desc[0]}<strong style={{ color: 'rgba(245,239,227,0.95)', fontWeight: 700 }}>{desc[1]}</strong>{desc[2]}
+                </div>
+                <div style={{ display: 'flex', gap: 10, flexShrink: 0 }}>
+                  {[1, 2, 3].map(m => (
+                    <button key={m} onClick={() => setThreshold(m)} style={{
+                      fontFamily: FONTS.mono, fontSize: 24, fontWeight: 600,
+                      padding: '10px 28px', borderRadius: 8, letterSpacing: '0.04em',
+                      border: `2.5px solid ${threshold === m ? GOLD : 'rgba(255,255,255,0.28)'}`,
+                      background: threshold === m ? GOLD : 'transparent',
+                      color: threshold === m ? COLORS.ink : 'rgba(245,239,227,0.6)',
+                      cursor: 'pointer', transition: 'all 0.15s',
+                    }}>{m}-of-3</button>
+                  ))}
+                </div>
+              </div>
+
+              {/* ── Two-column body ───────────────────────────────────────────── */}
+              <div style={{ flex: 1, display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20, minHeight: 0, overflow: 'hidden' }}>
+
+                {/* Left: signer cards */}
+                <div style={{ display: 'flex', flexDirection: 'column', minHeight: 0 }}>
+                  <div style={{
+                    fontFamily: FONTS.mono, fontSize: 16, letterSpacing: '0.2em',
+                    textTransform: 'uppercase', color: COLORS.muted, marginBottom: 10,
+                    flexShrink: 0,
+                  }}>Click to select signers</div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 8, flex: 1, minHeight: 0 }}>
+                    {MULTISIG_SIGNERS.map((s, idx) => {
+                      const on = selected.has(s.id);
+                      const borderColor = on ? (s.auth ? OK : ERR) : s.intruder ? 'rgba(155,42,27,0.32)' : COLORS.rule;
+                      const bg = on ? (s.auth ? 'rgba(59,110,74,0.10)' : 'rgba(155,42,27,0.10)') : 'transparent';
+                      const avatarBg = on ? (s.auth ? OK : ERR) : s.intruder ? 'rgba(155,42,27,0.10)' : 'rgba(15,31,58,0.10)';
+                      const avatarColor = on ? '#fff' : s.intruder ? ERR : COLORS.ink;
+                      return (
+                        <React.Fragment key={s.id}>
+                          {s.intruder && (
+                            <div style={{
+                              fontFamily: FONTS.mono, fontSize: 13, letterSpacing: '0.12em',
+                              textTransform: 'uppercase', color: ERR, marginTop: 2, marginBottom: 2, opacity: 0.7,
+                              flexShrink: 0,
+                            }}>⚠ not in wallet script</div>
+                          )}
+                          <div onClick={() => toggle(s.id)} style={{
+                            border: `3px solid ${borderColor}`,
+                            borderStyle: s.intruder && !on ? 'dashed' : 'solid',
+                            borderRadius: 9, padding: '12px 20px', cursor: 'pointer',
+                            display: 'grid', gridTemplateColumns: '60px 1fr 40px',
+                            alignItems: 'center', gap: 16, background: bg,
+                            transition: 'border-color 0.15s, background 0.15s',
+                            flex: 1, minHeight: 0, userSelect: 'none',
+                          }}>
+                            <div style={{
+                              width: 60, height: 60, borderRadius: '50%',
+                              display: 'flex', alignItems: 'center', justifyContent: 'center',
+                              fontWeight: 700, fontSize: 28, background: avatarBg, color: avatarColor,
+                              flexShrink: 0,
+                            }}>{s.initial}</div>
+                            <div style={{ minWidth: 0 }}>
+                              <div style={{
+                                fontFamily: FONTS.serif, fontSize: 26, fontWeight: 600,
+                                lineHeight: 1.15, color: s.intruder ? ERR : COLORS.ink,
+                              }}>{s.label}</div>
+                              <div style={{ fontFamily: FONTS.mono, fontSize: 14, color: COLORS.muted, marginTop: 2 }}>{s.role}</div>
+                              <div style={{ fontFamily: FONTS.mono, fontSize: 13, color: COLORS.muted, marginTop: 3 }}>{s.pub}</div>
+                            </div>
+                            <div style={{
+                              width: 40, height: 40, borderRadius: '50%', flexShrink: 0,
+                              border: `3px solid ${on ? (s.auth ? OK : ERR) : COLORS.rule}`,
+                              background: on ? (s.auth ? OK : ERR) : 'transparent',
+                              display: 'flex', alignItems: 'center', justifyContent: 'center',
+                              fontSize: 20, color: on ? '#fff' : 'transparent',
+                              transition: 'all 0.15s',
+                            }}>{on ? (s.auth ? '✓' : '✕') : ''}</div>
+                          </div>
+                        </React.Fragment>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* Right: verification */}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 8, minHeight: 0 }}>
+                  <div style={{
+                    fontFamily: FONTS.mono, fontSize: 16, letterSpacing: '0.2em',
+                    textTransform: 'uppercase', color: COLORS.muted, flexShrink: 0,
+                  }}>Signature verification</div>
+
+                  {/* Transaction box */}
+                  <div style={{ background: COLORS.ink, borderRadius: 9, padding: '12px 20px', flexShrink: 0 }}>
+                    <div style={{ fontFamily: FONTS.mono, fontSize: 16, letterSpacing: '0.18em', textTransform: 'uppercase', color: GOLD, marginBottom: 8 }}>Pending Transaction</div>
+                    {[['From','bc1q…9e4f  (this multisig wallet)'],['To','bc1q…3a72'],['Amount','0.5 BTC']].map(([k,v]) => (
+                      <div key={k} style={{ display: 'flex', justifyContent: 'space-between', fontFamily: FONTS.mono, fontSize: 18, color: 'rgba(245,239,227,0.5)', lineHeight: 1.8 }}>
+                        <span>{k}</span><span style={{ color: 'rgba(245,239,227,0.9)' }}>{v}</span>
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Check rows */}
+                  <div style={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column' }}>
+                    {MULTISIG_SIGNERS.map((s, i) => {
+                      const on = selected.has(s.id);
+                      const state = !on ? 'abs' : s.auth ? 'pass' : 'fail';
+                      const iconBg    = state === 'abs' ? 'rgba(15,31,58,0.05)' : state === 'pass' ? 'rgba(59,110,74,0.15)' : 'rgba(155,42,27,0.15)';
+                      const iconColor = state === 'abs' ? 'rgba(15,31,58,0.2)'  : state === 'pass' ? OK : ERR;
+                      const verdictColor = state === 'pass' ? OK : state === 'fail' ? ERR : COLORS.muted;
+                      return (
+                        <div key={s.id} style={{
+                          display: 'grid', gridTemplateColumns: '48px 1fr auto', alignItems: 'center',
+                          gap: 14, flex: 1, minHeight: 0,
+                          borderTop: i === 0 ? `1px solid ${COLORS.rule}` : 'none',
+                          borderBottom: `1px solid ${COLORS.rule}`,
+                        }}>
+                          <div style={{ width: 48, height: 48, borderRadius: '50%', flexShrink: 0, background: iconBg, color: iconColor, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 22, fontWeight: 700 }}>
+                            {state === 'abs' ? '—' : state === 'pass' ? '✓' : '✕'}
+                          </div>
+                          <div style={{ minWidth: 0 }}>
+                            <div style={{ fontSize: 22, fontWeight: 600, color: COLORS.ink, lineHeight: 1.2 }}>{s.label}'s signature</div>
+                            <div style={{ fontFamily: FONTS.mono, fontSize: 13, color: COLORS.muted, marginTop: 2 }}>
+                              {s.pub} — {s.auth ? 'in wallet script' : 'NOT in wallet script'}
+                            </div>
+                          </div>
+                          <div style={{ fontFamily: FONTS.mono, fontSize: 18, fontWeight: state !== 'abs' ? 600 : 400, color: verdictColor, whiteSpace: 'nowrap' }}>
+                            {state === 'abs' ? 'waiting' : state === 'pass' ? '✓ verified' : '✕ rejected'}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+
+                  {/* Result banner */}
+                  <div style={{
+                    borderRadius: 9, padding: '12px 20px', flexShrink: 0,
+                    display: 'flex', alignItems: 'center', gap: 16,
+                    border: `3px solid ${resultBorder}`, background: resultBg,
+                    transition: 'background 0.2s, border-color 0.2s',
+                  }}>
+                    <div style={{ flex: 1 }}>
+                      <div style={{
+                        fontFamily: FONTS.serif, fontSize: 26, fontWeight: 600, lineHeight: 1.2,
+                        color: resultState === 'success' ? OK : resultState === 'failure' ? ERR : COLORS.muted,
+                      }}>{resultTitle}</div>
+                      <div style={{ fontFamily: FONTS.sans, fontSize: 18, color: COLORS.muted, marginTop: 4, lineHeight: 1.4 }}>{resultSub}</div>
+                    </div>
+                    <div style={{
+                      fontFamily: FONTS.mono, fontSize: 56, fontWeight: 700, flexShrink: 0,
+                      color: resultState === 'success' ? OK : resultState === 'failure' ? ERR : 'rgba(15,31,58,0.15)',
+                    }}>{!anySelected ? '—' : `${validCount}/${threshold}`}</div>
+                  </div>
+
+                  {/* Reset */}
+                  <button onClick={() => setSelected(new Set())} style={{
+                    alignSelf: 'flex-end', fontFamily: FONTS.mono, fontSize: 16, letterSpacing: '0.1em',
+                    textTransform: 'uppercase', padding: '10px 24px', borderRadius: 6,
+                    border: `2px solid ${COLORS.rule}`, background: 'transparent', color: COLORS.muted,
+                    cursor: 'pointer', flexShrink: 0,
+                  }}>Reset</button>
+                </div>
+
+              </div>
+            </SlideFrame>
+          );
+        }
+
+        // ── 10 · Key Distribution ───────────────────────────────────────────────────
+        function SlideKeyDistribution() {
+          const keys = [
+            { n: '01', location: 'Phone or hardware wallet', role: 'Daily use — signs transactions on the go.' },
+            { n: '02', location: 'Offline safe', role: 'Cold backup — never touches the internet.' },
+            { n: '03', location: 'Multi-sig provider server', role: 'Remote co-signer — adds fraud detection layer.' },
+          ];
+          return (
+            <SlideFrame>
+              <Eyebrow>Distributed storage</Eyebrow>
+              <Title style={{ maxWidth: 1200 }}>
+                keys in <em style={{ fontStyle: 'italic', color: COLORS.accent }}>different places</em> mean no single point of failure.
+              </Title>
+              <div style={{ marginTop: 52, flex: 1 }}>
+                {keys.map(({ n, location, role }, i) => (
+                  <div key={n} style={{ display: 'grid', gridTemplateColumns: '90px 380px 1fr', gap: 36, alignItems: 'center', padding: '24px 0', borderTop: `1px solid ${COLORS.ruleFaint}`, borderBottom: i === keys.length - 1 ? `1px solid ${COLORS.ruleFaint}` : 'none' }}>
+                    <Numeral n={n} />
+                    <div style={{ fontFamily: FONTS.serif, fontSize: 40, lineHeight: 1.1, color: COLORS.ink }}>{location}</div>
+                    <Body size="bodyLg">{role}</Body>
+                  </div>
+                ))}
+              </div>
+              <Body style={{ marginTop: 32, color: COLORS.muted, fontStyle: 'italic', fontSize: 28 }}>
+                Storing all three keys in the same location defeats the purpose &mdash; it&rsquo;s equivalent to a single key again.
+              </Body>
+            </SlideFrame>
+          );
+        }
+
+        // ── 10 · Part 03 Divider ────────────────────────────────────────────────────
+        function SlidePart3Divider() {
+          return (
+            <SlideFrame variant="ink" footer={false}>
+              <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+                <div style={{ fontFamily: FONTS.sans, fontSize: 26, letterSpacing: '0.32em', textTransform: 'uppercase', color: COLORS.gold, marginBottom: 36 }}>Part 03</div>
+                <Title color={COLORS.paper} size="display" style={{ lineHeight: 0.95, fontSize: 165 }}>
+                  The Transaction.
+                </Title>
+                <Subtitle color="rgba(245,239,227,0.75)" style={{ fontSize: 40, marginTop: 48, maxWidth: 1100 }}>
+                  What actually happens when you spend from a multi-sig wallet?
+                </Subtitle>
+              </div>
+            </SlideFrame>
+          );
+        }
+
+        // ── 11 · Signing Step 1 ─────────────────────────────────────────────────────
+        function SlideSigningStep1() {
+          return (
+            <SlideFrame>
+              <Eyebrow color={COLORS.gold}>Step 01 &mdash; User</Eyebrow>
+              <Title style={{ maxWidth: 1200 }}>
+                you sign the transaction <em style={{ fontStyle: 'italic', color: COLORS.accent }}>with your key.</em>
+              </Title>
+              <Body size="bodyLg" style={{ marginTop: 36, maxWidth: 1300 }}>
+                When you tap &ldquo;pay,&rdquo; your wallet app constructs a transaction and signs it with the private key on your phone. The signature proves your intent &mdash; but it isn&rsquo;t enough on its own.
+              </Body>
+              {/* Transaction flow diagram */}
+              {/* TODO: upgrade to animated SVG step-through diagram */}
+              <div style={{ marginTop: 56, display: 'flex', alignItems: 'center', gap: 0 }}>
+                {[
+                  { label: 'YOU', sub: 'sign with KEY_01', highlight: true },
+                  { arrow: true },
+                  { label: 'PARTIAL TX', sub: '1 of 2 signatures', highlight: false },
+                  { arrow: true, faint: true },
+                  { label: 'BROADCAST', sub: 'needs 2nd signature', faint: true },
+                ].map((item, i) => item.arrow ? (
+                  <div key={i} style={{ flex: 1, height: 2, background: item.faint ? COLORS.ruleFaint : COLORS.rule, position: 'relative' }}>
+                    <div style={{ position: 'absolute', right: -10, top: '50%', transform: 'translateY(-50%)', width: 0, height: 0, borderTop: '8px solid transparent', borderBottom: '8px solid transparent', borderLeft: `14px solid ${item.faint ? COLORS.ruleFaint : COLORS.rule}` }} />
+                  </div>
+                ) : (
+                  <div key={i} style={{ border: `1px solid ${item.highlight ? COLORS.accent : (item.faint ? COLORS.ruleFaint : COLORS.rule)}`, borderRadius: 10, padding: '24px 36px', minWidth: 260, textAlign: 'center', opacity: item.faint ? 0.5 : 1 }}>
+                    <div style={{ fontFamily: FONTS.mono, fontSize: 28, color: item.highlight ? COLORS.accent : COLORS.inkSoft, letterSpacing: '0.1em', marginBottom: 8 }}>{item.label}</div>
+                    <div style={{ fontFamily: FONTS.sans, fontSize: 22, color: COLORS.muted, letterSpacing: '0.08em' }}>{item.sub}</div>
+                  </div>
+                ))}
+              </div>
+            </SlideFrame>
+          );
+        }
+
+        // ── 12 · Signing Step 2 ─────────────────────────────────────────────────────
+        function SlideSigningStep2() {
+          return (
+            <SlideFrame>
+              <Eyebrow color={COLORS.gold}>Step 02 &mdash; Provider</Eyebrow>
+              <Title style={{ maxWidth: 1200 }}>
+                the provider <em style={{ fontStyle: 'italic', color: COLORS.accent }}>co-signs</em> to complete it.
+              </Title>
+              <Body size="bodyLg" style={{ marginTop: 36, maxWidth: 1300 }}>
+                The partially signed transaction is sent to your multi-sig provider. They run fraud checks, and if everything looks valid, they add their signature. Two signatures: threshold met. The transaction broadcasts to the network.
+              </Body>
+              {/* Transaction flow diagram */}
+              <div style={{ marginTop: 56, display: 'flex', alignItems: 'center', gap: 0 }}>
+                {[
+                  { label: 'PARTIAL TX', sub: '1 signature', faint: true },
+                  { arrow: true },
+                  { label: 'PROVIDER', sub: 'sign with KEY_02', highlight: true },
+                  { arrow: true },
+                  { label: 'BROADCAST', sub: 'threshold met', ok: true },
+                ].map((item, i) => item.arrow ? (
+                  <div key={i} style={{ flex: 1, height: 2, background: COLORS.rule, position: 'relative' }}>
+                    <div style={{ position: 'absolute', right: -10, top: '50%', transform: 'translateY(-50%)', width: 0, height: 0, borderTop: '8px solid transparent', borderBottom: '8px solid transparent', borderLeft: `14px solid ${COLORS.rule}` }} />
+                  </div>
+                ) : (
+                  <div key={i} style={{ border: `1px solid ${item.highlight ? COLORS.accent : (item.ok ? COLORS.ok : COLORS.rule)}`, borderRadius: 10, padding: '24px 36px', minWidth: 260, textAlign: 'center', opacity: item.faint ? 0.5 : 1, background: item.ok ? 'rgba(59,110,74,0.08)' : 'transparent' }}>
+                    <div style={{ fontFamily: FONTS.mono, fontSize: 28, color: item.highlight ? COLORS.accent : (item.ok ? COLORS.ok : COLORS.inkSoft), letterSpacing: '0.1em', marginBottom: 8 }}>{item.label}</div>
+                    <div style={{ fontFamily: FONTS.sans, fontSize: 22, color: COLORS.muted, letterSpacing: '0.08em' }}>{item.sub}</div>
+                  </div>
+                ))}
+              </div>
+            </SlideFrame>
+          );
+        }
+
+        // ── 13 · Part 04 Divider ────────────────────────────────────────────────────
+        function SlidePart4Divider() {
+          return (
+            <SlideFrame variant="ink" footer={false}>
+              <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+                <div style={{ fontFamily: FONTS.sans, fontSize: 26, letterSpacing: '0.32em', textTransform: 'uppercase', color: COLORS.gold, marginBottom: 36 }}>Part 04</div>
+                <Title color={COLORS.paper} size="display" style={{ lineHeight: 0.95, fontSize: 180 }}>
+                  The Security.
+                </Title>
+                <Subtitle color="rgba(245,239,227,0.75)" style={{ fontSize: 40, marginTop: 48, maxWidth: 1100 }}>
+                  What does multi-sig actually protect against?
+                </Subtitle>
+              </div>
+            </SlideFrame>
+          );
+        }
+
+        // ── 14 · Lost Phone Scenario ────────────────────────────────────────────────
+        function SlideLostPhone() {
+          return (
+            <SlideFrame>
+              <Eyebrow>Scenario</Eyebrow>
+              <Title style={{ maxWidth: 1300 }}>
+                your phone is stolen. the attacker has <em style={{ fontStyle: 'italic', color: COLORS.accent }}>one key.</em>
+              </Title>
+              <Callout kicker="The question" style={{ marginTop: 48, maxWidth: 1400 }}>
+                In a standard single-key Bitcoin wallet, this is catastrophic &mdash; the attacker controls everything. Does the same hold for a multi-sig wallet?
+              </Callout>
+              <Body size="bodyLg" style={{ marginTop: 40, maxWidth: 1300 }}>
+                Your phone held KEY_01. The attacker now has one valid signature. The threshold requires two. Your offline safe (KEY_02) and provider server (KEY_03) are untouched. What happens?
+              </Body>
+            </SlideFrame>
+          );
+        }
+
+        // ── 15 · Redundancy Answer ──────────────────────────────────────────────────
+        function SlideRedundancy() {
+          return (
+            <SlideFrame variant="ink" footer={false}>
+              <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+                <Eyebrow color={COLORS.gold}>The answer</Eyebrow>
+                <Title color={COLORS.paper} size="titleLg" style={{ fontSize: 120, lineHeight: 0.97, maxWidth: 1300 }}>
+                  one key <em style={{ fontStyle: 'italic' }}>isn&rsquo;t enough</em> to drain the wallet.
+                </Title>
+                <div style={{ marginTop: 48, borderTop: `1px solid rgba(245,239,227,0.25)`, borderBottom: `1px solid rgba(245,239,227,0.25)`, padding: '32px 0', maxWidth: 1300 }}>
+                  <Body size="bodyLg" color="rgba(245,239,227,0.85)">
+                    The attacker holds one signature. The threshold requires two. Your remaining keys &mdash; in the safe and on the provider server &mdash; are unreachable by the thief. Your funds are safe. And you can still access them using KEY_02 and KEY_03.
+                  </Body>
+                </div>
+              </div>
+            </SlideFrame>
+          );
+        }
+
+        // ── 16 · Fraud Protection ───────────────────────────────────────────────────
+        function SlideFraudProtection() {
+          return (
+            <SlideFrame>
+              <Eyebrow>The analogy</Eyebrow>
+              <Title style={{ maxWidth: 1300 }}>
+                multi-sig recreates <em style={{ fontStyle: 'italic', color: COLORS.accent }}>credit card protection</em> for your wallet.
+              </Title>
+              <Callout kicker="How it works" style={{ marginTop: 44, maxWidth: 1400 }}>
+                Every credit card transaction requires the issuer to co-authorize the purchase. Multi-sig does the same for Bitcoin: every transaction needs a second party&rsquo;s signature.
+              </Callout>
+              <Body size="bodyLg" style={{ marginTop: 36, maxWidth: 1300 }}>
+                Unlike credit cards, this protection is enforced by cryptography &mdash; not corporate policy. The provider cannot reverse a transaction after the fact, but they can refuse to co-sign a suspicious one before it broadcasts.
+              </Body>
+            </SlideFrame>
+          );
+        }
+
+        // ── 17 · No Single Authority ────────────────────────────────────────────────
+        function SlideNoSingleAuthority() {
+          return (
+            <SlideFrame>
+              <Eyebrow>The guarantee</Eyebrow>
+              <Title style={{ maxWidth: 1300 }}>
+                no single key has <em style={{ fontStyle: 'italic', color: COLORS.accent }}>full authority.</em>
+              </Title>
+              <div style={{ marginTop: 48, flex: 1, display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 32 }}>
+                <div style={{ border: `1px solid ${COLORS.danger}`, borderRadius: 12, padding: '36px 44px', opacity: 0.8 }}>
+                  <div style={{ fontFamily: FONTS.sans, fontSize: 22, letterSpacing: '0.22em', textTransform: 'uppercase', color: COLORS.danger, marginBottom: 20 }}>Single-key wallet</div>
+                  <div style={{ fontFamily: FONTS.serif, fontSize: 40, lineHeight: 1.1, color: COLORS.ink, marginBottom: 24 }}>One key = total control.</div>
+                  <Body>Theft, coercion, or accidental loss of the key means permanent loss of funds. No recovery path.</Body>
+                </div>
+                <div style={{ border: `1px solid ${COLORS.ok}`, borderRadius: 12, padding: '36px 44px', background: 'rgba(59,110,74,0.04)' }}>
+                  <div style={{ fontFamily: FONTS.sans, fontSize: 22, letterSpacing: '0.22em', textTransform: 'uppercase', color: COLORS.ok, marginBottom: 20 }}>Multi-sig wallet</div>
+                  <div style={{ fontFamily: FONTS.serif, fontSize: 40, lineHeight: 1.1, color: COLORS.ink, marginBottom: 24 }}>Threshold = distributed control.</div>
+                  <Body>No single party can drain the wallet unilaterally. Theft of one key is survivable. Loss of one key is recoverable with the remaining two.</Body>
+                </div>
+              </div>
+            </SlideFrame>
+          );
+        }
+
+        // ── 18 · Recap ──────────────────────────────────────────────────────────────
+        function SlideRecap() {
+          return (
+            <SlideFrame>
+              <Eyebrow>Takeaways</Eyebrow>
+              <Title>How to explain <em style={{ fontStyle: 'italic', color: COLORS.accent }}>multi-sig</em> in one minute.</Title>
+              <Callout kicker="Mental model" style={{ marginTop: 42 }}>
+                A multi-signature wallet requires M-of-N private keys to authorize any transaction &mdash; eliminating single points of failure without relying on a trusted intermediary.
+              </Callout>
+              <Body size="bodyLg" style={{ marginTop: 36, maxWidth: 1400 }}>
+                The same principle protects corporate bank accounts: no single employee should be able to wire funds alone. Bitcoin can enforce this natively, in the protocol, with no bank required.
+              </Body>
+            </SlideFrame>
+          );
+        }
+
+        // ── 19 · Next Class ─────────────────────────────────────────────────────────
+        function SlideNextClass() {
+          return (
+            <SlideFrame variant="ink" footer={false}>
+              <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+                <div style={{ fontFamily: FONTS.sans, fontSize: 24, letterSpacing: '0.26em', textTransform: 'uppercase', color: COLORS.gold }}>Next class</div>
+                <Title color={COLORS.paper} size="titleLg" style={{ marginTop: 24, fontSize: 118, lineHeight: 0.97 }}>
+                  Smart Contracts<br />
+                  <em style={{ fontStyle: 'italic' }}>&amp; Ethereum</em>
+                </Title>
+                <Subtitle color="rgba(245,239,227,0.75)" style={{ marginTop: 36, fontSize: 36, maxWidth: 1200 }}>
+                  If Bitcoin scripts verify signatures, what happens when the script can do anything a programming language can express?
+                </Subtitle>
+              </div>
+            </SlideFrame>
+          );
+        }
+
+        Object.assign(window, {
+          SlideCover, SlideAgenda,
+          SlidePart1Divider, SlideSeedPhrase, SlideCustodialRisk,
+          SlidePart2Divider, SlideMultipleKeys, SlideMultisigVerification, SlideKeyDistribution,
+          SlidePart3Divider, SlideSigningStep1, SlideSigningStep2,
+          SlidePart4Divider, SlideLostPhone, SlideRedundancy, SlideFraudProtection, SlideNoSingleAuthority,
+          SlideRecap, SlideNextClass,
+        });
+      }
+    </script>
+
+    <script type="text/babel" data-presets="react">
+      {
+        function whenReady(cb) {
+          if (window.SlideCover && window.SlideNextClass && window.HTCS_TOKENS) return cb();
+          setTimeout(() => whenReady(cb), 60);
+        }
+
+        whenReady(() => {
+          const stage = document.querySelector('deck-stage');
+
+          const SLIDES = [
+            ['Cover',           SlideCover],
+            ['Agenda',          SlideAgenda],
+            ['Part 01',         SlidePart1Divider],
+            ['Seed phrase',     SlideSeedPhrase],
+            ['Custodial risk',  SlideCustodialRisk],
+            ['Part 02',         SlidePart2Divider],
+            ['Multiple keys',   SlideMultipleKeys],
+            ['Verify keys',     SlideMultisigVerification],
+            ['Key storage',     SlideKeyDistribution],
+            ['Part 03',         SlidePart3Divider],
+            ['Sign: Step 1',    SlideSigningStep1],
+            ['Sign: Step 2',    SlideSigningStep2],
+            ['Part 04',         SlidePart4Divider],
+            ['Lost phone',      SlideLostPhone],
+            ['Redundancy',      SlideRedundancy],
+            ['Fraud protection',SlideFraudProtection],
+            ['No single key',   SlideNoSingleAuthority],
+            ['Recap',           SlideRecap],
+            ['Next Class',      SlideNextClass],
+          ];
+
+          SLIDES.forEach(([label, Comp], i) => {
+            const section = document.createElement('section');
+            section.setAttribute('data-label', String(i + 1).padStart(2, '0') + ' ' + label);
+            stage.appendChild(section);
+            const root = ReactDOM.createRoot(section);
+            root.render(<Comp />);
+          });
+        });
+      }
+    </script>
+
+    <!-- Presenter view: press P to open. -->
+    <script>
+      (() => {
+        const PARAM = 'presenter';
+        const STORAGE_KEY = 'deck-stage:slide:' + (location.pathname || '/');
+        const inPresenter = new URLSearchParams(location.search).has(PARAM);
+
+        const readNotes = () => {
+          const tag = document.getElementById('speaker-notes');
+          if (!tag) return [];
+          try {
+            const parsed = JSON.parse(tag.textContent || '[]');
+            return Array.isArray(parsed) ? parsed : [];
+          } catch (_) { return []; }
+        };
+
+        if (inPresenter) mountPresenter();
+        else mountAudience();
+
+        function mountAudience() {
+          let presenterWin = null;
+          const stage = () => document.querySelector('deck-stage');
+          const currentIndex = () => {
+            const s = stage();
+            if (!s) return { index: 0, total: 1 };
+            const slides = s.querySelectorAll(':scope > [data-deck-slide]');
+            let idx = 0;
+            slides.forEach((el, i) => { if (el.hasAttribute('data-deck-active')) idx = i; });
+            return { index: idx, total: slides.length || 1 };
+          };
+          const pushSlide = (target) => {
+            const win = target || presenterWin;
+            if (!win) return;
+            try { const cur = currentIndex(); win.postMessage({ type: 'slide', index: cur.index, total: cur.total }, '*'); } catch (_) {}
+          };
+          const openPresenter = () => {
+            if (presenterWin && !presenterWin.closed) { try { presenterWin.focus(); } catch (_) {} return; }
+            const url = location.pathname + '?' + PARAM + '=1' + location.hash;
+            const w = window.open(url, 'htcs-presenter', 'popup=yes,width=1100,height=820,menubar=no,toolbar=no,location=no,status=no');
+            if (!w) { flashHint('Allow popups to use presenter mode (P)'); return; }
+            presenterWin = w;
+          };
+          const wireStage = () => {
+            const s = stage();
+            if (!s) { setTimeout(wireStage, 100); return; }
+            s.addEventListener('slidechange', (e) => {
+              if (!presenterWin || presenterWin.closed) return;
+              try { presenterWin.postMessage({ type: 'slide', index: e.detail.index, total: e.detail.total }, '*'); } catch (_) {}
+            });
+          };
+          wireStage();
+          window.addEventListener('message', (e) => {
+            const m = e && e.data;
+            if (!m || typeof m !== 'object') return;
+            if (m.type === 'ready' || m.type === 'nav') { if (e.source && (!presenterWin || presenterWin.closed)) presenterWin = e.source; }
+            if (m.type === 'ready') { pushSlide(e.source || presenterWin); return; }
+            if (m.type === 'nav') {
+              const map = { prev: 'ArrowLeft', next: 'ArrowRight', first: 'Home', last: 'End' };
+              const key = map[m.dir];
+              if (!key) return;
+              window.dispatchEvent(new KeyboardEvent('keydown', { key, bubbles: true }));
+            }
+          });
+          window.addEventListener('keydown', (ev) => {
+            if (ev.metaKey || ev.ctrlKey || ev.altKey) return;
+            const t = ev.target;
+            if (t && (t.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName))) return;
+            if (ev.key === 'p' || ev.key === 'P') { ev.preventDefault(); openPresenter(); }
+          });
+          function flashHint(text) {
+            let el = document.getElementById('presenter-hint');
+            if (!el) {
+              el = document.createElement('div');
+              el.id = 'presenter-hint';
+              Object.assign(el.style, { position: 'fixed', top: '16px', left: '50%', transform: 'translateX(-50%)', background: 'rgba(0,0,0,0.85)', color: '#fff', padding: '10px 16px', borderRadius: '999px', fontFamily: '-apple-system, BlinkMacSystemFont, "Helvetica Neue", Helvetica, Arial, sans-serif', fontSize: '13px', zIndex: 2147483647, opacity: '0', transition: 'opacity 200ms ease', pointerEvents: 'none' });
+              document.body.appendChild(el);
+            }
+            el.textContent = text;
+            requestAnimationFrame(() => { el.style.opacity = '1'; });
+            clearTimeout(flashHint._t);
+            flashHint._t = setTimeout(() => { el.style.opacity = '0'; }, 2200);
+          }
+        }
+
+        function mountPresenter() {
+          const stage = document.querySelector('deck-stage');
+          if (stage) stage.remove();
+          const root = document.getElementById('deck-root');
+          if (root) root.remove();
+
+          const notes = readNotes();
+          const title = (document.title || 'Deck').replace(/\s+/g, ' ').trim();
+          document.title = title + ' — Presenter';
+
+          const style = document.createElement('style');
+          style.textContent = `
+            html, body { background: #0c0c0e !important; color: #f5f3ee !important; overflow: auto !important; height: auto !important; min-height: 100%; margin: 0; padding: 0; }
+            .pv-app { box-sizing: border-box; display: grid; grid-template-rows: auto 1fr auto auto auto; gap: 16px; min-height: 100vh; padding: 24px clamp(20px, 4vw, 56px) 28px; font-family: "Source Serif 4", Georgia, serif; }
+            .pv-head { display: flex; align-items: center; justify-content: space-between; gap: 24px; flex-wrap: wrap; font-family: "Inter Tight", -apple-system, sans-serif; }
+            .pv-title { font-size: 13px; letter-spacing: 0.08em; text-transform: uppercase; opacity: 0.6; }
+            .pv-meta { display: flex; align-items: center; gap: 14px; font-feature-settings: "tnum" 1; }
+            .pv-counter { font-size: 15px; opacity: 0.85; }
+            .pv-counter b { font-weight: 600; }
+            .pv-timer { font-family: "JetBrains Mono", ui-monospace, monospace; font-size: 22px; background: #1a1a1f; padding: 6px 12px; border-radius: 8px; min-width: 92px; text-align: center; }
+            .pv-tbtn { font: inherit; font-family: "Inter Tight", -apple-system, sans-serif; font-size: 12px; letter-spacing: 0.04em; background: #1a1a1f; color: #f5f3ee; border: 1px solid #2a2a31; padding: 6px 12px; border-radius: 8px; cursor: pointer; }
+            .pv-tbtn:hover { background: #25252c; }
+            .pv-now { background: #14141a; border-radius: 14px; padding: clamp(20px, 3vw, 36px); display: flex; flex-direction: column; gap: 12px; min-height: 0; overflow: hidden; }
+            .pv-now-label, .pv-next-label { font-family: "Inter Tight", -apple-system, sans-serif; font-size: 11px; letter-spacing: 0.18em; text-transform: uppercase; opacity: 0.55; }
+            .pv-now-text { font-size: clamp(22px, 2.4vw, 34px); line-height: 1.45; overflow-y: auto; padding-right: 8px; }
+            .pv-next { background: #101015; border-radius: 12px; padding: 18px clamp(18px, 3vw, 30px); opacity: 0.62; max-height: 22vh; overflow: hidden; }
+            .pv-next-text { font-size: clamp(14px, 1.2vw, 18px); line-height: 1.45; margin-top: 8px; display: -webkit-box; -webkit-line-clamp: 4; -webkit-box-orient: vertical; overflow: hidden; }
+            .pv-empty { opacity: 0.45; font-style: italic; }
+            .pv-nav { display: flex; justify-content: center; gap: 12px; flex-wrap: wrap; font-family: "Inter Tight", -apple-system, sans-serif; }
+            .pv-nav button { font: inherit; font-size: 14px; background: #1a1a1f; color: #f5f3ee; border: 1px solid #2a2a31; padding: 10px 22px; border-radius: 10px; cursor: pointer; min-width: 130px; }
+            .pv-nav button:hover { background: #25252c; }
+            .pv-status { text-align: center; font-family: "Inter Tight", -apple-system, sans-serif; font-size: 12px; opacity: 0.5; margin-top: -6px; min-height: 1em; }
+          `;
+          document.head.appendChild(style);
+
+          const app = document.createElement('div');
+          app.className = 'pv-app';
+          app.innerHTML = `
+            <header class="pv-head">
+              <div class="pv-title"></div>
+              <div class="pv-meta">
+                <div class="pv-counter">Slide <b class="pv-cur">–</b> / <span class="pv-total">–</span></div>
+                <div class="pv-timer" data-timer>00:00</div>
+                <button class="pv-tbtn" data-timer-toggle>Start</button>
+                <button class="pv-tbtn" data-timer-reset>Reset</button>
+              </div>
+            </header>
+            <section class="pv-now">
+              <div class="pv-now-label">Now speaking</div>
+              <div class="pv-now-text"></div>
+            </section>
+            <section class="pv-next">
+              <div class="pv-next-label">Up next</div>
+              <div class="pv-next-text"></div>
+            </section>
+            <nav class="pv-nav">
+              <button data-nav="first">First</button>
+              <button data-nav="prev">Prev</button>
+              <button data-nav="next">Next</button>
+              <button data-nav="last">Last</button>
+            </nav>
+            <div class="pv-status"></div>
+          `;
+          document.body.appendChild(app);
+
+          const $ = (sel) => app.querySelector(sel);
+          $('.pv-title').textContent = title;
+          const statusEl = $('.pv-status');
+          const setStatus = (msg) => { statusEl.textContent = msg || ''; };
+
+          let curIdx = 0;
+          let total = Math.max(notes.length || 1, 1);
+
+          const render = (idx) => {
+            curIdx = Math.max(0, Math.min(total - 1, idx | 0));
+            $('.pv-cur').textContent = String(curIdx + 1);
+            $('.pv-total').textContent = String(total);
+            const cur = notes[curIdx];
+            const next = notes[curIdx + 1];
+            const nowEl = $('.pv-now-text');
+            const nextEl = $('.pv-next-text');
+            if (cur && String(cur).trim()) { nowEl.classList.remove('pv-empty'); nowEl.textContent = cur; }
+            else { nowEl.classList.add('pv-empty'); nowEl.textContent = '(no notes for this slide)'; }
+            if (next && String(next).trim()) { nextEl.classList.remove('pv-empty'); nextEl.textContent = next; }
+            else if (curIdx + 1 >= total) { nextEl.classList.add('pv-empty'); nextEl.textContent = '(end of deck)'; }
+            else { nextEl.classList.add('pv-empty'); nextEl.textContent = '(no notes for next slide)'; }
+          };
+
+          try { const raw = localStorage.getItem(STORAGE_KEY); const n = raw == null ? 0 : parseInt(raw, 10); render(Number.isFinite(n) ? n : 0); }
+          catch (_) { render(0); }
+
+          const tEl = $('[data-timer]');
+          const tToggle = $('[data-timer-toggle]');
+          const tReset = $('[data-timer-reset]');
+          let tStart = 0, tAccum = 0, tRunning = false, tTick = null;
+          const fmt = (ms) => { const s = Math.floor(ms / 1000); const mm = Math.floor(s / 60), ss = s % 60; if (mm >= 60) { const hh = Math.floor(mm / 60), m2 = mm % 60; return hh + ':' + String(m2).padStart(2, '0') + ':' + String(ss).padStart(2, '0'); } return String(mm).padStart(2, '0') + ':' + String(ss).padStart(2, '0'); };
+          const paint = () => { const elapsed = tAccum + (tRunning ? (Date.now() - tStart) : 0); tEl.textContent = fmt(elapsed); };
+          const startStop = () => { if (tRunning) { tAccum += Date.now() - tStart; tRunning = false; tToggle.textContent = 'Resume'; clearInterval(tTick); tTick = null; } else { tStart = Date.now(); tRunning = true; tToggle.textContent = 'Pause'; tTick = setInterval(paint, 250); } paint(); };
+          const resetTimer = () => { tAccum = 0; tStart = Date.now(); if (!tRunning) tToggle.textContent = 'Start'; paint(); };
+          tToggle.addEventListener('click', startStop);
+          tReset.addEventListener('click', resetTimer);
+          paint();
+
+          const sendNav = (dir) => {
+            if (window.opener && !window.opener.closed) { try { window.opener.postMessage({ type: 'nav', dir }, '*'); return; } catch (_) {} }
+            setStatus('Deck window not reachable — open the deck in another window and press P to link them.');
+          };
+          app.querySelectorAll('[data-nav]').forEach((btn) => { btn.addEventListener('click', () => sendNav(btn.getAttribute('data-nav'))); });
+
+          window.addEventListener('keydown', (ev) => {
+            if (ev.metaKey || ev.ctrlKey || ev.altKey) return;
+            const k = ev.key;
+            if (k === 'ArrowRight' || k === 'PageDown') { ev.preventDefault(); sendNav('next'); }
+            else if (k === 'ArrowLeft' || k === 'PageUp') { ev.preventDefault(); sendNav('prev'); }
+            else if (k === 'Home') { ev.preventDefault(); sendNav('first'); }
+            else if (k === 'End') { ev.preventDefault(); sendNav('last'); }
+            else if (k === ' ' || k === 'Spacebar') { ev.preventDefault(); startStop(); }
+            else if (k === 'r' || k === 'R') { ev.preventDefault(); resetTimer(); }
+          });
+
+          window.addEventListener('message', (e) => {
+            const m = e && e.data;
+            if (!m || typeof m !== 'object') return;
+            if (m.type === 'slide') { if (typeof m.total === 'number' && m.total > 0) total = m.total; render(m.index | 0); setStatus(''); }
+          });
+
+          window.addEventListener('storage', (e) => {
+            if (e.key !== STORAGE_KEY || e.newValue == null) return;
+            const n = parseInt(e.newValue, 10);
+            if (Number.isFinite(n)) render(n);
+            sayReady();
+          });
+
+          const sayReady = () => { if (window.opener && !window.opener.closed) { try { window.opener.postMessage({ type: 'ready' }, '*'); } catch (_) {} } };
+          if (!window.opener || window.opener.closed) { setStatus('Standalone mode — open the deck in another window and press P to link them.'); }
+          sayReady();
+          setTimeout(sayReady, 250);
+        }
+      })();
+    </script>
+  </body>
+
+</html>

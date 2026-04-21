@@ -140,6 +140,20 @@
     </div>
   </div>
 
+  <!-- #region agent log -->
+  <script>
+  document.addEventListener('DOMContentLoaded', function() {
+    var bl = document.querySelector('.back-link');
+    if (bl) {
+      bl.addEventListener('click', function(e) {
+        try { window.parent.postMessage({type:'widget-nav',action:'back-link-clicked',href:bl.href,widgetUrl:location.href},'*'); } catch(ex){}
+        fetch('/ingest/d9d3d22d-7daf-4f71-800f-c73eb656f3aa',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'2bd63b'},body:JSON.stringify({sessionId:'2bd63b',location:'exponential-sequences.html:back-link',message:'Back link clicked inside iframe',data:{href:bl.href,currentUrl:location.href},timestamp:Date.now(),hypothesisId:'H1'})}).catch(function(){});
+      });
+    }
+    fetch('/ingest/d9d3d22d-7daf-4f71-800f-c73eb656f3aa',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'2bd63b'},body:JSON.stringify({sessionId:'2bd63b',location:'exponential-sequences.html:load',message:'Widget HTML loaded',data:{url:location.href,isInIframe:window!==window.top},timestamp:Date.now(),hypothesisId:'H1-H3'})}).catch(function(){});
+  });
+  </script>
+  <!-- #endregion -->
   <script type="module" src="exponential-sequences.js"></script>
 </body>
 </html>

@@ -127,6 +127,11 @@
   </head>
 
   <body>
+    <!-- #region agent log -->
+    <script>
+    fetch('/ingest/d9d3d22d-7daf-4f71-800f-c73eb656f3aa',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'2bd63b'},body:JSON.stringify({sessionId:'2bd63b',location:'static/math/index.html:load',message:'Legacy math index page loaded',data:{url:location.href,isInIframe:window!==window.top,referrer:document.referrer},timestamp:Date.now(),hypothesisId:'H1-H3'})}).catch(function(){});
+    </script>
+    <!-- #endregion -->
     <div class="container">
       <h1>Interactive Math Learning Widgets</h1>
 
