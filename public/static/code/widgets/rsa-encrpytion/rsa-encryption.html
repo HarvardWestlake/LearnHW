@@ -1,625 +1,1113 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
   <meta charset="utf-8" />
-  <title>RSA Key Generation: Interactive Dark-Themed Demo</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>RSA Encryption — Interactive Demo</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Source+Sans+Pro:wght@300;400;600;700;900&display=swap" rel="stylesheet">
   <style>
-    /***************** DARK THEME & BASIC LAYOUT *****************/
+    :root {
+      --hw-red:   #c8102e;
+      --hw-gold:  #f0b323;
+      --hw-gray-900: #1f2937;
+      --hw-gray-800: #374151;
+      --hw-gray-700: #4b5563;
+      --hw-gray-600: #6b7280;
+      --hw-gray-500: #9ca3af;
+      --hw-gray-400: #cbd5e1;
+      --hw-gray-300: #e5e7eb;
+      --hw-gray-200: #edf0f3;
+      --hw-gray-100: #f4f6f8;
+      --hw-surface: #ffffff;
+      --hw-font-sans: "Source Sans Pro", Arial, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      --hw-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      --hw-radius: 8px;
+      --hw-radius-sm: 6px;
+      --hw-radius-xs: 4px;
+      --hw-border: #e5e7eb;
+      --hw-shadow: 0 1px 3px rgba(0,0,0,0.08);
+      --hw-focus-ring: 0 0 0 3px rgba(200,16,46,0.18);
+      --hw-page-bg: radial-gradient(1200px 600px at 0 -10%, rgba(0,0,0,0.02), transparent 60%),
+                    linear-gradient(#f6f7f9, #eff2f5);
+    }
+    *, *::before, *::after { box-sizing: border-box; }
+    html, body { height: 100%; }
     body {
-      margin: 20px;
-      background-color: #1e1e1e; 
-      color: #f0f0f0;
-      font-family: Arial, sans-serif;
-    }
-    h1, h2 {
-      margin: 0.5em 0;
-      color: #ffffff;
-    }
-    h1 {
-      margin-bottom: 0.2em;
-    }
-    h2 {
-      margin-top: 1.2em;
-    }
-    p {
-      margin: 0.4em 0;
+      margin: 0; padding: 0;
+      font-family: var(--hw-font-sans); font-weight: 400;
+      color: #111; background: var(--hw-page-bg);
+      line-height: 1.45;
+      -webkit-font-smoothing: antialiased;
+      overflow: hidden;
     }
 
-    /***************** SUMMARY BOX *****************/
-    #rsaSummary {
-      margin-bottom: 20px;
-      padding: 10px;
-      border: 1px solid #555;
-      background-color: #2c2c2c;
-      border-radius: 6px;
+    /* ===== App shell — fixed-viewport flex column ===== */
+    .app {
+      display: flex; flex-direction: column;
+      height: 100vh; max-height: 100vh;
+      padding: .6rem .9rem .8rem;
+      gap: .55rem;
     }
-    #rsaSummary ul {
-      margin: 0.5em 0;
-      padding-left: 1.5em;
-    }
-    .summary-step {
-      padding: 2px 0;
-    }
-    .highlight {
-      background-color: #444444;
-      color: #20fc8f; /* bright green highlight */
-    }
-
-    /***************** STEP CONTAINERS *****************/
-    .step-container {
-      display: flex;
+    .topbar {
+      display: flex; align-items: center; gap: .7rem; flex-shrink: 0;
       flex-wrap: wrap;
-      background-color: #2a2a2a;
-      border: 1px solid #444;
-      padding: 0.5em;
-      border-radius: 5px;
-      margin-bottom: 1em;
     }
-    .step-left {
-      flex: 1 1 500px;
-      min-width: 300px;
-      margin-right: 10px;
+    .topbar h1 {
+      margin: 0; font-size: 1.2rem; font-weight: 900; letter-spacing: -.01em;
     }
-    .step-right {
-      flex: 1 1 300px;
-      min-width: 200px;
-      background-color: #333;
-      border-radius: 5px;
-      padding: 0.5em;
-      border: 1px solid #555;
-      color: #ccc;
-      font-size: 0.9em;
+    .topbar .eyebrow {
+      font-size: .65rem; text-transform: uppercase; letter-spacing: .1em;
+      color: var(--hw-gray-600); font-weight: 700;
     }
+    .pills { display: flex; gap: .3rem; flex-wrap: wrap; flex: 1; }
+    .pill {
+      display: inline-flex; align-items: center; gap: .3rem;
+      padding: .15rem .55rem; border-radius: 999px;
+      background: #fff; border: 1px solid var(--hw-border);
+      font-family: var(--hw-mono); font-size: .75rem; color: var(--hw-gray-700);
+    }
+    .pill span.lbl { font-family: var(--hw-font-sans); font-weight: 700; color: var(--hw-gray-600); font-size: .7rem; text-transform: uppercase; letter-spacing: .05em; }
+    .pill b { color: #000; font-weight: 700; }
+    .pill.set { border-color: rgba(200,16,46,.35); background: #fff7f8; }
+    .pill.set b { color: var(--hw-red); }
 
-    details {
-      margin: 0.5em 0;
+    /* ===== Tabs ===== */
+    .tabs {
+      display: flex; gap: .1rem; flex-shrink: 0;
+      border-bottom: 1px solid var(--hw-border);
     }
-    details summary {
-      cursor: pointer;
-      font-weight: bold;
-      color: #f0f0f0;
+    .tab {
+      appearance: none; background: transparent; border: 0;
+      font-family: inherit; font-size: .92rem; font-weight: 700;
+      color: var(--hw-gray-700); cursor: pointer;
+      padding: .5rem .9rem .55rem;
+      border-bottom: 3px solid transparent; margin-bottom: -1px;
+      transition: color .15s ease, border-color .15s ease, background .15s ease;
+      border-radius: 4px 4px 0 0;
+    }
+    .tab:hover { color: var(--hw-red); background: var(--hw-gray-100); }
+    .tab.active { color: var(--hw-red); border-bottom-color: var(--hw-red); background: #fff; }
+    .tab[disabled] { color: var(--hw-gray-400); cursor: not-allowed; background: transparent; }
+
+    .panels { flex: 1; min-height: 0; position: relative; }
+    .panel { display: none; height: 100%; overflow: auto; padding-top: .55rem; }
+    .panel.active { display: flex; flex-direction: column; gap: .55rem; }
+
+    /* ===== Buttons / inputs (style-guide parity) ===== */
+    .btn {
+      display: inline-flex; align-items: center; justify-content: center;
+      min-height: 36px; padding: .3rem .8rem; gap: .4rem;
+      border-radius: var(--hw-radius-sm);
+      background: var(--hw-red); color: #fff;
+      border: 1px solid transparent;
+      font-family: inherit; font-size: .9rem; font-weight: 700;
+      cursor: pointer; text-decoration: none;
+      transition: filter .15s ease, transform .1s ease, box-shadow .15s ease, background .15s ease;
+    }
+    .btn:hover:not(:disabled) { filter: brightness(.95); transform: translateY(-1px); box-shadow: 0 2px 4px rgba(0,0,0,.1); }
+    .btn:disabled { background: var(--hw-gray-400); cursor: not-allowed; }
+    .btn--outline { background: transparent; color: var(--hw-red); border-color: var(--hw-red); }
+    .btn--outline:hover:not(:disabled) { background: var(--hw-red); color: #fff; }
+    .btn--ghost { background: transparent; color: var(--hw-red); }
+    .btn--ghost:hover:not(:disabled) { background: var(--hw-gray-100); }
+    .btn--sm { min-height: 30px; padding: .25rem .6rem; font-size: .8rem; }
+    .btn--block { width: 100%; }
+
+    label.lbl { display: block; font-weight: 700; color: #000; font-size: .75rem; margin-bottom: .15rem; text-transform: uppercase; letter-spacing: .04em; }
+    .input {
+      width: 100%; min-height: 32px; padding: .3rem .5rem;
+      border: 1px solid var(--hw-border); border-radius: var(--hw-radius-sm);
+      background: #fff; color: #000;
+      font-family: inherit; font-size: .9rem;
       outline: none;
+      transition: border-color .15s ease, box-shadow .15s ease;
+    }
+    .input:focus { border-color: var(--hw-red); box-shadow: var(--hw-focus-ring); }
+    textarea.input { font-family: var(--hw-mono); resize: vertical; min-height: 60px; }
+
+    /* ===== Step cards (Key Generation tab) ===== */
+    .stepGrid {
+      display: grid; grid-template-columns: repeat(5, minmax(0, 1fr));
+      gap: .55rem; flex: 1; min-height: 0;
+    }
+    @media (max-width: 1020px) { .stepGrid { grid-template-columns: repeat(3, minmax(0,1fr)); } }
+    @media (max-width: 680px)  { .stepGrid { grid-template-columns: repeat(2, minmax(0,1fr)); } }
+
+    .card {
+      background: #fff; border: 1px solid var(--hw-border);
+      border-radius: var(--hw-radius);
+      padding: .65rem .7rem .7rem;
+      display: flex; flex-direction: column; gap: .35rem;
+      min-height: 0; overflow: hidden;
+      box-shadow: var(--hw-shadow);
+      position: relative;
+    }
+    .card.done { border-color: rgba(25,135,84,.5); }
+    .card.disabled { opacity: .55; }
+    .card .stepHead {
+      display: flex; align-items: center; gap: .45rem; flex-shrink: 0;
+    }
+    .card .stepIcon {
+      width: 34px; height: 34px;
+      display: grid; place-items: center;
+      font-size: 1.2rem;
+      border-radius: 10px;
+      background: var(--hw-gray-100); border: 1px solid var(--hw-border);
+    }
+    .card.done .stepIcon { background: #e6f4ea; border-color: #198754; }
+    .card .stepNum {
+      font-size: .65rem; text-transform: uppercase; letter-spacing: .08em;
+      font-weight: 700; color: var(--hw-gray-600);
+    }
+    .card .stepTitle { font-size: .9rem; font-weight: 800; line-height: 1.2; color: #000; margin: 0; }
+    .card .stepCopy { font-size: .75rem; color: var(--hw-gray-700); margin: 0; line-height: 1.35; }
+    .card .controls { display: flex; flex-direction: column; gap: .3rem; flex-shrink: 0; }
+    .card .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: .3rem; }
+    .card .out {
+      font-family: var(--hw-mono); font-size: .78rem;
+      padding: .3rem .45rem; border-radius: var(--hw-radius-sm);
+      background: var(--hw-gray-100); border: 1px solid var(--hw-border);
+      color: var(--hw-gray-800);
+      min-height: 1.8em; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    }
+    .card .out.ok { background: #e6f4ea; border-color: #b7dfc4; color: #0f5132; }
+    .card .out.err { background: #fde8ea; border-color: #f3bcc2; color: #8a1c2a; }
+    .card .miniViz {
+      flex: 1; min-height: 0;
+      background: #fff; border: 1px solid var(--hw-border);
+      border-radius: var(--hw-radius-sm);
+      padding: .35rem; display: flex;
+      align-items: center; justify-content: center;
+    }
+    .card .miniViz svg { width: 100%; height: 100%; display: block; }
+    .doneBadge {
+      position: absolute; top: .45rem; right: .5rem;
+      width: 18px; height: 18px; border-radius: 50%;
+      background: #198754; color: #fff;
+      display: none; place-items: center; font-size: .7rem; font-weight: 900;
+    }
+    .card.done .doneBadge { display: grid; }
+
+    /* ===== Background tab ===== */
+    .bgGrid {
+      display: grid; grid-template-columns: 1fr 1fr; gap: .75rem;
+      flex: 1; min-height: 0;
+    }
+    @media (max-width: 820px) { .bgGrid { grid-template-columns: 1fr; } }
+    .bgCard {
+      background: #fff; border: 1px solid var(--hw-border);
+      border-radius: var(--hw-radius); padding: .9rem 1rem;
+      display: flex; flex-direction: column; gap: .5rem;
+      box-shadow: var(--hw-shadow); overflow: auto;
+    }
+    .bgCard h2 { margin: 0; font-size: 1.05rem; font-weight: 900; display: flex; align-items: center; gap: .4rem; }
+    .bgCard .bgHero {
+      padding: .5rem .6rem; background: var(--hw-gray-100);
+      border: 1px solid var(--hw-border); border-radius: var(--hw-radius-sm);
+      display: flex; align-items: center; justify-content: center;
+      min-height: 140px;
+    }
+    .bgCard .bgHero svg { width: 100%; height: 100%; max-height: 150px; }
+    .bgCard .bgTries {
+      background: var(--hw-gray-100);
+      border: 1px solid var(--hw-border);
+      border-radius: var(--hw-radius-sm);
+      padding: .5rem .6rem; font-family: var(--hw-mono); font-size: .85rem;
+      line-height: 1.5;
+    }
+    .bgCard .bgTries .try { display: flex; gap: .5rem; align-items: center; }
+    .bgCard .bgTries .fail { color: var(--hw-gray-600); }
+    .bgCard .bgTries .win { color: #0f5132; font-weight: 700; }
+    .bgCard .bgTries .mark { font-weight: 900; }
+    .scaleBox {
+      display: grid; grid-template-columns: 1fr 1fr; gap: .4rem;
+      font-family: var(--hw-mono); font-size: .8rem;
+    }
+    .scaleBox .k {
+      background: #fff; border: 1px solid var(--hw-border);
+      border-radius: var(--hw-radius-sm); padding: .35rem .5rem;
+    }
+    .scaleBox .k .kLabel {
+      display: block; font-family: var(--hw-font-sans); font-size: .65rem;
+      font-weight: 700; letter-spacing: .06em; text-transform: uppercase;
+      color: var(--hw-gray-600); margin-bottom: .1rem;
+    }
+    .bgCard .note { font-size: .85rem; color: var(--hw-gray-700); margin: 0; }
+    .bgCard .callout {
+      background: #fff4e5; border-left: 4px solid var(--hw-gold);
+      padding: .5rem .7rem; border-radius: var(--hw-radius-sm);
+      font-size: .85rem; color: #664d03;
     }
 
-    /***************** INPUTS, BUTTONS, OUTPUTS *****************/
-    label {
+    /* ===== Encrypt/Decrypt tab ===== */
+    .ed {
+      display: grid; grid-template-columns: 1fr 1fr; gap: .65rem;
+      flex: 1; min-height: 0;
+    }
+    @media (max-width: 880px) { .ed { grid-template-columns: 1fr; } }
+    .edCard {
+      background: #fff; border: 1px solid var(--hw-border);
+      border-radius: var(--hw-radius);
+      padding: .7rem .8rem .8rem;
+      display: flex; flex-direction: column; gap: .5rem;
+      box-shadow: var(--hw-shadow);
+      min-height: 0;
+      overflow: auto;
+    }
+    .edTitle { margin: 0; font-size: 1rem; font-weight: 900; display: flex; align-items: center; gap: .4rem; }
+    .edSub { font-size: .75rem; color: var(--hw-gray-600); margin: -.3rem 0 0; }
+    .edStream {
+      display: flex; flex-wrap: wrap; gap: .25rem;
+      padding: .4rem; min-height: 2.3em;
+      background: var(--hw-gray-100);
+      border: 1px solid var(--hw-border);
+      border-radius: var(--hw-radius-sm);
+      font-family: var(--hw-mono);
+    }
+    .edLabel {
+      font-size: .65rem; text-transform: uppercase; letter-spacing: .08em;
+      font-weight: 700; color: var(--hw-gray-700);
+      margin-bottom: .2rem;
+    }
+    .charTile {
+      display: inline-flex; align-items: center; justify-content: center;
+      min-width: 1.7rem; padding: .1rem .35rem;
+      background: #fff; border: 1px solid var(--hw-border);
+      border-radius: 4px;
+      font-family: var(--hw-mono); font-size: .8rem;
+      transition: all .18s ease;
+    }
+    .charTile.active {
+      background: var(--hw-red); color: #fff;
+      border-color: var(--hw-red); transform: translateY(-2px) scale(1.08);
+      box-shadow: 0 2px 4px rgba(200,16,46,.25);
+    }
+    .charTile.done {
+      background: #e6f4ea; border-color: #b7dfc4; color: #0f5132;
+    }
+    .numTile { font-size: .78rem; min-width: 2rem; }
+
+    .edEquation {
+      padding: .55rem; min-height: 2.4em;
+      background: #fff; border: 1px solid var(--hw-border);
+      border-radius: var(--hw-radius-sm);
+      font-family: var(--hw-mono); font-size: .95rem;
+      display: flex; align-items: center; justify-content: center;
+      gap: .2rem; flex-wrap: wrap;
+      color: var(--hw-gray-700);
+    }
+    .edEquation .bigNum {
       display: inline-block;
-      width: 30px;
+      background: #fff; border: 1px solid var(--hw-red);
+      color: var(--hw-red);
+      padding: .1rem .4rem; border-radius: 4px;
+      font-weight: 700; min-width: 1.8rem; text-align: center;
+      animation: pop .25s ease;
     }
-    input[type="number"],
-    input[type="text"] {
-      width: 140px;
-      margin: 0.2em 0;
-      padding: 3px;
-      background-color: #1e1e1e;
-      color: #f0f0f0;
-      border: 1px solid #555;
-      border-radius: 3px;
-    }
-    button {
-      margin: 6px 0;
-      padding: 6px 12px;
-      background-color: #444;
-      color: #fff;
-      border: 1px solid #666;
-      border-radius: 4px;
-      cursor: pointer;
-    }
-    button:hover {
-      background-color: #555;
-    }
-    .output {
-      margin-top: 4px;
-      padding: 5px;
-      background-color: #1f1f1f;
-      border: 1px solid #555;
-      border-radius: 4px;
-      font-family: monospace;
-      white-space: pre-wrap;
-    }
-    textarea {
-      background-color: #1e1e1e;
-      color: #f0f0f0;
-      border: 1px solid #555;
-      border-radius: 3px;
-    }
-    .subtitle {
-      font-style: italic;
-      color: #aaa;
-      font-size: 0.8em;
-      margin-top: 0.3em;
-    }
+    .edEquation .bigNum.result { background: var(--hw-gold); border-color: var(--hw-gold); color: #000; }
+    .edEquation .bigNum.pending { background: var(--hw-gray-100); border-color: var(--hw-gray-400); color: var(--hw-gray-500); }
+    .edEquation sup { font-size: .72rem; }
+    @keyframes pop { 0% { transform: scale(.7); opacity: 0; } 60% { transform: scale(1.1); } 100% { transform: scale(1); opacity: 1; } }
 
-    /***************** SECTION GROUPINGS, ETC. *****************/
-    hr {
-      margin: 1em 0;
-      border: 0;
-      border-top: 1px solid #444;
+    .edActions { display: flex; gap: .4rem; align-items: center; flex-wrap: wrap; }
+    .edActions .input { flex: 1; min-width: 140px; }
+    .keysMissing {
+      background: #fff4e5; border: 1px solid #f6c343;
+      border-radius: var(--hw-radius-sm);
+      padding: .5rem .7rem; font-size: .85rem; color: #664d03;
+      display: flex; align-items: center; gap: .5rem;
     }
-    #equationsBox {
-      margin: 0.5em 0 1em 0;
-      background-color: #2a2a2a;
-      border: 1px solid #444;
-      padding: 0.5em;
-      border-radius: 5px;
+    .keysMissing[hidden] { display: none !important; }
+
+    .clockStrip {
+      background: #fff; border: 1px solid var(--hw-border);
+      border-radius: var(--hw-radius);
+      padding: .45rem .7rem; flex-shrink: 0;
+      display: flex; gap: .7rem; align-items: center;
+      margin-top: .25rem;
+    }
+    .clockStrip svg { flex: 0 0 240px; max-height: 110px; max-width: 240px; }
+    .clockNote { font-size: .78rem; color: var(--hw-gray-700); flex: 1; }
+
+    /* ===== Send-to-someone tab ===== */
+    .sendBox {
+      max-width: 640px; background: #fff;
+      border: 1px solid var(--hw-border); border-radius: var(--hw-radius);
+      padding: 1rem; display: flex; flex-direction: column; gap: .55rem;
+      box-shadow: var(--hw-shadow);
+    }
+    .sendRow { display: grid; grid-template-columns: 1fr 1fr; gap: .6rem; }
+
+    /* Badges */
+    .badge { display: inline-block; padding: .1rem .45rem; border-radius: 999px; font-size: .7rem; font-weight: 700; letter-spacing: .02em; }
+    .badge--red { background: var(--hw-red); color: #fff; }
+    .badge--gold { background: var(--hw-gold); color: #000; }
+
+    .muted { color: var(--hw-gray-600); font-size: .8rem; }
+
+    /* Tiny-mode fallback */
+    @media (max-height: 600px) {
+      body { overflow: auto; }
+      .app { height: auto; min-height: 100vh; }
+      .panels { overflow: visible; }
+      .panel.active { height: auto; }
     }
   </style>
 </head>
 <body>
 
-<h1>Interactive RSA Demo (Dark Theme)</h1>
+<div class="app">
 
-<!-- TOP SUMMARY: We'll highlight each step as the user completes it. -->
-<div id="rsaSummary">
-  <h2>RSA Steps Overview</h2>
-  <ul>
-    <li id="summaryStep1" class="summary-step">1) Choose two primes <em>p</em> and <em>q</em>.</li>
-    <li id="summaryStep2" class="summary-step">2) Compute <em>n</em> = <em>p</em>×<em>q</em>.</li>
-    <li id="summaryStep3" class="summary-step">3) Compute <em>φ(n)</em> = (<em>p</em>−1)(<em>q</em>−1).</li>
-    <li id="summaryStep4" class="summary-step">4) Choose public exponent <em>e</em> (coprime with φ(n)).</li>
-    <li id="summaryStep5" class="summary-step">5) Compute private exponent <em>d</em> = inverse of <em>e</em> mod φ(n).</li>
-    <li id="summaryStep6" class="summary-step">6) Encrypt with <em>(n, e)</em>.</li>
-    <li id="summaryStep7" class="summary-step">7) Decrypt with <em>(n, d)</em>.</li>
-    <li id="summaryStep8" class="summary-step">8) Encrypt for someone else using their public key.</li>
-  </ul>
-</div>
+  <!-- ========== Top bar ========== -->
+  <header class="topbar">
+    <div>
+      <div class="eyebrow">Computer Science · Cryptography</div>
+      <h1>RSA Encryption</h1>
+    </div>
+    <div class="pills" id="pills">
+      <span class="pill" id="pPill"><span class="lbl">p</span><b>—</b></span>
+      <span class="pill" id="qPill"><span class="lbl">q</span><b>—</b></span>
+      <span class="pill" id="nPill"><span class="lbl">n</span><b>—</b></span>
+      <span class="pill" id="phiPill"><span class="lbl">φ(n)</span><b>—</b></span>
+      <span class="pill" id="ePill"><span class="lbl">e</span><b>—</b></span>
+      <span class="pill" id="dPill"><span class="lbl">d</span><b>—</b></span>
+    </div>
+  </header>
 
-<h2>Public/Private Key Generation</h2>
+  <!-- ========== Tab bar ========== -->
+  <nav class="tabs" role="tablist">
+    <button class="tab" data-tab="background" role="tab">Background</button>
+    <button class="tab active" data-tab="keygen"   role="tab">1 · Generate keys</button>
+    <button class="tab"        data-tab="encdec"   role="tab">2 · Encrypt &amp; decrypt</button>
+    <button class="tab"        data-tab="sendto"   role="tab">3 · Send to someone else</button>
+  </nav>
 
-<!-- STEP 1 -->
-<div class="step-container">
-  <div class="step-left">
-    <details open>
-      <summary>Step 1: Choose primes <code>p</code> and <code>q</code></summary>
-      <p>Enter your own small primes or leave blank to auto-generate:</p>
-      <label>p:</label>
-      <input type="number" id="pInput" placeholder="e.g. 17" />
-      <br>
-      <label>q:</label>
-      <input type="number" id="qInput" placeholder="e.g. 11" />
-      <br>
-      <button onclick="choosePrimes()">Choose/Generate Primes</button>
-      <div id="outputChoosePQ" class="output"></div>
-      <p class="subtitle">For real security, these primes should be extremely large.</p>
-    </details>
-  </div>
-  <div class="step-right">
-    <strong>What is happening here?</strong>
-    <p>We need two prime numbers because it's hard to factor their product. This makes the system secure.</p>
-  </div>
-</div>
+  <div class="panels">
 
-<!-- STEP 2 -->
-<div class="step-container">
-  <div class="step-left">
-    <details>
-      <summary>Step 2: Compute <code>n</code> = <code>p</code>×<code>q</code></summary>
-      <button onclick="computeN()">Compute n</button>
-      <div id="outputN" class="output"></div>
-    </details>
-  </div>
-  <div class="step-right">
-    <strong>What is happening?</strong>
-    <p>The number <em>n</em> is our main modulus used in both public and private keys.</p>
-  </div>
-</div>
+    <!-- ========== Tab: Background ========== -->
+    <section class="panel" data-panel="background" role="tabpanel">
+      <div class="bgGrid">
 
-<!-- STEP 3 -->
-<div class="step-container">
-  <div class="step-left">
-    <details>
-      <summary>Step 3: Compute <code>φ(n)</code> = (<code>p</code>−1)(<code>q</code>−1)</summary>
-      <button onclick="computePhi()">Compute φ(n)</button>
-      <div id="outputPhi" class="output"></div>
-    </details>
-  </div>
-  <div class="step-right">
-    <strong>What is happening?</strong>
-    <p><em>φ(n)</em> is needed to figure out the private key. It counts how many numbers below <em>n</em> are “coprime” to <em>n</em>.</p>
-  </div>
-</div>
+        <div class="bgCard">
+          <h2>🧮 Multiplying is easy</h2>
+          <p class="note">Given two primes <em>p</em> and <em>q</em>, computing <code>n = p · q</code> is one step — whether the numbers have 2 digits or 600.</p>
+          <div class="bgHero">
+            <svg id="bgEasySvg" viewBox="0 0 320 150" role="img" aria-label="3x5 rectangle showing p times q equals n"></svg>
+          </div>
+          <div class="scaleBox">
+            <div class="k"><span class="kLabel">Example</span>3 × 5 = 15</div>
+            <div class="k"><span class="kLabel">Real RSA</span>one CPU multiply</div>
+          </div>
+        </div>
 
-<!-- STEP 4 -->
-<div class="step-container">
-  <div class="step-left">
-    <details>
-      <summary>Step 4: Choose public exponent <code>e</code></summary>
-      <button onclick="chooseE()">Generate e (coprime with φ(n))</button>
-      <div id="outputE" class="output"></div>
-      <p class="subtitle">In real RSA, <code>e=65537</code> is often used.</p>
-    </details>
-  </div>
-  <div class="step-right">
-    <strong>What is happening?</strong>
-    <p>We pick <em>e</em> so it doesn't share any factors with <em>φ(n)</em>. That ensures encryption works properly.</p>
-  </div>
-</div>
+        <div class="bgCard">
+          <h2>🔒 Factoring is hard</h2>
+          <p class="note">Given only <em>n</em>, recovering <em>p</em> and <em>q</em> means searching divisor candidates one at a time.</p>
+          <div class="bgTries">
+            <div class="try"><span>To factor <b>n = 15</b>:</span></div>
+            <div class="try fail"><span class="mark">✗</span><span>try 2 → 15 mod 2 = 1</span></div>
+            <div class="try win"><span class="mark">✓</span><span>try 3 → 15 / 3 = 5 → <b>p=3, q=5</b></span></div>
+          </div>
+          <div class="callout">
+            <strong>Real RSA uses ~1200-digit n.</strong> That's ≈ 10³⁰⁰ candidates to try — more steps than there have been seconds since the Big Bang (≈ 10¹⁷). Even the best known algorithms can't close that gap.
+          </div>
+          <div class="scaleBox">
+            <div class="k"><span class="kLabel">Candidates</span>≈ 10³⁰⁰</div>
+            <div class="k"><span class="kLabel">Universe age</span>≈ 10¹⁷ s</div>
+          </div>
+        </div>
 
-<!-- STEP 5 -->
-<div class="step-container">
-  <div class="step-left">
-    <details>
-      <summary>Step 5: Compute private exponent <code>d</code></summary>
-      <button onclick="computeD()">Compute d (inverse of e mod φ(n))</button>
-      <div id="outputD" class="output"></div>
-    </details>
-  </div>
-  <div class="step-right">
-    <strong>What is happening?</strong>
-    <p>We find <em>d</em> so that <em>(d × e) ≡ 1</em> mod <em>φ(n)</em>. You need <em>d</em> to undo the encryption.</p>
-  </div>
-</div>
+      </div>
 
-<hr/>
+      <div class="bgCard" style="margin-top:.5rem;">
+        <h2>🪤 The one-way gap <span class="badge badge--gold">the trapdoor</span></h2>
+        <p class="note">
+          Encryption uses only the public pair <code>(n, e)</code>. Decryption requires <code>d</code>,
+          which requires <code>φ(n) = (p−1)(q−1)</code>, which requires the original primes.
+          The key-holder takes a shortcut — everyone else has to factor <em>n</em>.
+        </p>
+      </div>
+    </section>
 
-<h2>Encryption / Decryption</h2>
+    <!-- ========== Tab: Key Generation ========== -->
+    <section class="panel active" data-panel="keygen" role="tabpanel">
+      <div class="stepGrid">
 
-<!-- A small box showing the actual equations with the user's chosen numbers -->
-<div id="equationsBox">
-  <h3>Encryption &amp; Decryption Equations</h3>
-  <p><strong>Encryption:</strong> <span id="encryptEqNumbers">C = M<sup>e</sup> mod n</span></p>
-  <p><strong>Decryption:</strong> <span id="decryptEqNumbers">M = C<sup>d</sup> mod n</span></p>
+        <!-- Step 1 -->
+        <article class="card" id="card1">
+          <span class="doneBadge">✓</span>
+          <div class="stepHead">
+            <div class="stepIcon">🧩</div>
+            <div>
+              <div class="stepNum">Step 1</div>
+              <h3 class="stepTitle">Pick primes p, q</h3>
+            </div>
+          </div>
+          <p class="stepCopy">The "atoms" of integers. Their product is the modulus.</p>
+          <div class="controls">
+            <div class="row2">
+              <div>
+                <label class="lbl" for="pInput">p</label>
+                <input class="input" type="number" id="pInput" placeholder="e.g. 17"/>
+              </div>
+              <div>
+                <label class="lbl" for="qInput">q</label>
+                <input class="input" type="number" id="qInput" placeholder="e.g. 11"/>
+              </div>
+            </div>
+            <button class="btn btn--block btn--sm" onclick="choosePrimes()">Use / randomize</button>
+          </div>
+          <div class="out" id="out1"></div>
+          <div class="miniViz">
+            <svg id="vizPrimes" viewBox="0 0 220 220" preserveAspectRatio="xMidYMid meet"></svg>
+          </div>
+        </article>
 
-  <p class="subtitle">
-    <strong>How does modular arithmetic keep this secure?</strong><br/>
-    By using big primes, it is extremely hard to figure out <em>d</em> 
-    from <em>e</em> and <em>n</em> alone because you would need 
-    to factor <em>n</em> back into its primes. This keeps the private 
-    key safe even though <em>(n, e)</em> is public.
-  </p>
-</div>
+        <!-- Step 2 -->
+        <article class="card disabled" id="card2">
+          <span class="doneBadge">✓</span>
+          <div class="stepHead">
+            <div class="stepIcon">🧮</div>
+            <div>
+              <div class="stepNum">Step 2</div>
+              <h3 class="stepTitle">Multiply: n = p · q</h3>
+            </div>
+          </div>
+          <p class="stepCopy">Area of a p × q rectangle. Easy forward, hard backward.</p>
+          <div class="controls">
+            <button class="btn btn--block btn--sm" onclick="computeN()">Compute n</button>
+          </div>
+          <div class="out" id="out2"></div>
+          <div class="miniViz">
+            <svg id="vizN" viewBox="0 0 220 220" preserveAspectRatio="xMidYMid meet"></svg>
+          </div>
+        </article>
 
-<!-- STEP 6 -->
-<div class="step-container">
-  <div class="step-left">
-    <details>
-      <summary>Step 6: Encrypt your message (with your public key)</summary>
-      <p>Type a short text message and click <em>Encrypt</em>:</p>
-      <input type="text" id="messageInput" placeholder="Hello RSA!" />
-      <br>
-      <button onclick="encryptMessage()">Encrypt</button>
-      <div id="outputEncrypt" class="output"></div>
-    </details>
-  </div>
-  <div class="step-right">
-    <strong>What is happening?</strong>
-    <p>We convert each character to a number, then compute <em>number<sup>e</sup> mod n</em> to scramble it using <em>(n, e)</em>.</p>
-  </div>
-</div>
+        <!-- Step 3 -->
+        <article class="card disabled" id="card3">
+          <span class="doneBadge">✓</span>
+          <div class="stepHead">
+            <div class="stepIcon">📐</div>
+            <div>
+              <div class="stepNum">Step 3</div>
+              <h3 class="stepTitle">Euler's totient φ(n)</h3>
+            </div>
+          </div>
+          <p class="stepCopy">Count of numbers &lt; n coprime to n. = (p−1)(q−1).</p>
+          <div class="controls">
+            <button class="btn btn--block btn--sm" onclick="computePhi()">Compute φ(n)</button>
+          </div>
+          <div class="out" id="out3"></div>
+          <div class="miniViz">
+            <svg id="vizPhi" viewBox="0 0 220 300" preserveAspectRatio="xMidYMid meet"></svg>
+          </div>
+        </article>
 
-<!-- STEP 7 -->
-<div class="step-container">
-  <div class="step-left">
-    <details>
-      <summary>Step 7: Decrypt the ciphertext (with your private key)</summary>
-      <p>Your ciphertext (numbers):</p>
-      <textarea id="ciphertextArea" rows="3" cols="40"></textarea>
-      <br>
-      <button onclick="decryptMessage()">Decrypt</button>
-      <div id="outputDecrypt" class="output"></div>
-    </details>
-  </div>
-  <div class="step-right">
-    <strong>What is happening?</strong>
-    <p>We raise those scrambled numbers to <em>d</em> mod <em>n</em> to get back the original message. This uses <em>(n, d)</em>.</p>
-  </div>
-</div>
+        <!-- Step 4 -->
+        <article class="card disabled" id="card4">
+          <span class="doneBadge">✓</span>
+          <div class="stepHead">
+            <div class="stepIcon">📬</div>
+            <div>
+              <div class="stepNum">Step 4</div>
+              <h3 class="stepTitle">Pick public e</h3>
+            </div>
+          </div>
+          <p class="stepCopy">Any e with gcd(e, φ(n)) = 1. Usually small (65537).</p>
+          <div class="controls">
+            <button class="btn btn--block btn--sm" onclick="chooseE()">Choose e</button>
+          </div>
+          <div class="out" id="out4"></div>
+          <div class="miniViz">
+            <svg id="vizE" viewBox="0 0 220 220" preserveAspectRatio="xMidYMid meet"></svg>
+          </div>
+        </article>
 
-<hr/>
+        <!-- Step 5 -->
+        <article class="card disabled" id="card5">
+          <span class="doneBadge">✓</span>
+          <div class="stepHead">
+            <div class="stepIcon">🔑</div>
+            <div>
+              <div class="stepNum">Step 5</div>
+              <h3 class="stepTitle">Private d</h3>
+            </div>
+          </div>
+          <p class="stepCopy">Modular inverse of e mod φ(n): e · d ≡ 1.</p>
+          <div class="controls">
+            <button class="btn btn--block btn--sm" onclick="computeD()">Compute d</button>
+          </div>
+          <div class="out" id="out5"></div>
+          <div class="miniViz">
+            <svg id="vizD" viewBox="0 0 220 220" preserveAspectRatio="xMidYMid meet"></svg>
+          </div>
+        </article>
 
-<!-- STEP 8: Encrypt using someone else's public key -->
-<div class="step-container">
-  <div class="step-left">
-    <details>
-      <summary>Step 8: Encrypt using someone else’s public key</summary>
-      <p>Enter another public key <em>(n, e)</em>:</p>
-      <label>n:</label>
-      <input type="number" id="otherN" placeholder="12345"/>
-      <br>
-      <label>e:</label>
-      <input type="number" id="otherE" placeholder="65537"/>
-      <br>
-      <p>Message to encrypt:</p>
-      <input type="text" id="otherMessage" placeholder="Hello friend!" />
-      <br>
-      <button onclick="encryptWithOtherKey()">Encrypt with their Key</button>
-      <div id="outputEncryptOther" class="output"></div>
-    </details>
-  </div>
-  <div class="step-right">
-    <strong>What is happening?</strong>
-    <p>We use <em>(their n, their e)</em> to turn your message into ciphertext that only the holder of <em>(n, d)</em> (their private key) can decrypt.</p>
-  </div>
-</div>
+      </div>
+    </section>
 
-<p><strong>Public key:</strong> <code>(n, e)</code> &nbsp;|&nbsp; 
-   <strong>Private key:</strong> <code>(n, d)</code></p>
+    <!-- ========== Tab: Encrypt / Decrypt ========== -->
+    <section class="panel" data-panel="encdec" role="tabpanel">
+
+      <div id="edKeysBanner" class="keysMissing" hidden>
+        <strong>No keys yet.</strong>
+        <span>Generate keys first.</span>
+        <button class="btn btn--sm btn--outline" onclick="switchTab('keygen')">Go to Step 1 →</button>
+      </div>
+
+      <div class="ed">
+        <div class="edCard">
+          <h3 class="edTitle">🔒 Encrypt <span class="badge badge--red">public key</span></h3>
+          <p class="edSub">C<sub>i</sub> = M<sub>i</sub><sup>e</sup> mod n — one character at a time.</p>
+
+          <div>
+            <div class="edLabel">Message (per character)</div>
+            <div class="edStream" id="encMsgStream"></div>
+          </div>
+          <div>
+            <div class="edLabel">Equation (filling in as we go)</div>
+            <div class="edEquation" id="encEq">
+              <span class="bigNum pending">M</span><sup>e</sup>
+              &nbsp;mod&nbsp;
+              <span class="bigNum pending">n</span>
+              &nbsp;=&nbsp;
+              <span class="bigNum pending">?</span>
+            </div>
+          </div>
+          <div>
+            <div class="edLabel">Ciphertext</div>
+            <div class="edStream" id="encOutStream"></div>
+          </div>
+
+          <div class="edActions">
+            <input type="text" id="messageInput" class="input" value="Hi RSA!" placeholder="Type a message"/>
+            <button class="btn" onclick="encryptMessage()">Encrypt →</button>
+          </div>
+        </div>
+
+        <div class="edCard">
+          <h3 class="edTitle">🔓 Decrypt <span class="badge badge--gold">private key</span></h3>
+          <p class="edSub">M<sub>i</sub> = C<sub>i</sub><sup>d</sup> mod n — Euler's theorem closes the loop.</p>
+
+          <div>
+            <div class="edLabel">Ciphertext</div>
+            <div class="edStream" id="decInStream"></div>
+          </div>
+          <div>
+            <div class="edLabel">Equation (filling in as we go)</div>
+            <div class="edEquation" id="decEq">
+              <span class="bigNum pending">C</span><sup>d</sup>
+              &nbsp;mod&nbsp;
+              <span class="bigNum pending">n</span>
+              &nbsp;=&nbsp;
+              <span class="bigNum pending">?</span>
+            </div>
+          </div>
+          <div>
+            <div class="edLabel">Decoded message</div>
+            <div class="edStream" id="decOutStream"></div>
+          </div>
+
+          <div class="edActions">
+            <input type="text" id="cipherInput" class="input" placeholder="(use Encrypt → or paste space-separated numbers)"/>
+            <button class="btn" onclick="decryptMessage()">← Decrypt</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="clockStrip">
+        <svg id="vizClockSvg" viewBox="0 0 300 140" role="img" aria-label="Round-trip wrap-around clock"></svg>
+        <div class="clockNote" id="clockNote">
+          M → C → M. Walk M around the mod-n clock <em>e</em> steps-of-itself to get C; walk C another <em>d</em> steps-of-itself to land back on M.
+        </div>
+      </div>
+    </section>
+
+    <!-- ========== Tab: Send to someone else ========== -->
+    <section class="panel" data-panel="sendto" role="tabpanel">
+      <div class="sendBox">
+        <h3 style="margin:0;">📨 Encrypt using someone else's public key</h3>
+        <p class="muted" style="margin:0;">In practice nobody shares secrets first — they just look up the recipient's public <code>(n, e)</code> and encrypt toward it. Only the owner of the matching <em>d</em> can read it.</p>
+        <div class="sendRow">
+          <div>
+            <label class="lbl" for="otherN">Their n</label>
+            <input class="input" type="number" id="otherN" placeholder="e.g. 12317"/>
+          </div>
+          <div>
+            <label class="lbl" for="otherE">Their e</label>
+            <input class="input" type="number" id="otherE" placeholder="e.g. 65537" value="65537"/>
+          </div>
+        </div>
+        <div>
+          <label class="lbl" for="otherMessage">Message</label>
+          <input class="input" type="text" id="otherMessage" placeholder="Hello friend!"/>
+        </div>
+        <div><button class="btn" onclick="encryptWithOtherKey()">Encrypt with their key</button></div>
+        <div class="out" id="outOther" style="font-family: var(--hw-mono); font-size:.85rem;"></div>
+      </div>
+    </section>
+
+  </div><!-- /.panels -->
+</div><!-- /.app -->
 
 <script>
-  /************************************************************
-   *                  RSA DEMO JAVASCRIPT (VANILLA)           *
-   ************************************************************/
+/* ===================== Design tokens (SVG needs real hex) ===================== */
+const TOK = {
+  red:'#c8102e', gold:'#f0b323', green:'#198754',
+  gray800:'#374151', gray700:'#4b5563', gray600:'#6b7280',
+  gray500:'#9ca3af', gray400:'#cbd5e1', gray300:'#e5e7eb',
+  gray200:'#edf0f3', gray100:'#f4f6f8'
+};
 
-  let p = null;
-  let q = null;
-  let n = null;
-  let phi = null;
-  let e = null;
-  let d = null;
+/* ===================== Math ===================== */
+function gcd(a,b){a=Math.abs(a);b=Math.abs(b);while(b){const t=b;b=a%b;a=t;}return a;}
+function modInverse(e,phi){let[oR,r]=[e,phi],[oS,s]=[1,0];while(r!==0){const q=Math.floor(oR/r);[oR,r]=[r,oR-q*r];[oS,s]=[s,oS-q*s];}if(oR!==1)return null;return((oS%phi)+phi)%phi;}
+function isPrime(n){if(!Number.isInteger(n)||n<2)return false;if(n===2)return true;if(n%2===0)return false;for(let i=3;i*i<=n;i+=2)if(n%i===0)return false;return true;}
+function generatePrime(min=11,max=200){while(true){const c=Math.floor(Math.random()*(max-min))+min;if(isPrime(c))return c;}}
+function modPow(base,exp,m){let r=1n;let b=BigInt(base)%BigInt(m);let e=BigInt(exp);const mm=BigInt(m);if(b<0n)b+=mm;while(e>0n){if(e&1n)r=(r*b)%mm;b=(b*b)%mm;e>>=1n;}return Number(r);}
 
-  // GCD (Euclid's algorithm)
-  function gcd(a, b) {
-    while (b !== 0) {
-      const t = b;
-      b = a % b;
-      a = t;
-    }
-    return a;
+/* ===================== State ===================== */
+let p=null,q=null,n=null,phi=null,e=null,d=null;
+
+/* ===================== SVG helpers ===================== */
+const NS='http://www.w3.org/2000/svg';
+function el(name,attrs,text){const x=document.createElementNS(NS,name);if(attrs)for(const k in attrs)x.setAttribute(k,attrs[k]);if(text!=null)x.textContent=text;return x;}
+function clearSvg(id){const s=document.getElementById(id);while(s.firstChild)s.removeChild(s.firstChild);return s;}
+function T(svg,x,y,txt,o){o=o||{};svg.appendChild(el('text',{x,y,'text-anchor':o.anchor||'middle','font-size':o.size||11,'font-weight':o.weight||600,fill:o.fill||TOK.gray700},txt));}
+
+/* ===================== UI: pills, tabs, cards ===================== */
+function setPill(id,label,val,set){
+  const pill=document.getElementById(id);
+  pill.classList.toggle('set',!!set);
+  pill.querySelector('.lbl').textContent=label;
+  pill.querySelector('b').textContent=val;
+}
+function refreshPills(){
+  setPill('pPill','p', p??'—', p!=null);
+  setPill('qPill','q', q??'—', q!=null);
+  setPill('nPill','n', n??'—', n!=null);
+  setPill('phiPill','φ(n)', phi??'—', phi!=null);
+  setPill('ePill','e', e??'—', e!=null);
+  setPill('dPill','d', d??'—', d!=null);
+}
+function setCardState(num, state){
+  const c=document.getElementById('card'+num);
+  c.classList.toggle('done', state==='done');
+  c.classList.toggle('disabled', state==='disabled');
+}
+function cascadeEnable(){
+  setCardState(1, p!=null ? 'done' : 'active');
+  setCardState(2, n!=null ? 'done' : (p!=null?'active':'disabled'));
+  setCardState(3, phi!=null ? 'done' : (n!=null?'active':'disabled'));
+  setCardState(4, e!=null ? 'done' : (phi!=null?'active':'disabled'));
+  setCardState(5, d!=null ? 'done' : (e!=null?'active':'disabled'));
+}
+function setOut(id,text,kind){
+  const o=document.getElementById(id);
+  o.className='out'+(kind?' '+kind:'');
+  o.textContent=text||'';
+  o.title=text||'';
+}
+
+/* ===================== Tabs ===================== */
+function switchTab(name){
+  document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('active',t.dataset.tab===name));
+  document.querySelectorAll('.panel').forEach(p=>p.classList.toggle('active',p.dataset.panel===name));
+  if(name==='encdec'){ refreshEncDecBanner(); drawClock(); }
+  if(name==='background'){ drawBgEasy(); }
+}
+document.querySelectorAll('.tab').forEach(t=>t.addEventListener('click',()=>switchTab(t.dataset.tab)));
+
+function refreshEncDecBanner(){
+  const ready=(n!=null && e!=null && d!=null);
+  document.getElementById('edKeysBanner').hidden = ready;
+}
+
+/* ===================== Mini-viz: Step 1 (primes as strips) ===================== */
+function drawPrimes(){
+  const s=clearSvg('vizPrimes'); s.setAttribute('viewBox','0 0 220 220');
+  if(p==null||q==null){
+    T(s,110,22,'Primes only line up as 1 × prime',{size:13,weight:700,fill:'#000'});
+    dotRow(s,1,7,  15,45, 190,40, TOK.red,    '7 is prime');
+    dotRow(s,2,3,  15,125,190,60, TOK.gray500,'6 = 2 × 3 (composite)');
+    T(s,110,210,'A prime has no tidier rectangle.',{size:11,fill:TOK.gray600,weight:400});
+    return;
   }
-
-  // Extended Euclidean Algorithm to find modular inverse
-  function modInverse(e, phi) {
-    let [old_r, r] = [e, phi];
-    let [old_s, s] = [1, 0];
-    let [old_t, t] = [0, 1];
-
-    while (r !== 0) {
-      let quotient = Math.floor(old_r / r);
-      [old_r, r] = [r, old_r - quotient * r];
-      [old_s, s] = [s, old_s - quotient * s];
-      [old_t, t] = [t, old_t - quotient * t];
-    }
-    if (old_r !== 1) {
-      return null;
-    }
-    return (old_s % phi + phi) % phi;
+  const maxShow = 18;
+  const pShow = Math.min(p, maxShow);
+  const qShow = Math.min(q, maxShow);
+  dotRow(s,1,pShow, 15,40, 190,44, TOK.red,  `p = ${p}` + (p>maxShow?` (first ${maxShow})`:''));
+  dotRow(s,1,qShow, 15,130,190,44, TOK.gold, `q = ${q}` + (q>maxShow?` (first ${maxShow})`:''));
+  T(s,110,206,'Neither splits into a cleaner rectangle.',{size:11,fill:TOK.gray600,weight:400});
+}
+function dotRow(svg,rows,cols,x,y,w,h,color,caption){
+  const size=Math.min(w/cols,h/rows);
+  const r=Math.max(2,size*0.28);
+  const offX=x+(w-cols*size)/2, offY=y+(h-rows*size)/2;
+  for(let i=0;i<rows;i++)for(let j=0;j<cols;j++){
+    svg.appendChild(el('circle',{cx:offX+j*size+size/2,cy:offY+i*size+size/2,r,fill:color,opacity:.9}));
   }
+  if(caption) T(svg, x+w/2, y-6, caption, {size:12,weight:700,fill:'#000'});
+}
 
-  // Check primality (only for small numbers, demonstration only)
-  function isPrime(num) {
-    if (num < 2) return false;
-    if (num % 2 === 0 && num !== 2) return false;
-    for (let i = 3; i * i <= num; i += 2) {
-      if (num % i === 0) return false;
-    }
-    return true;
+/* ===================== Mini-viz: Step 2 (p × q rectangle) ===================== */
+function drawN(){
+  const s=clearSvg('vizN'); s.setAttribute('viewBox','0 0 220 220');
+  if(p==null||q==null){ T(s,110,110,'Pick p, q first.',{size:13,fill:TOK.gray600,weight:400}); return; }
+  const R=Math.min(p,14), C=Math.min(q,14);
+  const pad=28, W=220, H=220;
+  const size=Math.min((W-2*pad)/C,(H-2*pad-20)/R);
+  const offX=(W-C*size)/2, offY=(H-R*size)/2-4;
+  for(let i=0;i<R;i++)for(let j=0;j<C;j++){
+    s.appendChild(el('rect',{x:offX+j*size+1,y:offY+i*size+1,width:size-2,height:size-2,rx:2,fill:'rgba(200,16,46,.12)',stroke:TOK.red,'stroke-width':1}));
   }
+  T(s, offX-8, offY+(R*size)/2+4, `p=${p}`,{size:12,weight:800,anchor:'end',fill:'#000'});
+  T(s, offX+(C*size)/2, offY-8, `q=${q}`,{size:12,weight:800,fill:'#000'});
+  const truncated = (p>14||q>14);
+  T(s, 110, H-8, `area = n = ${n ?? (p*q)}`,{size:13,weight:800,fill:TOK.gray800});
+  if(truncated) T(s, 110, H-22, '(shown truncated)',{size:10,weight:400,fill:TOK.gray600});
+}
 
-  // Generate a small random prime for demo
-  function generateRandomPrime(min = 10, max = 200) {
-    let prime = null;
-    while (!prime) {
-      const candidate = Math.floor(Math.random() * (max - min)) + min;
-      if (isPrime(candidate)) prime = candidate;
-    }
-    return prime;
+/* ===================== Mini-viz: Step 3 (totient wheel, legend below) ===================== */
+function drawPhi(){
+  const s=clearSvg('vizPhi'); s.setAttribute('viewBox','0 0 220 300');
+  if(n==null){ T(s,110,150,'Compute n first.',{size:13,fill:TOK.gray600,weight:400}); return; }
+
+  const cx=110, cy=110, R=85;
+  // background ring
+  s.appendChild(el('circle',{cx,cy,r:R+6,fill:'#fff',stroke:TOK.gray300,'stroke-width':1}));
+  s.appendChild(el('circle',{cx,cy,r:R,  fill:'none',stroke:TOK.gray400,'stroke-width':1,'stroke-dasharray':'3 3'}));
+
+  let coprimeCount = 0;
+  const Nmark = n;
+  for(let k=0;k<Nmark;k++){
+    const a=(k/Nmark)*2*Math.PI - Math.PI/2;
+    const x=cx+R*Math.cos(a), y=cy+R*Math.sin(a);
+    const co = (k>0 && gcd(k,n)===1);
+    if(co) coprimeCount++;
+    const rDot = (Nmark<=60) ? 3.4 : (Nmark<=160?2.6:2.0);
+    s.appendChild(el('circle',{cx:x,cy:y,r:rDot,fill: co?TOK.red:TOK.gray400}));
   }
+  // center labels — larger
+  T(s,cx,cy-12,'φ(n)',{size:14,weight:700,fill:TOK.gray700});
+  T(s,cx,cy+14,`${phi ?? (p-1)*(q-1)}`,{size:32,weight:900,fill:TOK.red});
+  T(s,cx,cy+34,`of ${n}`,{size:13,weight:700,fill:TOK.gray700});
 
-  // Modular exponentiation: (base^exp) mod m
-  function modPow(base, exp, m) {
-    let result = 1;
-    let cur = base % m;
-    let e = exp;
-    while (e > 0) {
-      if (e & 1) {
-        result = (result * cur) % m;
-      }
-      cur = (cur * cur) % m;
-      e >>= 1;
-    }
-    return result;
+  // Legend BELOW the wheel (vertical layout, bigger text)
+  const legendY = 210;
+  T(s, 110, legendY, 'Dots on the wheel', {size:13,weight:800,fill:'#000'});
+
+  // Row 1: total positions
+  s.appendChild(el('rect',{x:18, y:legendY+10, width:14, height:14, rx:3, fill:TOK.gray400}));
+  T(s, 36, legendY+22, `n = ${n} total positions`, {size:12, weight:700, fill:'#000', anchor:'start'});
+
+  // Row 2: coprime
+  s.appendChild(el('rect',{x:18, y:legendY+30, width:14, height:14, rx:3, fill:TOK.red}));
+  T(s, 36, legendY+42, `φ(n) = ${coprimeCount} coprime to n`, {size:12, weight:700, fill:'#000', anchor:'start'});
+
+  // Row 3: shares factor
+  s.appendChild(el('rect',{x:18, y:legendY+50, width:14, height:14, rx:3, fill:TOK.gray400}));
+  T(s, 36, legendY+62, `${n - coprimeCount} share factor with n`, {size:12, weight:700, fill:TOK.gray700, anchor:'start'});
+
+  // Footer percentage
+  const pct = ((phi ?? (p-1)*(q-1))/n*100);
+  T(s, 110, legendY+82, `${pct.toFixed(1)}% of the wheel is coprime`, {size:12, weight:800, fill:TOK.gray800});
+}
+
+/* ===================== Mini-viz: Steps 4, 5 (clocks — big with bigger text) ===================== */
+function drawClockOnMod(svgId, modulus, markers, opts){
+  opts = opts||{};
+  const s=clearSvg(svgId); s.setAttribute('viewBox','0 0 220 220');
+  const cx=110, cy=110, R=80;
+  s.appendChild(el('circle',{cx,cy,r:R,fill:'#fff',stroke:TOK.gray400,'stroke-width':1.5}));
+  const tickCount=Math.min(modulus, 60);
+  for(let i=0;i<tickCount;i++){
+    const a=(i/tickCount)*2*Math.PI - Math.PI/2;
+    const major=(tickCount>=12 && (i%Math.ceil(tickCount/12)===0)) || tickCount<=12;
+    const r1=R-(major?9:5);
+    s.appendChild(el('line',{x1:cx+r1*Math.cos(a),y1:cy+r1*Math.sin(a),x2:cx+R*Math.cos(a),y2:cy+R*Math.sin(a),stroke:major?TOK.gray700:TOK.gray400,'stroke-width':major?1.6:1}));
   }
+  T(s,cx,cy-R-8,`0 / ${modulus}`,{size:12,weight:800,fill:TOK.gray700});
+  T(s,cx,cy-6, opts.centerTop||'',{size:13,weight:800,fill:'#000'});
+  if(opts.centerBottom) T(s,cx,cy+14,opts.centerBottom,{size:12,weight:700,fill:TOK.gray700});
+  if(opts.centerExtra)  T(s,cx,cy+30,opts.centerExtra,{size:11,weight:700,fill:TOK.gray600});
 
-  // Highlight a step in the top summary
-  function highlightStep(stepNum) {
-    // remove highlight from all steps
-    for (let i = 1; i <= 8; i++) {
-      document.getElementById('summaryStep' + i).classList.remove('highlight');
+  (markers||[]).forEach(m=>{
+    const v=((m.value%modulus)+modulus)%modulus;
+    const a=(v/modulus)*2*Math.PI - Math.PI/2;
+    const x=cx+(R+4)*Math.cos(a), y=cy+(R+4)*Math.sin(a);
+    s.appendChild(el('line',{x1:cx,y1:cy,x2:x,y2:y,stroke:m.color,'stroke-width':2.2,'stroke-linecap':'round'}));
+    s.appendChild(el('circle',{cx:x,cy:y,r:5,fill:m.color,stroke:'#fff','stroke-width':1.6}));
+    if(m.label){
+      // Place label just outside the rim; nudge based on angle to avoid the "0 / n" header
+      const lr = R + 22;
+      let lx = cx + lr*Math.cos(a);
+      let ly = cy + lr*Math.sin(a) + 4;
+      // keep labels inside the viewBox
+      lx = Math.max(16, Math.min(204, lx));
+      ly = Math.max(14, Math.min(204, ly));
+      T(s,lx,ly,m.label,{size:13,weight:800,fill:m.color});
     }
-    // add highlight to the chosen step
-    document.getElementById('summaryStep' + stepNum).classList.add('highlight');
+  });
+}
+function drawE(){
+  if(phi==null || e==null){
+    drawClockOnMod('vizE', Math.max(phi||12,12), [], {centerTop: phi!=null?`mod φ(n)`:'pick e first', centerBottom: phi!=null?`= ${phi}`:''});
+    return;
   }
+  drawClockOnMod('vizE', phi, [{value:e,color:TOK.red,label:`e = ${e}`}], {
+    centerTop:`mod φ(n)`,
+    centerBottom:`= ${phi}`,
+    centerExtra: 'public exponent'
+  });
+}
+function drawD(){
+  if(phi==null){ drawClockOnMod('vizD',12,[],{centerTop:'compute φ(n)'}); return; }
+  const marks=[];
+  if(e!=null) marks.push({value:e,color:TOK.red,label:`e=${e}`});
+  if(d!=null) marks.push({value:d,color:TOK.gold,label:`d=${d}`});
+  if(e!=null && d!=null) marks.push({value:1,color:TOK.green,label:'e·d ≡ 1'});
+  drawClockOnMod('vizD', phi, marks, {
+    centerTop:`mod φ(n)`,
+    centerBottom:`= ${phi}`,
+    centerExtra:(e&&d)?`e·d = ${e*d}`:''
+  });
+}
 
-  // Update the displayed encryption/decryption equations with actual numbers
-  function updateEquations() {
-    let eVal = (e !== null) ? e : '?';
-    let dVal = (d !== null) ? d : '?';
-    let nVal = (n !== null) ? n : '?';
-
-    // Example: "C = M^e mod n" => "C = M^13 mod 77"
-    document.getElementById('encryptEqNumbers').textContent = `C = M^${eVal} mod ${nVal}`;
-    document.getElementById('decryptEqNumbers').textContent = `M = C^${dVal} mod ${nVal}`;
+/* ===================== Clock viz on encrypt/decrypt tab ===================== */
+function drawClock(){
+  const s=clearSvg('vizClockSvg'); s.setAttribute('viewBox','0 0 300 140');
+  if(n==null||e==null||d==null){
+    T(s,150,70,'Generate keys to see the round-trip.',{size:12,weight:700,fill:TOK.gray600});
+    return;
   }
-
-  /********************* STEP 1: Choose p and q *********************/
-  function choosePrimes() {
-    highlightStep(1);
-
-    let pInput = document.getElementById('pInput').value.trim();
-    let qInput = document.getElementById('qInput').value.trim();
-
-    if (!pInput) {
-      p = generateRandomPrime(10, 200);
-      document.getElementById('pInput').value = p;
-    } else {
-      p = parseInt(pInput, 10);
-      if (!isPrime(p)) {
-        alert("p is not prime (or invalid). Generating random prime instead.");
-        p = generateRandomPrime(10, 200);
-        document.getElementById('pInput').value = p;
-      }
-    }
-
-    if (!qInput) {
-      do {
-        q = generateRandomPrime(10, 200);
-      } while (q === p);
-      document.getElementById('qInput').value = q;
-    } else {
-      q = parseInt(qInput, 10);
-      if (!isPrime(q) || q === p) {
-        alert("q is not prime or not distinct from p. Generating random prime.");
-        do {
-          q = generateRandomPrime(10, 200);
-        } while (q === p);
-        document.getElementById('qInput').value = q;
-      }
-    }
-
-    document.getElementById('outputChoosePQ').textContent =
-      `p = ${p}, q = ${q} chosen successfully.`;
-
-    // Reset subsequent steps
-    n = null;
-    phi = null;
-    e = null;
-    d = null;
-    updateEquations();
+  const cx=150, cy=70, R=50;
+  s.appendChild(el('circle',{cx,cy,r:R,fill:'#fff',stroke:TOK.gray400,'stroke-width':1.3}));
+  const tickCount=Math.min(n,60);
+  for(let i=0;i<tickCount;i++){
+    const a=(i/tickCount)*2*Math.PI - Math.PI/2;
+    s.appendChild(el('line',{x1:cx+(R-4)*Math.cos(a),y1:cy+(R-4)*Math.sin(a),x2:cx+R*Math.cos(a),y2:cy+R*Math.sin(a),stroke:TOK.gray400,'stroke-width':.8}));
   }
+  T(s,cx,cy-R-5,`0 / ${n}`,{size:9,weight:700,fill:TOK.gray700});
+  T(s,cx,cy-3,`mod n = ${n}`,{size:10,weight:700,fill:'#000'});
+  T(s,cx,cy+12,`e=${e}, d=${d}`,{size:9,weight:700,fill:TOK.gray700});
 
-  /********************* STEP 2: Compute n ***************************/
-  function computeN() {
-    highlightStep(2);
+  // Use first char of last message as demo
+  const msg = document.getElementById('messageInput').value || 'A';
+  const M = msg.charCodeAt(0) % n;
+  const C = modPow(M, e, n);
+  const back = modPow(C, d, n);
 
-    if (!p || !q) {
-      alert('Please complete Step 1 first.');
-      return;
-    }
-    n = p * q;
-    document.getElementById('outputN').textContent = `n = p * q = ${n}`;
-    updateEquations();
+  [{v:M,col:TOK.gray800,lab:`M=${M}`},{v:C,col:TOK.red,lab:`C=${C}`},{v:back,col:TOK.gold,lab:`C^d=${back}`}].forEach(m=>{
+    const a=(m.v/n)*2*Math.PI - Math.PI/2;
+    const x=cx+(R+3)*Math.cos(a), y=cy+(R+3)*Math.sin(a);
+    s.appendChild(el('line',{x1:cx,y1:cy,x2:x,y2:y,stroke:m.col,'stroke-width':1.8,'stroke-linecap':'round'}));
+    s.appendChild(el('circle',{cx:x,cy:y,r:4,fill:m.col,stroke:'#fff','stroke-width':1.2}));
+    const lx=cx+(R+16)*Math.cos(a), ly=cy+(R+16)*Math.sin(a)+3;
+    T(s,lx,ly,m.lab,{size:9,weight:700,fill:m.col});
+  });
+
+  document.getElementById('clockNote').innerHTML =
+    `First char <b>'${msg[0]||'?'}'</b> → codepoint ${M} · C=${C} · round-trip=${back} ${back===M?'✓':'✗'}`;
+}
+
+/* ===================== Background tab: easy-vs-hard hero ===================== */
+function drawBgEasy(){
+  const s=clearSvg('bgEasySvg'); s.setAttribute('viewBox','0 0 320 150');
+  // Left: p dots as column (3)
+  const pDots=3, qDots=5, cell=22;
+  const leftX=24, topY=30;
+  for(let i=0;i<pDots;i++) s.appendChild(el('circle',{cx:leftX,cy:topY+i*cell,r:7,fill:TOK.red}));
+  T(s,leftX,topY+pDots*cell+14,`p = 3`,{size:11,weight:800,fill:'#000'});
+  // times
+  T(s,72,75,'×',{size:22,weight:900,fill:TOK.gray500});
+  // q dots as row (5)
+  const midX=100, midY=topY;
+  for(let i=0;i<qDots;i++) s.appendChild(el('circle',{cx:midX+i*cell,cy:midY,r:7,fill:TOK.gold}));
+  T(s,midX+(qDots-1)*cell/2,midY-14,`q = 5`,{size:11,weight:800,fill:'#000'});
+  // arrow
+  s.appendChild(el('line',{x1:midX+qDots*cell-4,y1:midY+cell*1.2,x2:midX+qDots*cell+18,y2:midY+cell*1.2,stroke:TOK.gray700,'stroke-width':2}));
+  s.appendChild(el('polygon',{points:`${midX+qDots*cell+18},${midY+cell*1.2-4} ${midX+qDots*cell+26},${midY+cell*1.2} ${midX+qDots*cell+18},${midY+cell*1.2+4}`,fill:TOK.gray700}));
+  // right rectangle 3×5 = 15 cells
+  const rx=midX+qDots*cell+32, ry=topY-6;
+  for(let i=0;i<pDots;i++) for(let j=0;j<qDots;j++){
+    s.appendChild(el('rect',{x:rx+j*14,y:ry+i*14,width:12,height:12,rx:2,fill:'rgba(200,16,46,.16)',stroke:TOK.red,'stroke-width':1}));
   }
+  T(s,rx+qDots*14/2,ry+pDots*14+16,`n = 15 (one step)`,{size:11,weight:800,fill:TOK.red});
+}
 
-  /********************* STEP 3: Compute φ(n) ************************/
-  function computePhi() {
-    highlightStep(3);
-
-    if (!n) {
-      alert('Please complete Step 2 first.');
-      return;
-    }
-    phi = (p - 1) * (q - 1);
-    document.getElementById('outputPhi').textContent = `φ(n) = (p-1)*(q-1) = ${phi}`;
-    updateEquations();
+/* ===================== Step handlers ===================== */
+function choosePrimes(){
+  const pEl=document.getElementById('pInput'), qEl=document.getElementById('qInput');
+  const pTxt=pEl.value.trim(), qTxt=qEl.value.trim();
+  let np, nq;
+  if(!pTxt){ np=generatePrime(11,200); pEl.value=np; }
+  else {
+    np=parseInt(pTxt,10);
+    if(!isPrime(np)){ setOut('out1',`${pTxt} isn't prime — randomized instead`,'err'); np=generatePrime(11,200); pEl.value=np; }
   }
-
-  /********************* STEP 4: Choose e ****************************/
-  function chooseE() {
-    highlightStep(4);
-
-    if (!phi) {
-      alert('Please complete Step 3 first.');
-      return;
-    }
-    let candidate;
-    while (true) {
-      candidate = Math.floor(Math.random() * (phi - 2)) + 2;
-      if (gcd(candidate, phi) === 1) {
-        break;
-      }
-    }
-    e = candidate;
-    document.getElementById('outputE').textContent =
-      `e chosen to be ${e}, which is coprime with φ(n).`;
-    d = null; // reset d
-    updateEquations();
+  if(!qTxt){ do{ nq=generatePrime(11,200);}while(nq===np); qEl.value=nq; }
+  else {
+    nq=parseInt(qTxt,10);
+    if(!isPrime(nq)||nq===np){ setOut('out1',`${qTxt} isn't prime or = p — randomized`,'err'); do{ nq=generatePrime(11,200);}while(nq===np); qEl.value=nq; }
   }
+  p=np; q=nq; n=phi=e=d=null;
+  setOut('out1', `p=${p}, q=${q} ✓`,'ok');
+  refreshPills(); cascadeEnable();
+  drawPrimes(); drawN(); drawPhi(); drawE(); drawD(); drawClock();
+  refreshEncDecBanner();
+}
+function computeN(){
+  if(p==null){ setOut('out2','Pick p, q first','err'); return; }
+  n=p*q; phi=e=d=null;
+  setOut('out2',`n = ${p}·${q} = ${n} ✓`,'ok');
+  refreshPills(); cascadeEnable();
+  drawN(); drawPhi(); drawE(); drawD(); drawClock();
+  refreshEncDecBanner();
+}
+function computePhi(){
+  if(n==null){ setOut('out3','Compute n first','err'); return; }
+  phi=(p-1)*(q-1); e=d=null;
+  setOut('out3',`φ(n) = ${p-1}·${q-1} = ${phi} ✓`,'ok');
+  refreshPills(); cascadeEnable();
+  drawPhi(); drawE(); drawD(); drawClock();
+  refreshEncDecBanner();
+}
+function chooseE(){
+  if(phi==null){ setOut('out4','Compute φ(n) first','err'); return; }
+  const friendly=[3,5,7,11,13,17,257,65537].filter(x=>x<phi&&gcd(x,phi)===1);
+  e = friendly.length ? friendly[Math.floor(Math.random()*friendly.length)] : (()=>{let c;do{c=Math.floor(Math.random()*(phi-2))+2;}while(gcd(c,phi)!==1);return c;})();
+  d=null;
+  setOut('out4',`e=${e}, gcd(${e},${phi})=1 ✓`,'ok');
+  refreshPills(); cascadeEnable();
+  drawE(); drawD(); drawClock();
+  refreshEncDecBanner();
+}
+function computeD(){
+  if(e==null){ setOut('out5','Pick e first','err'); return; }
+  const inv=modInverse(e,phi);
+  if(inv==null){ setOut('out5','no inverse — pick new e','err'); return; }
+  d=inv;
+  setOut('out5',`d=${d}, e·d mod φ=${(e*d)%phi} ✓`,'ok');
+  refreshPills(); cascadeEnable();
+  drawD(); drawClock();
+  refreshEncDecBanner();
+}
 
-  /********************* STEP 5: Compute d ****************************/
-  function computeD() {
-    highlightStep(5);
+/* ===================== Encrypt / Decrypt animation ===================== */
+function sleep(ms){ return new Promise(r=>setTimeout(r,ms)); }
 
-    if (!e) {
-      alert('Please complete Step 4 first.');
-      return;
-    }
-    d = modInverse(e, phi);
-    if (d == null) {
-      alert('Could not compute modular inverse. Try again.');
-      return;
-    }
-    document.getElementById('outputD').textContent =
-      `d = ${d}, so that (d * e) ≡ 1 (mod φ(n)).`;
-    updateEquations();
+async function encryptMessage(){
+  if(n==null||e==null){ switchTab('keygen'); return; }
+  const msg = document.getElementById('messageInput').value || '';
+  if(!msg) return;
+  const msgStream = document.getElementById('encMsgStream');
+  const outStream = document.getElementById('encOutStream');
+  const eq = document.getElementById('encEq');
+
+  // Render message tiles (one per char, showing the char + its codepoint on hover)
+  msgStream.innerHTML=''; outStream.innerHTML='';
+  [...msg].forEach(ch=>{
+    const t=document.createElement('span'); t.className='charTile';
+    t.textContent = ch===' ' ? '␠' : ch;
+    t.title = `codepoint ${ch.charCodeAt(0)}`;
+    msgStream.appendChild(t);
+  });
+
+  const results=[];
+  for(let i=0;i<msg.length;i++){
+    const code=msg.charCodeAt(i);
+    const cipher=modPow(code,e,n);
+    results.push(cipher);
+    const tiles=msgStream.querySelectorAll('.charTile');
+    tiles.forEach((t,k)=>t.classList.toggle('active',k===i));
+
+    // Build equation with code on LHS, e as exponent, n as modulus, result pending
+    eq.innerHTML = `<span class="bigNum">${code}</span><sup>${e}</sup> &nbsp;mod&nbsp; <span class="bigNum">${n}</span> &nbsp;=&nbsp; <span class="bigNum pending">?</span>`;
+    await sleep(260);
+    eq.querySelector('.pending').classList.remove('pending');
+    eq.querySelector('.pending')?.classList.remove('pending');
+    eq.lastElementChild.classList.add('result');
+    eq.lastElementChild.textContent = cipher;
+    await sleep(180);
+
+    // Drop the result into the ciphertext stream
+    const out=document.createElement('span');
+    out.className='charTile numTile';
+    out.textContent=cipher;
+    outStream.appendChild(out);
+    tiles[i].classList.remove('active'); tiles[i].classList.add('done');
+    await sleep(120);
   }
+  // Also fill the decrypt input automatically for continuity
+  document.getElementById('cipherInput').value = results.join(' ');
+  drawClock();
+}
 
-  /********************* STEP 6: Encrypt (with your public key) ******/
-  function encryptMessage() {
-    highlightStep(6);
+async function decryptMessage(){
+  if(n==null||d==null){ switchTab('keygen'); return; }
+  const txt = document.getElementById('cipherInput').value.trim();
+  if(!txt) return;
+  const parts = txt.split(/\s+/).map(x=>parseInt(x,10));
+  if(parts.some(x=>!Number.isFinite(x))) return;
 
-    if (!n || !e) {
-      alert('Steps 1–5 must be completed first (need n and e).');
-      return;
-    }
-    const message = document.getElementById('messageInput').value;
-    if (!message) {
-      alert('Please enter a message to encrypt.');
-      return;
-    }
-    // Convert each character to char code, then (code^e) mod n
-    let encryptedCodes = [];
-    for (let i = 0; i < message.length; i++) {
-      let code = message.charCodeAt(i);
-      let enc = modPow(code, e, n);
-      encryptedCodes.push(enc);
-    }
-    let cipherText = encryptedCodes.join(' ');
-    document.getElementById('outputEncrypt').textContent =
-      `Ciphertext (numbers): ${cipherText}`;
-    document.getElementById('ciphertextArea').value = cipherText;
+  const inStream=document.getElementById('decInStream');
+  const outStream=document.getElementById('decOutStream');
+  const eq=document.getElementById('decEq');
+  inStream.innerHTML=''; outStream.innerHTML='';
+  parts.forEach(c=>{
+    const t=document.createElement('span'); t.className='charTile numTile'; t.textContent=c;
+    inStream.appendChild(t);
+  });
+
+  for(let i=0;i<parts.length;i++){
+    const c=parts[i];
+    const m=modPow(c,d,n);
+    const tiles=inStream.querySelectorAll('.charTile');
+    tiles.forEach((t,k)=>t.classList.toggle('active',k===i));
+
+    eq.innerHTML = `<span class="bigNum">${c}</span><sup>${d}</sup> &nbsp;mod&nbsp; <span class="bigNum">${n}</span> &nbsp;=&nbsp; <span class="bigNum pending">?</span>`;
+    await sleep(260);
+    eq.lastElementChild.classList.remove('pending');
+    eq.lastElementChild.classList.add('result');
+    eq.lastElementChild.textContent = m;
+    await sleep(180);
+
+    const ch=String.fromCharCode(m);
+    const out=document.createElement('span'); out.className='charTile';
+    out.textContent = ch===' ' ? '␠' : ch;
+    out.title = `codepoint ${m}`;
+    outStream.appendChild(out);
+    tiles[i].classList.remove('active'); tiles[i].classList.add('done');
+    await sleep(120);
   }
+  drawClock();
+}
 
-  /********************* STEP 7: Decrypt (with your private key) *****/
-  function decryptMessage() {
-    highlightStep(7);
-
-    if (!n || !d) {
-      alert('Need valid n and d from Steps 1–5.');
-      return;
-    }
-    let ciphertext = document.getElementById('ciphertextArea').value.trim();
-    if (!ciphertext) {
-      alert('No ciphertext found. Please encrypt first.');
-      return;
-    }
-    let parts = ciphertext.split(' ').map(x => parseInt(x, 10));
-    let decryptedChars = [];
-    for (let i = 0; i < parts.length; i++) {
-      let dec = modPow(parts[i], d, n);
-      decryptedChars.push(String.fromCharCode(dec));
-    }
-    let decryptedMessage = decryptedChars.join('');
-    document.getElementById('outputDecrypt').textContent =
-      `Decrypted message: ${decryptedMessage}`;
+/* ===================== Send-to-someone ===================== */
+function encryptWithOtherKey(){
+  const oN=parseInt(document.getElementById('otherN').value,10);
+  const oE=parseInt(document.getElementById('otherE').value,10);
+  const msg=document.getElementById('otherMessage').value;
+  if(!Number.isFinite(oN)||!Number.isFinite(oE)||oN<2||oE<2){
+    setOut('outOther','Enter a valid (n, e) — both ≥ 2.','err'); return;
   }
+  if(!msg){ setOut('outOther','Enter a message to encrypt.','err'); return; }
+  const codes=[];
+  for(const ch of msg) codes.push(modPow(ch.charCodeAt(0), oE, oN));
+  setOut('outOther', codes.join(' '), 'ok');
+}
 
-  /********************* STEP 8: Encrypt with someone else's key ******/
-  function encryptWithOtherKey() {
-    highlightStep(8);
-
-    let otherNVal = parseInt(document.getElementById('otherN').value, 10);
-    let otherEVal = parseInt(document.getElementById('otherE').value, 10);
-    if (!otherNVal || !otherEVal) {
-      alert('Please enter a valid public key (n, e).');
-      return;
-    }
-    let msg = document.getElementById('otherMessage').value;
-    if (!msg) {
-      alert('Please enter a message to encrypt for the other person.');
-      return;
-    }
-
-    let encryptedCodes = [];
-    for (let i = 0; i < msg.length; i++) {
-      let code = msg.charCodeAt(i);
-      let enc = modPow(code, otherEVal, otherNVal);
-      encryptedCodes.push(enc);
-    }
-    let cipherText = encryptedCodes.join(' ');
-    document.getElementById('outputEncryptOther').textContent =
-      `Ciphertext (numbers): ${cipherText}`;
-  }
+/* ===================== Init ===================== */
+document.addEventListener('DOMContentLoaded', ()=>{
+  refreshPills();
+  cascadeEnable();
+  drawPrimes(); drawN(); drawPhi(); drawE(); drawD();
+  drawClock(); drawBgEasy();
+  refreshEncDecBanner();
+});
 </script>
-
 </body>
 </html>

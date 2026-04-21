@@ -1,417 +1,972 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Shamir's Secret Sharing - Geometric Demo with Random Wiggles</title>
-<!-- Shared styles (Math widgets baseline) -->
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Source+Sans+Pro:wght@400;500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="../../math/widgets/shared/styles.css" />
-<style>
-  /* Scoped overrides for this demo to fit the math layout */
-  .controls { background: #f8f9fa; border:1px solid #eee; }
-  #canvasContainer { text-align:center; }
-  canvas { background:#fff; border:1px solid #ccc; }
-  .info { background:#f8f9fa; border:1px solid #eee; }
-  .info h2 { margin-top:0; }
-</style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Shamir's Secret Sharing — Interactive Demo</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Source+Sans+Pro:wght@300;400;600;700;900&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --hw-red:   #c8102e;
+      --hw-gold:  #f0b323;
+      --hw-green: #198754;
+      --hw-gray-900: #1f2937;
+      --hw-gray-800: #374151;
+      --hw-gray-700: #4b5563;
+      --hw-gray-600: #6b7280;
+      --hw-gray-500: #9ca3af;
+      --hw-gray-400: #cbd5e1;
+      --hw-gray-300: #e5e7eb;
+      --hw-gray-200: #edf0f3;
+      --hw-gray-100: #f4f6f8;
+      --hw-surface: #ffffff;
+      --hw-font-sans: "Source Sans Pro", Arial, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      --hw-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      --hw-radius: 8px;
+      --hw-radius-sm: 6px;
+      --hw-radius-xs: 4px;
+      --hw-border: #e5e7eb;
+      --hw-shadow: 0 1px 3px rgba(0,0,0,0.08);
+      --hw-focus-ring: 0 0 0 3px rgba(200,16,46,0.18);
+      --hw-page-bg: radial-gradient(1200px 600px at 0 -10%, rgba(0,0,0,0.02), transparent 60%),
+                    linear-gradient(#f6f7f9, #eff2f5);
+    }
+    *, *::before, *::after { box-sizing: border-box; }
+    html, body { height: 100%; }
+    body {
+      margin: 0; padding: 0;
+      font-family: var(--hw-font-sans); font-weight: 400;
+      color: #111; background: var(--hw-page-bg);
+      line-height: 1.45;
+      -webkit-font-smoothing: antialiased;
+      overflow: hidden;
+    }
+
+    /* ===== App shell ===== */
+    .app {
+      display: flex; flex-direction: column;
+      height: 100vh; max-height: 100vh;
+      padding: .6rem .9rem .8rem;
+      gap: .55rem;
+    }
+    .topbar { display: flex; align-items: center; gap: .7rem; flex-wrap: wrap; flex-shrink: 0; }
+    .topbar h1 { margin: 0; font-size: 1.2rem; font-weight: 900; letter-spacing: -.01em; }
+    .topbar .eyebrow { font-size: .65rem; text-transform: uppercase; letter-spacing: .1em; color: var(--hw-gray-600); font-weight: 700; }
+
+    .pills { display: flex; gap: .3rem; flex-wrap: wrap; flex: 1; }
+    .pill {
+      display: inline-flex; align-items: center; gap: .3rem;
+      padding: .15rem .55rem; border-radius: 999px;
+      background: #fff; border: 1px solid var(--hw-border);
+      font-family: var(--hw-mono); font-size: .75rem; color: var(--hw-gray-700);
+    }
+    .pill .lbl { font-family: var(--hw-font-sans); font-weight: 700; color: var(--hw-gray-600); font-size: .7rem; text-transform: uppercase; letter-spacing: .05em; }
+    .pill b { color: #000; font-weight: 700; }
+    .pill.set { border-color: rgba(200,16,46,.35); background: #fff7f8; }
+    .pill.set b { color: var(--hw-red); }
+    .pill.revealed { border-color: rgba(240,179,35,.7); background: #fff8e1; }
+    .pill.revealed b { color: #7a4c00; }
+
+    /* ===== Tabs ===== */
+    .tabs { display: flex; gap: .1rem; flex-shrink: 0; border-bottom: 1px solid var(--hw-border); }
+    .tab {
+      appearance: none; background: transparent; border: 0;
+      font-family: inherit; font-size: .92rem; font-weight: 700;
+      color: var(--hw-gray-700); cursor: pointer;
+      padding: .5rem .9rem .55rem;
+      border-bottom: 3px solid transparent; margin-bottom: -1px;
+      transition: color .15s ease, border-color .15s ease, background .15s ease;
+      border-radius: 4px 4px 0 0;
+    }
+    .tab:hover { color: var(--hw-red); background: var(--hw-gray-100); }
+    .tab.active { color: var(--hw-red); border-bottom-color: var(--hw-red); background: #fff; }
+
+    .panels { flex: 1; min-height: 0; position: relative; }
+    .panel { display: none; height: 100%; overflow: auto; padding-top: .55rem; }
+    .panel.active { display: flex; flex-direction: column; gap: .55rem; }
+
+    /* ===== Buttons / inputs ===== */
+    .btn {
+      display: inline-flex; align-items: center; justify-content: center;
+      min-height: 36px; padding: .3rem .8rem; gap: .4rem;
+      border-radius: var(--hw-radius-sm);
+      background: var(--hw-red); color: #fff; border: 1px solid transparent;
+      font-family: inherit; font-size: .9rem; font-weight: 700;
+      cursor: pointer; text-decoration: none;
+      transition: filter .15s ease, transform .1s ease, box-shadow .15s ease, background .15s ease;
+    }
+    .btn:hover:not(:disabled) { filter: brightness(.95); transform: translateY(-1px); box-shadow: 0 2px 4px rgba(0,0,0,.1); }
+    .btn:disabled { background: var(--hw-gray-400); cursor: not-allowed; }
+    .btn--outline { background: transparent; color: var(--hw-red); border-color: var(--hw-red); }
+    .btn--outline:hover:not(:disabled) { background: var(--hw-red); color: #fff; }
+    .btn--sm { min-height: 30px; padding: .25rem .6rem; font-size: .8rem; }
+
+    .input {
+      min-height: 32px; padding: .3rem .5rem;
+      border: 1px solid var(--hw-border); border-radius: var(--hw-radius-sm);
+      background: #fff; color: #000;
+      font-family: inherit; font-size: .9rem;
+      outline: none;
+      transition: border-color .15s ease, box-shadow .15s ease;
+    }
+    .input:focus { border-color: var(--hw-red); box-shadow: var(--hw-focus-ring); }
+
+    label.lbl { display: block; font-weight: 700; color: #000; font-size: .72rem; margin-bottom: .15rem; text-transform: uppercase; letter-spacing: .05em; }
+
+    .card {
+      background: #fff; border: 1px solid var(--hw-border);
+      border-radius: var(--hw-radius); box-shadow: var(--hw-shadow);
+      padding: .8rem .9rem;
+    }
+
+    .muted { color: var(--hw-gray-600); font-size: .85rem; }
+    .badge { display: inline-block; padding: .1rem .45rem; border-radius: 999px; font-size: .7rem; font-weight: 700; }
+    .badge--gold { background: var(--hw-gold); color: #000; }
+    .badge--red  { background: var(--hw-red);  color: #fff; }
+
+    /* ===== Background tab ===== */
+    .bgGrid {
+      display: grid; grid-template-columns: 1fr 1fr;
+      gap: .6rem; flex: 1; min-height: 0;
+    }
+    @media (max-width: 900px) { .bgGrid { grid-template-columns: 1fr; } }
+    .bgCol { display: flex; flex-direction: column; gap: .55rem; min-height: 0; overflow: auto; }
+
+    .scenarios { display: flex; flex-direction: column; gap: .45rem; }
+    .scenario {
+      display: grid; grid-template-columns: 40px 1fr; gap: .6rem;
+      padding: .55rem .7rem;
+      background: var(--hw-gray-100); border: 1px solid var(--hw-border);
+      border-radius: var(--hw-radius-sm);
+    }
+    .scenario .icon {
+      width: 40px; height: 40px; border-radius: 10px;
+      background: #fff; border: 1px solid var(--hw-border);
+      display: grid; place-items: center; font-size: 1.25rem;
+    }
+    .scenario h4 { margin: 0 0 .1rem; font-size: .95rem; font-weight: 800; }
+    .scenario p  { margin: 0; font-size: .82rem; color: var(--hw-gray-700); line-height: 1.4; }
+    .scenario .tag {
+      display: inline-block; font-size: .7rem; font-weight: 700;
+      background: #fff; color: var(--hw-red); border: 1px solid var(--hw-red);
+      padding: .05rem .4rem; border-radius: 999px; margin-left: .3rem;
+      vertical-align: 1px;
+    }
+
+    .geoMini {
+      display: grid; grid-template-columns: 1fr 1fr;
+      gap: .4rem;
+    }
+    .geoMini .halve {
+      background: var(--hw-gray-100); border: 1px solid var(--hw-border);
+      border-radius: var(--hw-radius-sm);
+      padding: .35rem;
+      display: flex; flex-direction: column; gap: .25rem;
+      align-items: center;
+    }
+    .geoMini .halve .cap {
+      font-size: .72rem; font-weight: 700; color: var(--hw-gray-700); text-align: center;
+      line-height: 1.25;
+    }
+    .geoMini svg { width: 100%; height: auto; }
+    .geoGroup h3 { margin: 0 0 .25rem; font-size: .95rem; font-weight: 800; display: flex; align-items: center; gap: .35rem; }
+    .geoGroup { display: flex; flex-direction: column; gap: .35rem; }
+
+    .callout {
+      background: #fff4e5; border-left: 4px solid var(--hw-gold);
+      padding: .55rem .75rem; border-radius: var(--hw-radius-sm);
+      font-size: .87rem; color: #664d03;
+    }
+
+    /* ===== Try-it tab ===== */
+    .tryRow1 {
+      display: flex; gap: .5rem; align-items: center; flex-wrap: wrap;
+      flex-shrink: 0;
+    }
+    .tryRow1 .ctrlGroup {
+      display: flex; gap: .4rem; align-items: center;
+      background: #fff; border: 1px solid var(--hw-border);
+      border-radius: var(--hw-radius-sm); padding: .35rem .55rem;
+    }
+    .tryRow1 .ctrlGroup label { font-size: .75rem; font-weight: 700; text-transform: uppercase; letter-spacing: .05em; color: var(--hw-gray-700); margin: 0; }
+    .tryRow1 .input { width: 64px; }
+    .tryRow1 .toggle { display: inline-flex; align-items: center; gap: .3rem; font-size: .8rem; color: var(--hw-gray-700); cursor: pointer; }
+    .tryRow1 .toggle input { width: 14px; height: 14px; }
+    .tryRow1 .spacer { flex: 1; }
+
+    .tryBody {
+      display: grid; grid-template-columns: minmax(0, 1fr) 260px; gap: .55rem;
+      flex: 1; min-height: 0;
+    }
+    @media (max-width: 900px) { .tryBody { grid-template-columns: 1fr; } }
+    .canvasCard {
+      background: #fff; border: 1px solid var(--hw-border);
+      border-radius: var(--hw-radius); box-shadow: var(--hw-shadow);
+      padding: .5rem; display: flex; flex-direction: column;
+      min-height: 0; overflow: hidden;
+    }
+    .canvasCard canvas { width: 100%; height: 100%; max-height: calc(100vh - 220px); background: #fff; border-radius: var(--hw-radius-sm); display: block; }
+    .sideCard {
+      background: #fff; border: 1px solid var(--hw-border);
+      border-radius: var(--hw-radius); box-shadow: var(--hw-shadow);
+      padding: .7rem .8rem; display: flex; flex-direction: column; gap: .55rem;
+      min-height: 0; overflow: auto;
+    }
+
+    .statusRow {
+      display: grid; grid-template-columns: 1fr 1fr; gap: .35rem;
+    }
+    .statusRow .stat {
+      background: var(--hw-gray-100); border: 1px solid var(--hw-border);
+      border-radius: var(--hw-radius-sm);
+      padding: .35rem .5rem;
+    }
+    .stat .sLabel {
+      font-size: .65rem; text-transform: uppercase; letter-spacing: .06em;
+      color: var(--hw-gray-600); font-weight: 700;
+    }
+    .stat .sVal  { font-size: 1.2rem; font-weight: 900; color: #000; line-height: 1.1; }
+
+    .shareGrid { display: grid; grid-template-columns: repeat(2, 1fr); gap: .3rem; }
+    .shareChip {
+      background: #fff; border: 1px solid var(--hw-border);
+      border-radius: var(--hw-radius-sm);
+      padding: .35rem .5rem;
+      font-family: var(--hw-mono); font-size: .78rem;
+      cursor: pointer;
+      display: flex; justify-content: space-between; align-items: center;
+      transition: all .15s ease;
+      user-select: none;
+    }
+    .shareChip:hover { border-color: var(--hw-red); }
+    .shareChip .sName { font-family: var(--hw-font-sans); font-weight: 700; }
+    .shareChip.selected {
+      background: var(--hw-red); color: #fff;
+      border-color: var(--hw-red);
+    }
+    .shareChip.selected .sName { color: #fff; }
+
+    .revealBox {
+      background: linear-gradient(135deg, #fff8e1, #fff4d0);
+      border: 2px solid var(--hw-gold);
+      border-radius: var(--hw-radius); padding: .6rem .8rem;
+      display: none;
+      animation: appear .4s ease;
+    }
+    .revealBox.show { display: block; }
+    .revealBox .rTop { font-size: .7rem; text-transform: uppercase; letter-spacing: .06em; font-weight: 700; color: #7a4c00; }
+    .revealBox .rVal { font-size: 1.4rem; font-weight: 900; color: var(--hw-red); font-family: var(--hw-mono); }
+    .revealBox .rNote { font-size: .78rem; color: #664d03; margin-top: .15rem; }
+    @keyframes appear { from { transform: translateY(6px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+
+    .hintBox {
+      background: var(--hw-gray-100); border: 1px dashed var(--hw-border);
+      border-radius: var(--hw-radius-sm); padding: .5rem .6rem;
+      font-size: .8rem; color: var(--hw-gray-700);
+    }
+
+    /* ===== Why-it-works tab ===== */
+    .whyGrid {
+      display: grid; grid-template-columns: 1.2fr 1fr;
+      gap: .55rem; flex: 1; min-height: 0;
+    }
+    @media (max-width: 900px) { .whyGrid { grid-template-columns: 1fr; } }
+    .whyGrid .card { display: flex; flex-direction: column; gap: .4rem; overflow: auto; }
+    .whyGrid h3 { margin: 0; font-size: 1rem; font-weight: 900; display: flex; align-items: center; gap: .35rem; }
+    .whyGrid p { margin: 0; font-size: .88rem; line-height: 1.5; color: var(--hw-gray-800); }
+
+    /* Tiny fallback */
+    @media (max-height: 600px) {
+      body { overflow: auto; }
+      .app { height: auto; min-height: 100vh; }
+      .panels { overflow: visible; }
+      .panel.active { height: auto; }
+    }
+  </style>
 </head>
 <body>
 
-<div class="container">
-  <a href="../../../index.html" class="back-link">← Back to Home</a>
-  <h1>Shamir's Secret Sharing Demo (Geometry + “Wiggles”)</h1>
+<div class="app">
 
-  <div class="controls">
-  <label>Threshold (t):</label>
-  <input type="number" id="thresholdInput" value="3" min="2" max="6">
-  
-  <label>Total Shares (n):</label>
-  <input type="number" id="totalSharesInput" value="5" min="3" max="10">
+  <!-- ========== Top bar ========== -->
+  <header class="topbar">
+    <div>
+      <div class="eyebrow">Computer Science · Cryptography</div>
+      <h1>Shamir's Secret Sharing</h1>
+    </div>
+    <div class="pills">
+      <span class="pill set" id="ttPill"><span class="lbl">Threshold</span><b id="ttVal">3</b></span>
+      <span class="pill set" id="nnPill"><span class="lbl">Total shares</span><b id="nnVal">5</b></span>
+      <span class="pill" id="selPill"><span class="lbl">Selected</span><b id="selVal">0</b></span>
+      <span class="pill" id="secretPill"><span class="lbl">Secret f(0)</span><b id="secretVal">hidden</b></span>
+    </div>
+  </header>
 
-  <button onclick="generatePolynomial()">Generate New Secret</button>
-  <button onclick="resetSelection()">Reset Selection</button>
+  <!-- ========== Tabs ========== -->
+  <nav class="tabs" role="tablist">
+    <button class="tab active" data-tab="background" role="tab">Background</button>
+    <button class="tab"        data-tab="tryit"      role="tab">Try it</button>
+    <button class="tab"        data-tab="why"        role="tab">Why it works</button>
+  </nav>
 
-  <br><br>
+  <div class="panels">
 
-  <input type="checkbox" id="showRandomToggle" class="smallToggle" checked>
-  <label for="showRandomToggle" class="smallToggle">Show random “wiggles” if not enough points?</label>
+    <!-- ========== Background tab ========== -->
+    <section class="panel active" data-panel="background" role="tabpanel">
+      <div class="bgGrid">
 
-  <button onclick="regenerateWiggles()">Regenerate Wiggles</button>
-  </div>
+        <!-- Left: motivation -->
+        <div class="bgCol">
+          <div class="card">
+            <h3 style="margin:0 0 .35rem;">🔐 Why split a secret? <span class="badge badge--gold">multi-key signatures</span></h3>
+            <p class="muted" style="margin:0 0 .4rem;">
+              Sometimes no one person should hold the whole key. Shamir's Secret Sharing splits a secret
+              into <em>n</em> shares so that any <em>t</em> together can reconstruct it — while <em>t − 1</em> shares reveal
+              <strong>absolutely nothing</strong>.
+            </p>
 
-  <div id="canvasContainer" class="chartarea">
-    <canvas id="shamirCanvas" width="800" height="500"></canvas>
-  </div>
+            <div class="scenarios">
+              <div class="scenario">
+                <div class="icon">🏛️</div>
+                <div>
+                  <h4>Company treasury <span class="tag">3 of 5</span></h4>
+                  <p>Five board members hold one share each. Any three can co-sign to move corporate funds, but no two together can drain the account.</p>
+                </div>
+              </div>
+              <div class="scenario">
+                <div class="icon">💰</div>
+                <div>
+                  <h4>Crypto cold wallet <span class="tag">2 of 3</span></h4>
+                  <p>Split the seed phrase across three vaults in different cities. A fire or theft can destroy one and you still recover the wallet from the other two. One vault alone leaks nothing.</p>
+                </div>
+              </div>
+              <div class="scenario">
+                <div class="icon">🔑</div>
+                <div>
+                  <h4>Password recovery <span class="tag">3 of 5</span></h4>
+                  <p>Give five trusted friends one share each. If you lose your device, any three can help you recover. No friend can spy alone, and even two can't learn a thing.</p>
+                </div>
+              </div>
+            </div>
 
-  <div class="info">
-  <h2>How this Demo Works</h2>
-  <p>
-    We create a random polynomial <em>f(x)</em> of degree <strong>t-1</strong>. 
-    Its constant term <em>f(0)</em> is our "secret."
-  </p>
-  <p>
-    We plot <em>n</em> points: <strong>(1, f(1)), (2, f(2)), ..., (n, f(n))</strong>. Each is a "share."
-    Click on a share to toggle selection. 
-    If you select <em>t</em> or more shares, we can reconstruct the polynomial exactly 
-    (green line matches the original gray line). This reveals <em>f(0)</em>.
-  </p>
-  <p>
-    If you select <em>fewer</em> than <em>t</em> shares, you can see (if you turn on the toggle) 
-    random “wiggles” (polynomials) that pass through those selected points but differ elsewhere. 
-    This shows how the secret stays hidden when not enough points are known, 
-    since there are infinitely many possibilities.
-  </p>
-  <p>
-    Real Shamir’s Secret Sharing uses arithmetic in a finite field (like a large prime modulus), 
-    but the geometric idea is the same: <strong>t</strong> points uniquely define a 
-    degree-<strong>t-1</strong> polynomial. Fewer than <strong>t</strong> leaves infinitely many solutions.
-  </p>
-  </div>
-</div>
+            <div class="callout" style="margin-top:.5rem;">
+              <strong>The design goal.</strong> Increase <em>t</em> for security (harder to collude); increase <em>n − t</em> for availability (more shares can be lost without losing the secret).
+            </div>
+          </div>
+        </div>
+
+        <!-- Right: geometric primer -->
+        <div class="bgCol">
+          <div class="card">
+            <h3 style="margin:0 0 .35rem;">📐 The geometric idea</h3>
+            <p class="muted" style="margin:0 0 .5rem;">
+              <strong>t points pin down exactly one polynomial of degree t − 1.</strong>
+              Fewer than t leaves infinitely many polynomials that still fit.
+            </p>
+
+            <div class="geoGroup">
+              <h3 style="font-size:.85rem; font-weight:700;">t = 2 → a line</h3>
+              <div class="geoMini">
+                <div class="halve">
+                  <svg id="geo2Left"  viewBox="0 0 180 110"></svg>
+                  <div class="cap">1 point · infinitely many lines</div>
+                </div>
+                <div class="halve">
+                  <svg id="geo2Right" viewBox="0 0 180 110"></svg>
+                  <div class="cap">2 points · exactly one line</div>
+                </div>
+              </div>
+            </div>
+
+            <div class="geoGroup" style="margin-top:.5rem;">
+              <h3 style="font-size:.85rem; font-weight:700;">t = 3 → a parabola</h3>
+              <div class="geoMini">
+                <div class="halve">
+                  <svg id="geo3Left"  viewBox="0 0 180 110"></svg>
+                  <div class="cap">2 points · many parabolas</div>
+                </div>
+                <div class="halve">
+                  <svg id="geo3Right" viewBox="0 0 180 110"></svg>
+                  <div class="cap">3 points · exactly one</div>
+                </div>
+              </div>
+            </div>
+
+            <div class="geoGroup" style="margin-top:.5rem;">
+              <h3 style="font-size:.85rem; font-weight:700;">t = 4 → a cubic</h3>
+              <div class="geoMini">
+                <div class="halve">
+                  <svg id="geo4Left"  viewBox="0 0 180 110"></svg>
+                  <div class="cap">3 points · many cubics</div>
+                </div>
+                <div class="halve">
+                  <svg id="geo4Right" viewBox="0 0 180 110"></svg>
+                  <div class="cap">4 points · exactly one</div>
+                </div>
+              </div>
+            </div>
+
+            <div class="callout" style="margin-top:.5rem; background:#e7f3ff; border-left-color:#0d6efd; color:#084298;">
+              <strong>The secret is f(0)</strong> — where the curve crosses the y-axis. Each share is a point (x, f(x)) for x ≥ 1. Fewer than t of them, the y-intercept is still completely free.
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ========== Try-it tab ========== -->
+    <section class="panel" data-panel="tryit" role="tabpanel">
+
+      <div class="tryRow1">
+        <div class="ctrlGroup">
+          <label for="thresholdInput">t</label>
+          <input type="number" id="thresholdInput" class="input" value="3" min="2" max="6">
+        </div>
+        <div class="ctrlGroup">
+          <label for="totalSharesInput">n</label>
+          <input type="number" id="totalSharesInput" class="input" value="5" min="3" max="10">
+        </div>
+        <button class="btn btn--sm" onclick="generatePolynomial()">New secret</button>
+        <button class="btn btn--sm btn--outline" onclick="resetSelection()">Reset</button>
+        <label class="toggle">
+          <input type="checkbox" id="showRandomToggle" checked>
+          Show "wiggles" when under threshold
+        </label>
+        <button class="btn btn--sm btn--outline" onclick="regenerateWiggles()">New wiggles</button>
+        <span class="spacer"></span>
+      </div>
+
+      <div class="tryBody">
+
+        <div class="canvasCard">
+          <canvas id="shamirCanvas" width="1000" height="500"></canvas>
+        </div>
+
+        <aside class="sideCard">
+          <div class="statusRow">
+            <div class="stat"><div class="sLabel">Selected</div><div class="sVal" id="sSelected">0 / 3</div></div>
+            <div class="stat"><div class="sLabel">Status</div><div class="sVal" id="sStatus" style="font-size:.95rem; color:var(--hw-gray-700);">below threshold</div></div>
+          </div>
+
+          <div>
+            <div style="font-size:.7rem; text-transform:uppercase; letter-spacing:.06em; font-weight:700; color:var(--hw-gray-600); margin-bottom:.25rem;">Shares (click to toggle)</div>
+            <div class="shareGrid" id="shareChips"></div>
+          </div>
+
+          <div class="revealBox" id="revealBox">
+            <div class="rTop">🔓 Secret reconstructed</div>
+            <div class="rVal" id="revealVal">?</div>
+            <div class="rNote" id="revealNote">f(0) recovered from Lagrange interpolation of the selected shares.</div>
+          </div>
+
+          <div class="hintBox" id="hintBox">
+            Click any <b id="hintShare">3</b> share chips (or dots on the graph) to rebuild the polynomial and reveal the secret.
+          </div>
+        </aside>
+      </div>
+    </section>
+
+    <!-- ========== Why-it-works tab ========== -->
+    <section class="panel" data-panel="why" role="tabpanel">
+      <div class="whyGrid">
+        <div class="card">
+          <h3>🌀 Why fewer than t shares reveal nothing</h3>
+          <p>
+            Pick any candidate value <em>s</em> for f(0). Together with your <em>t − 1</em> known shares, that's <em>t</em> points total — which always defines exactly one polynomial of degree <em>t − 1</em>.
+            <strong>So every possible secret is consistent with what you hold.</strong> No information leaks.
+          </p>
+          <p>
+            On the graph, the "wiggles" toggle shows this directly: each curve below threshold passes through every selected point and still disagrees about f(0).
+          </p>
+          <div class="callout">
+            <strong>Threshold security.</strong> With a 3-of-5 scheme, any two colluding officers still face the same guessing problem they had before they talked. Trust is split, not shared.
+          </div>
+        </div>
+
+        <div class="card">
+          <h3>⚙️ Real Shamir vs. this demo</h3>
+          <p>
+            This demo uses real-number polynomials so you can <em>see</em> the curves. Real deployments use arithmetic in a finite field (all operations mod a large prime), which removes rounding error and makes each coefficient look like random noise.
+          </p>
+          <p>
+            The geometric intuition is the same: <strong>t</strong> points define one polynomial of degree <strong>t − 1</strong>; fewer leave it free.
+          </p>
+          <h3 style="margin-top:.25rem;">🔗 Threshold & multi-key signatures</h3>
+          <p>
+            Shamir's scheme is the foundation of <em>threshold signatures</em> and <em>multi-signature</em> wallets: the private signing key is never assembled in one place; instead, any <em>t</em> of <em>n</em> parties can cooperate to sign, and <em>t − 1</em> can't.
+          </p>
+        </div>
+      </div>
+    </section>
+
+  </div><!-- /.panels -->
+</div><!-- /.app -->
 
 <script>
-/******************************************************************************
- *                           SHAMIR DEMO JAVASCRIPT                            *
- ******************************************************************************/
+/* ===================== Design tokens ===================== */
+const TOK = {
+  red:'#c8102e', gold:'#f0b323', green:'#198754',
+  gray800:'#374151', gray700:'#4b5563', gray600:'#6b7280',
+  gray500:'#9ca3af', gray400:'#cbd5e1', gray300:'#e5e7eb',
+  gray200:'#edf0f3', gray100:'#f4f6f8'
+};
 
-// We'll do real-number polynomials for illustration, not actual finite-field ops.
-
-const canvas = document.getElementById("shamirCanvas");
-const ctx = canvas.getContext("2d");
-
-// Global state
-let polynomial = [];    // The original "secret" polynomial of degree t-1
-let points = [];        // Shares: [{x, y, selected}, ...]
-let t = 3;              // threshold
-let n = 5;              // total shares
-const margin = 50; 
-const scaleX = 50; 
-let maxY = 0;           // track max absolute value for y range
-
-let randomPolynomials = []; // store random "wiggles" polynomials
-
-/**
- * Generate a random polynomial of degree (t-1), then
- * produce n shares (x, f(x)) for x=1..n, storing in `points`.
- */
-function generatePolynomial() {
-  t = parseInt(document.getElementById('thresholdInput').value, 10) || 3;
-  n = parseInt(document.getElementById('totalSharesInput').value, 10) || 5;
-  if (t < 2) t = 2;
-  if (n < t) n = t;
-
-  // Random polynomial of degree t-1
-  polynomial = [];
-  for (let i = 0; i < t; i++) {
-    // random coeff in [-10..10]
-    polynomial.push(Math.floor(Math.random()*21 - 10));
-  }
-
-  // Build points
-  points = [];
-  maxY = 0;
-  for (let x = 1; x <= n; x++) {
-    let y = evalPoly(polynomial, x);
-    if (Math.abs(y) > maxY) maxY = Math.abs(y);
-    points.push({x, y, selected: false});
-  }
-
-  randomPolynomials = []; // clear wiggles
-  drawAll();
+/* ===================== Polynomial helpers ===================== */
+function polyAdd(a, b) {
+  const len = Math.max(a.length, b.length);
+  const out = Array(len).fill(0);
+  for (let i = 0; i < len; i++) { if (i < a.length) out[i] += a[i]; if (i < b.length) out[i] += b[i]; }
+  return out;
 }
-
-/** Evaluate polynomial (array of coeffs) at x. */
-function evalPoly(coeffs, x) {
-  let sum = 0;
-  let power = 1;
-  for (let i=0; i<coeffs.length; i++) {
-    sum += coeffs[i]*power;
-    power *= x;
-  }
-  return sum;
+function polyMul(a, b) {
+  const out = Array(a.length + b.length - 1).fill(0);
+  for (let i = 0; i < a.length; i++) for (let j = 0; j < b.length; j++) out[i + j] += a[i] * b[j];
+  return out;
 }
-
-/** Convert from data X to canvas X. */
-function toCanvasX(dataX) {
-  return margin + dataX * scaleX;
-}
-/** Convert from data Y to canvas Y. */
-function toCanvasY(dataY) {
-  // Center the polynomial around the middle:
-  let center = canvas.height/2;
-  let yRange = maxY*1.2; // some margin
-  if (yRange < 1) yRange = 1;
-  let halfCanvas = (canvas.height - margin*2)/2;
-  let s = halfCanvas / yRange;
-  return center - dataY*s;
-}
-
-/** Redraw everything. */
-function drawAll() {
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
-  drawAxes();
-
-  // Draw the original polynomial in gray (for demo)
-  drawPolynomial(polynomial, '#999');
-
-  // If user has >= t selected points, reconstruct exactly
-  let selectedPoints = points.filter(p => p.selected);
-  if (selectedPoints.length >= t) {
-    let recPoly = lagrangeInterpolate(selectedPoints, t-1);
-    drawPolynomial(recPoly, '#0f0'); // green
-  } else {
-    // If user wants to see random polynomials that also pass these points (wiggles)
-    if (document.getElementById('showRandomToggle').checked && randomPolynomials.length>0) {
-      randomPolynomials.forEach(rp => {
-        drawPolynomial(rp, randomColor());
-      });
-    }
-  }
-
-  drawPoints();
-}
-
-/** Draw X and Y axes. */
-function drawAxes() {
-  ctx.save();
-  ctx.strokeStyle = '#666';
-  ctx.lineWidth = 1;
-  // X-axis
-  ctx.beginPath();
-  ctx.moveTo(0, toCanvasY(0));
-  ctx.lineTo(canvas.width, toCanvasY(0));
-  ctx.stroke();
-  // Y-axis
-  ctx.beginPath();
-  ctx.moveTo(toCanvasX(0), 0);
-  ctx.lineTo(toCanvasX(0), canvas.height);
-  ctx.stroke();
-  ctx.restore();
-}
-
-/** Draw a polynomial line from x=0..(n+1) in small steps. */
-function drawPolynomial(poly, color) {
-  ctx.save();
-  ctx.strokeStyle = color;
-  ctx.lineWidth = 2;
-  ctx.beginPath();
-  let started = false;
-  for (let xPos=0; xPos<=n+1; xPos+=0.1) {
-    let yVal = evalPoly(poly, xPos);
-    let cX = toCanvasX(xPos);
-    let cY = toCanvasY(yVal);
-    if (!started) {
-      ctx.moveTo(cX, cY);
-      started = true;
-    } else {
-      ctx.lineTo(cX, cY);
-    }
-  }
-  ctx.stroke();
-  ctx.restore();
-}
-
-/** Draw the share points. */
-function drawPoints() {
-  ctx.save();
-  for (let p of points) {
-    let cX = toCanvasX(p.x);
-    let cY = toCanvasY(p.y);
-    ctx.beginPath();
-    ctx.arc(cX, cY, 6, 0, 2*Math.PI);
-    ctx.fillStyle = p.selected ? '#f33' : '#33f';
-    ctx.fill();
-    // label
-    ctx.font = '14px sans-serif';
-    ctx.fillStyle = '#000';
-    ctx.fillText(`(${p.x}, ${p.y})`, cX+8, cY-8);
-  }
-  ctx.restore();
-}
-
-/** On canvas click, see if we clicked near a point, toggle selection. */
-canvas.addEventListener('click', e => {
-  let rect = canvas.getBoundingClientRect();
-  let mx = e.clientX - rect.left;
-  let my = e.clientY - rect.top;
-
-  for (let p of points) {
-    let cX = toCanvasX(p.x);
-    let cY = toCanvasY(p.y);
-    let dx = mx - cX;
-    let dy = my - cY;
-    if (Math.sqrt(dx*dx + dy*dy) < 10) {
-      p.selected = !p.selected; // toggle
-      break;
-    }
-  }
-  drawAll();
-});
-
-/** Reset all points to unselected. */
-function resetSelection() {
-  for (let p of points) {
-    p.selected = false;
-  }
-  drawAll();
-}
-
-/** Lagrange interpolation over real numbers to produce a polynomial of <= (deg). 
- *  If you have k points, but ask for deg=(t-1) with t>k, you get a polynomial 
- *  of up to degree t-1 that EXACTLY fits those k points but might have free parameters. 
- *  We'll just do the standard Lagrange formula for a polynomial of degree (k-1), 
- *  then if we want exactly degree (t-1), we'll embed it in a bigger polynomial 
- *  if needed. But let's keep it simpler: 
- *  - We'll do standard Lagrange with degree (k-1).
- *  - If deg>(k-1), we won't fill the extra terms unless we add random “wiggles.”
- */
-function lagrangeInterpolate(pts, deg) {
-  let k = pts.length; 
-  if (k === 0) {
-    // no points => a polynomial of all zero for this demo
-    return Array(deg+1).fill(0);
-  }
-  // If k=1, Lagrange is trivial. If k>1, do normal Lagrange. 
-  // The polynomial we get is exactly degree up to (k-1).
-  // Then if we want "explicitly" degree=deg with k< deg+1, 
-  // we can embed it in a bigger polynomial (the random wiggle part).
-  let basePoly = computeLagrange(pts); // degree <= k-1
-  if (basePoly.length-1 > deg) {
-    // Something unexpected if user gave deg < (k-1)
-    // We'll just truncate. (In a rigorous approach, we'd handle differently.)
-    return basePoly.slice(0, deg+1);
-  } else {
-    // pad with zeros if needed
-    while (basePoly.length < deg+1) {
-      basePoly.push(0);
-    }
-    return basePoly;
-  }
-}
-
-/** Actual Lagrange: return polynomial of exactly degree up to (k-1). */
+function polyScale(a, c) { return a.map(x => x * c); }
+function evalPoly(coeffs, x) { let s = 0, p = 1; for (let i = 0; i < coeffs.length; i++) { s += coeffs[i] * p; p *= x; } return s; }
 function computeLagrange(pts) {
-  let k = pts.length;
-  let result = Array(k).fill(0); // up to degree k-1
-  for (let i=0; i<k; i++) {
-    let Li = [1]; // polynomial "1"
-    // build the factor for each j != i
-    for (let j=0; j<k; j++) {
-      if (j===i) continue;
-      let denom = (pts[i].x - pts[j].x);
-      // multiply Li by (x - x_j)/denom
-      Li = polyMultiply(Li, [-pts[j].x, 1]); 
-      Li = polyScale(Li, 1/denom);
+  const k = pts.length;
+  let result = Array(k).fill(0);
+  for (let i = 0; i < k; i++) {
+    let Li = [1];
+    for (let j = 0; j < k; j++) {
+      if (j === i) continue;
+      const denom = (pts[i].x - pts[j].x);
+      Li = polyMul(Li, [-pts[j].x, 1]);
+      Li = polyScale(Li, 1 / denom);
     }
-    // multiply by y_i
     Li = polyScale(Li, pts[i].y);
-    // add to result
     result = polyAdd(result, Li);
   }
   return result;
 }
 
-/** Generate random polynomials that pass exactly through the selected points
- *  but differ elsewhere (the “wiggles”).
- */
-function generateRandomWiggles(selectedPts, count, deg) {
-  // Step 1: basePoly = Lagrange interpolation of selectedPts with degree <= (k-1).
-  let k = selectedPts.length;
-  let basePoly = computeLagrange(selectedPts); // degree <= k-1
-  while (basePoly.length < deg+1) {
-    basePoly.push(0);
-  }
+/* ===================== Main-canvas state ===================== */
+const canvas = document.getElementById('shamirCanvas');
+const ctx = canvas.getContext('2d');
+let polynomial = [];
+let points = [];    // [{x, y, selected}]
+let t = 3, n = 5;
+let maxAbsY = 1;
+let wiggles = [];
 
-  // Step 2: We want a polynomial of degree up to (deg), 
-  // but with (k - 1) points fixed. We have leftover (deg+1 - k) degrees 
-  // of freedom. We can create a polynomial R(x) that is 0 at each selected x_i,
-  // and multiply it by a random polynomial of degree (deg+1 - k). 
-  // Then add to basePoly. 
-  // We'll define a factor poly F(x) = ∏(x - x_i) for i in selectedPts
-  // Then pick random polynomial H of degree (deg+1 - k). 
-  // final = basePoly + F(x)*H(x).
-  let factorPoly = [1]; 
-  for (let pt of selectedPts) {
-    factorPoly = polyMultiply(factorPoly, [-pt.x, 1]); 
-  }
-  let leftoverDeg = deg+1 - factorPoly.length; 
-  // leftoverDeg could be negative if k is close to deg+1, 
-  // meaning there's not much freedom. If leftoverDeg<0 => no wiggles. 
-  let randomPolys = [];
+/* ===================== Tabs ===================== */
+function switchTab(name) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.toggle('active', t.dataset.tab === name));
+  document.querySelectorAll('.panel').forEach(p => p.classList.toggle('active', p.dataset.panel === name));
+  if (name === 'tryit') { resizeAndDraw(); }
+  if (name === 'background') { drawAllGeoPrimers(); }
+}
+document.querySelectorAll('.tab').forEach(el => el.addEventListener('click', () => switchTab(el.dataset.tab)));
 
-  for (let c = 0; c < count; c++) {
-    // if leftoverDeg >= 0, create random poly H of degree leftoverDeg
-    let H = [];
-    for (let i=0; i<=Math.max(0,leftoverDeg); i++){
-      // random small coeff
-      H.push(Math.floor(Math.random()*11 - 5));
-    }
-    let R = polyMultiply(factorPoly, H);
-    // Now sum up with basePoly
-    let wiggle = polyAdd(basePoly, R);
-    // If wiggle is longer than deg+1, we can trim
-    if (wiggle.length > deg+1) {
-      wiggle = wiggle.slice(0, deg+1);
-    }
-    randomPolys.push(wiggle);
-  }
-  return randomPolys;
+/* ===================== Share chips ===================== */
+function renderShareChips() {
+  const wrap = document.getElementById('shareChips');
+  wrap.innerHTML = '';
+  points.forEach((p, i) => {
+    const chip = document.createElement('div');
+    chip.className = 'shareChip' + (p.selected ? ' selected' : '');
+    chip.innerHTML = `<span class="sName">Share ${p.x}</span><span>(${p.x}, ${p.y})</span>`;
+    chip.addEventListener('click', () => {
+      p.selected = !p.selected;
+      renderShareChips();
+      drawAll();
+      updateStatus();
+    });
+    wrap.appendChild(chip);
+  });
 }
 
-/** Polynomials: add, multiply, scale. */
-function polyAdd(a,b) {
-  let len = Math.max(a.length,b.length);
-  let out = Array(len).fill(0);
-  for (let i=0; i<len; i++){
-    if (i<a.length) out[i]+=a[i];
-    if (i<b.length) out[i]+=b[i];
-  }
-  return out;
-}
-function polyMultiply(a,b) {
-  let out = Array(a.length+b.length-1).fill(0);
-  for (let i=0; i<a.length; i++){
-    for (let j=0; j<b.length; j++){
-      out[i+j]+= a[i]*b[j];
-    }
-  }
-  return out;
-}
-function polyScale(a,c) {
-  return a.map(x=>x*c);
-}
+/* ===================== Top-bar pills + status ===================== */
+function updateStatus() {
+  const sel = points.filter(p => p.selected).length;
+  document.getElementById('ttVal').textContent = t;
+  document.getElementById('nnVal').textContent = n;
+  document.getElementById('selVal').textContent = sel;
+  document.getElementById('selPill').classList.toggle('set', sel > 0);
+  document.getElementById('sSelected').textContent = `${sel} / ${t}`;
 
-/** Utility for random color (semi-transparent?). */
-function randomColor() {
-  // generate a random hue
-  const r = Math.floor(Math.random()*256);
-  const g = Math.floor(Math.random()*256);
-  const b = Math.floor(Math.random()*256);
-  return `rgba(${r}, ${g}, ${b}, 0.8)`;
-}
+  const sStatus = document.getElementById('sStatus');
+  const hint = document.getElementById('hintBox');
+  const hintShare = document.getElementById('hintShare');
+  const reveal = document.getElementById('revealBox');
+  const revealVal = document.getElementById('revealVal');
+  const secretPill = document.getElementById('secretPill');
+  const secretVal = document.getElementById('secretVal');
 
-/** Re-generate the random polynomials (wiggles) if user has < t selected points. */
-function regenerateWiggles() {
-  let selectedPts = points.filter(p => p.selected);
-  if (selectedPts.length >= t) {
-    // with t or more, there's exactly one polynomial, no extra wiggles
-    randomPolynomials = [];
+  hintShare.textContent = Math.max(0, t - sel);
+
+  if (sel >= t) {
+    const rec = computeLagrange(points.filter(p => p.selected));
+    const f0 = Math.round(rec[0] * 1e6) / 1e6;
+    sStatus.textContent = 'secret revealed';
+    sStatus.style.color = '#0f5132';
+    reveal.classList.add('show');
+    revealVal.textContent = f0;
+    secretVal.textContent = f0;
+    secretPill.classList.add('revealed');
+    hint.style.display = 'none';
   } else {
-    // Generate some random polynomials that pass exactly those selected points
-    // but differ elsewhere. The "true" polynomial degree is (t-1).
-    randomPolynomials = generateRandomWiggles(selectedPts, 3, t-1);
+    sStatus.textContent = sel === 0 ? 'pick shares' : 'below threshold';
+    sStatus.style.color = 'var(--hw-gray-700)';
+    reveal.classList.remove('show');
+    secretVal.textContent = 'hidden';
+    secretPill.classList.remove('revealed');
+    hint.style.display = 'block';
+  }
+}
+
+/* ===================== Main canvas draw ===================== */
+function toCanvasX(dx, w, margin) { return margin + (dx / (n + 1)) * (w - margin * 2); }
+function toCanvasY(dy, h, margin) {
+  const center = h / 2;
+  const range = Math.max(maxAbsY * 1.2, 1);
+  const half = (h - margin * 2) / 2;
+  return center - dy * (half / range);
+}
+
+function drawAll() {
+  const w = canvas.width, h = canvas.height;
+  ctx.clearRect(0, 0, w, h);
+  const margin = 40;
+
+  // background grid
+  ctx.save();
+  ctx.strokeStyle = TOK.gray200; ctx.lineWidth = 1;
+  ctx.beginPath();
+  for (let x = 0; x <= n + 1; x++) {
+    const cx = toCanvasX(x, w, margin);
+    ctx.moveTo(cx, margin); ctx.lineTo(cx, h - margin);
+  }
+  ctx.stroke();
+  ctx.restore();
+
+  // axes
+  ctx.save();
+  ctx.strokeStyle = TOK.gray500; ctx.lineWidth = 1.2;
+  ctx.beginPath(); ctx.moveTo(margin, toCanvasY(0, h, margin)); ctx.lineTo(w - margin, toCanvasY(0, h, margin)); ctx.stroke();
+  const yAxisX = toCanvasX(0, w, margin);
+  ctx.beginPath(); ctx.moveTo(yAxisX, margin); ctx.lineTo(yAxisX, h - margin); ctx.stroke();
+  ctx.restore();
+
+  // x-labels
+  ctx.save();
+  ctx.fillStyle = TOK.gray600; ctx.font = '12px "Source Sans Pro", sans-serif'; ctx.textAlign = 'center';
+  for (let x = 0; x <= n + 1; x++) {
+    ctx.fillText(String(x), toCanvasX(x, w, margin), toCanvasY(0, h, margin) + 16);
+  }
+  ctx.restore();
+
+  // highlight y-axis as "secret" axis
+  ctx.save();
+  ctx.fillStyle = TOK.gold + '33';
+  ctx.fillRect(yAxisX - 10, margin, 20, h - margin * 2);
+  ctx.restore();
+
+  // original polynomial in faint gray
+  drawPolynomial(polynomial, TOK.gray400, 2, [6, 4]);
+
+  const selected = points.filter(p => p.selected);
+  if (selected.length >= t) {
+    const rec = computeLagrange(selected);
+    drawPolynomial(rec, TOK.gold, 3);
+
+    // mark f(0) with a glowing marker on the y-axis
+    const f0 = rec[0];
+    const y = toCanvasY(f0, h, margin);
+    ctx.save();
+    ctx.fillStyle = TOK.gold;
+    ctx.strokeStyle = '#7a4c00';
+    ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.arc(yAxisX, y, 8, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+    ctx.fillStyle = '#000';
+    ctx.font = 'bold 13px "Source Sans Pro", sans-serif';
+    ctx.textAlign = 'left';
+    ctx.fillText(`f(0) = ${Math.round(f0 * 1e4) / 1e4}`, yAxisX + 12, y - 12);
+    ctx.restore();
+  } else if (document.getElementById('showRandomToggle').checked && wiggles.length > 0) {
+    wiggles.forEach((wg, i) => drawPolynomial(wg, wiggleColor(i), 1.6));
+  }
+
+  // points
+  points.forEach(p => {
+    const cx = toCanvasX(p.x, w, margin);
+    const cy = toCanvasY(p.y, h, margin);
+    ctx.save();
+    ctx.fillStyle = p.selected ? TOK.red : '#fff';
+    ctx.strokeStyle = p.selected ? TOK.red : TOK.gray700;
+    ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.arc(cx, cy, 7, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+    ctx.fillStyle = p.selected ? '#fff' : TOK.gray800;
+    ctx.font = 'bold 10px "Source Sans Pro", sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(String(p.x), cx, cy);
+    ctx.fillStyle = TOK.gray700;
+    ctx.font = '11px "Source Sans Pro", sans-serif';
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'alphabetic';
+    ctx.fillText(`Share ${p.x}: (${p.x}, ${p.y})`, cx + 11, cy - 10);
+    ctx.restore();
+  });
+
+  // legend
+  ctx.save();
+  ctx.font = '11px "Source Sans Pro", sans-serif'; ctx.textAlign = 'left';
+  const lx = w - 180, ly = margin + 6;
+  ctx.fillStyle = '#fff'; ctx.strokeStyle = TOK.gray300; ctx.lineWidth = 1;
+  ctx.fillRect(lx - 6, ly - 6, 170, 56); ctx.strokeRect(lx - 6, ly - 6, 170, 56);
+  ctx.strokeStyle = TOK.gray400; ctx.lineWidth = 2; ctx.setLineDash([6, 4]);
+  ctx.beginPath(); ctx.moveTo(lx, ly + 4); ctx.lineTo(lx + 24, ly + 4); ctx.stroke(); ctx.setLineDash([]);
+  ctx.fillStyle = TOK.gray800; ctx.fillText('original polynomial', lx + 30, ly + 8);
+  ctx.strokeStyle = TOK.gold; ctx.lineWidth = 3;
+  ctx.beginPath(); ctx.moveTo(lx, ly + 22); ctx.lineTo(lx + 24, ly + 22); ctx.stroke();
+  ctx.fillStyle = TOK.gray800; ctx.fillText('reconstruction', lx + 30, ly + 26);
+  ctx.fillStyle = TOK.red; ctx.beginPath(); ctx.arc(lx + 12, ly + 40, 5, 0, Math.PI * 2); ctx.fill();
+  ctx.fillStyle = TOK.gray800; ctx.fillText('selected share', lx + 30, ly + 44);
+  ctx.restore();
+}
+
+function drawPolynomial(poly, color, width, dash) {
+  const w = canvas.width, h = canvas.height;
+  const margin = 40;
+  ctx.save();
+  ctx.strokeStyle = color; ctx.lineWidth = width || 2;
+  if (dash) ctx.setLineDash(dash);
+  ctx.beginPath();
+  let started = false;
+  for (let xPos = 0; xPos <= n + 1; xPos += 0.05) {
+    const yVal = evalPoly(poly, xPos);
+    const cX = toCanvasX(xPos, w, margin);
+    const cY = toCanvasY(yVal, h, margin);
+    if (!started) { ctx.moveTo(cX, cY); started = true; } else { ctx.lineTo(cX, cY); }
+  }
+  ctx.stroke();
+  ctx.restore();
+}
+function wiggleColor(i) {
+  const pal = ['rgba(13,110,253,0.45)', 'rgba(25,135,84,0.45)', 'rgba(102,77,3,0.45)', 'rgba(200,16,46,0.45)'];
+  return pal[i % pal.length];
+}
+
+/* ===================== Click handling on canvas ===================== */
+canvas.addEventListener('click', e => {
+  const rect = canvas.getBoundingClientRect();
+  const scaleX = canvas.width / rect.width;
+  const scaleY = canvas.height / rect.height;
+  const mx = (e.clientX - rect.left) * scaleX;
+  const my = (e.clientY - rect.top) * scaleY;
+  const w = canvas.width, h = canvas.height, margin = 40;
+  for (const p of points) {
+    const cx = toCanvasX(p.x, w, margin);
+    const cy = toCanvasY(p.y, h, margin);
+    if (Math.hypot(mx - cx, my - cy) < 16) {
+      p.selected = !p.selected;
+      renderShareChips(); drawAll(); updateStatus();
+      return;
+    }
+  }
+});
+
+/* ===================== Actions ===================== */
+function generatePolynomial() {
+  t = Math.max(2, parseInt(document.getElementById('thresholdInput').value, 10) || 3);
+  n = Math.max(t, parseInt(document.getElementById('totalSharesInput').value, 10) || 5);
+  polynomial = [];
+  for (let i = 0; i < t; i++) polynomial.push(Math.floor(Math.random() * 21 - 10));
+  points = [];
+  maxAbsY = 1;
+  for (let x = 1; x <= n; x++) {
+    const y = evalPoly(polynomial, x);
+    if (Math.abs(y) > maxAbsY) maxAbsY = Math.abs(y);
+    points.push({ x, y, selected: false });
+  }
+  wiggles = [];
+  renderShareChips();
+  drawAll();
+  updateStatus();
+}
+function resetSelection() {
+  points.forEach(p => p.selected = false);
+  renderShareChips(); drawAll(); updateStatus();
+}
+function regenerateWiggles() {
+  const selected = points.filter(p => p.selected);
+  if (selected.length >= t || selected.length === 0) { wiggles = []; drawAll(); return; }
+  // base = Lagrange(selected), then add a random polynomial that vanishes on selected x's
+  let base = computeLagrange(selected);
+  while (base.length < t) base.push(0);
+  let factor = [1];
+  for (const pt of selected) factor = polyMul(factor, [-pt.x, 1]);
+  const leftover = t - factor.length; // degrees of freedom
+  wiggles = [];
+  const count = 3;
+  for (let c = 0; c < count; c++) {
+    const H = [];
+    for (let i = 0; i <= Math.max(0, leftover); i++) H.push(Math.floor(Math.random() * 11 - 5));
+    const add = polyMul(factor, H);
+    let wg = polyAdd(base, add);
+    if (wg.length > t) wg = wg.slice(0, t);
+    wiggles.push(wg);
   }
   drawAll();
 }
 
-/** On load, create initial polynomial. */
-window.onload = () => {
-  generatePolynomial();
-};
-</script>
+/* ===================== Canvas sizing ===================== */
+function resizeAndDraw() {
+  const card = canvas.parentElement;
+  const w = Math.max(400, card.clientWidth - 16);
+  const h = Math.max(300, card.clientHeight - 16);
+  canvas.width = w;
+  canvas.height = h;
+  canvas.style.width = w + 'px';
+  canvas.style.height = h + 'px';
+  drawAll();
+}
+window.addEventListener('resize', () => { if (document.querySelector('.panel.active')?.dataset.panel === 'tryit') resizeAndDraw(); });
 
+/* ===================== Geometric primer (SVG) ===================== */
+const NS = 'http://www.w3.org/2000/svg';
+function svgEl(name, attrs, text) {
+  const el = document.createElementNS(NS, name);
+  if (attrs) for (const k in attrs) el.setAttribute(k, attrs[k]);
+  if (text != null) el.textContent = text;
+  return el;
+}
+
+function drawGeoMini(svgId, opts) {
+  const s = document.getElementById(svgId);
+  while (s.firstChild) s.removeChild(s.firstChild);
+  const W = 180, H = 110;
+  const pad = 14;
+  // axis
+  s.appendChild(svgEl('line', { x1: pad, y1: H / 2, x2: W - pad, y2: H / 2, stroke: TOK.gray400, 'stroke-width': 1 }));
+  s.appendChild(svgEl('line', { x1: pad + 12, y1: 8, x2: pad + 12, y2: H - 8, stroke: TOK.gray400, 'stroke-width': 1 }));
+
+  const xs = opts.points.map(p => p.x);
+  const ys = opts.points.map(p => p.y);
+  const xMin = -0.3, xMax = 4.3;
+  const yMin = -2.2, yMax = 2.2;
+  const tx = x => pad + 12 + ((x - xMin) / (xMax - xMin)) * (W - pad * 2 - 12);
+  const ty = y => H / 2 - (y * ((H - 16) / 2 / (yMax)));
+
+  // draw curves
+  opts.curves.forEach(c => {
+    let path = '';
+    for (let x = xMin; x <= xMax; x += 0.05) {
+      const y = evalPoly(c.poly, x);
+      if (y < yMin * 1.4 || y > yMax * 1.4) { path += ''; continue; }
+      path += (path ? ' L ' : 'M ') + tx(x).toFixed(1) + ' ' + ty(y).toFixed(1);
+    }
+    s.appendChild(svgEl('path', {
+      d: path, fill: 'none',
+      stroke: c.color, 'stroke-width': c.width || 1.2,
+      'stroke-dasharray': c.dash || '', opacity: c.opacity || 1
+    }));
+  });
+
+  // draw points
+  opts.points.forEach(p => {
+    s.appendChild(svgEl('circle', { cx: tx(p.x), cy: ty(p.y), r: 4, fill: TOK.red, stroke: '#fff', 'stroke-width': 1.5 }));
+  });
+
+  // "y-intercept" highlight if requested
+  if (opts.showYIntercept) {
+    // faint y-axis band
+    s.appendChild(svgEl('rect', {
+      x: pad + 12 - 3, y: 8, width: 6, height: H - 16,
+      fill: TOK.gold, opacity: .25
+    }));
+  }
+}
+
+function randomPoly(deg) {
+  const c = [];
+  for (let i = 0; i <= deg; i++) c.push((Math.random() * 2 - 1) * 1.2);
+  return c;
+}
+// Build several polynomials of degree `deg` that all pass through the given points.
+function curvesThrough(points, deg, count, colorSeed) {
+  // base polynomial: Lagrange on `points` then padded/extended with a random polynomial that vanishes on these xs
+  const base = computeLagrange(points);
+  while (base.length < deg + 1) base.push(0);
+  let factor = [1];
+  for (const p of points) factor = polyMul(factor, [-p.x, 1]);
+  const leftover = deg + 1 - factor.length;
+  const curves = [];
+  const palette = ['#0d6efd', '#198754', '#8a1c2a', '#7a4c00', '#8e44ad', '#16a085'];
+  for (let i = 0; i < count; i++) {
+    const H = [];
+    for (let j = 0; j <= Math.max(0, leftover); j++) H.push((Math.random() * 2 - 1) * 1.1);
+    const add = polyMul(factor, H);
+    let wg = polyAdd(base, add);
+    if (wg.length > deg + 1) wg = wg.slice(0, deg + 1);
+    curves.push({ poly: wg, color: palette[(i + (colorSeed || 0)) % palette.length], width: 1.6, opacity: 0.85 });
+  }
+  return curves;
+}
+
+function drawAllGeoPrimers() {
+  // t = 2 (line)
+  drawGeoMini('geo2Left', {
+    points: [{ x: 2, y: 0.6 }],
+    curves: [
+      { poly: [0.6 - 2 * 0.4, 0.4], color: '#0d6efd', width: 1.3, opacity: .7 },
+      { poly: [0.6 - 2 * -0.6, -0.6], color: '#198754', width: 1.3, opacity: .7 },
+      { poly: [0.6, 0], color: '#8a1c2a', width: 1.3, opacity: .7 },
+      { poly: [0.6 - 2 * 0.9, 0.9], color: '#7a4c00', width: 1.3, opacity: .7 },
+      { poly: [0.6 - 2 * -0.2, -0.2], color: '#8e44ad', width: 1.3, opacity: .7 }
+    ],
+    showYIntercept: true
+  });
+  // 2 points -> unique line
+  const linePts = [{ x: 1, y: -0.8 }, { x: 3, y: 1.1 }];
+  drawGeoMini('geo2Right', {
+    points: linePts,
+    curves: [{ poly: computeLagrange(linePts), color: TOK.red, width: 2.2 }],
+    showYIntercept: true
+  });
+
+  // t = 3 (parabola)
+  const parabPts2 = [{ x: 1, y: -0.8 }, { x: 3, y: 0.6 }];
+  drawGeoMini('geo3Left', {
+    points: parabPts2,
+    curves: curvesThrough(parabPts2, 2, 5, 0),
+    showYIntercept: true
+  });
+  const parabPts3 = [{ x: 1, y: -0.9 }, { x: 2.3, y: 1.4 }, { x: 3.6, y: -0.3 }];
+  drawGeoMini('geo3Right', {
+    points: parabPts3,
+    curves: [{ poly: computeLagrange(parabPts3), color: TOK.red, width: 2.2 }],
+    showYIntercept: true
+  });
+
+  // t = 4 (cubic)
+  const cubPts3 = [{ x: 0.6, y: -0.7 }, { x: 2, y: 0.9 }, { x: 3.4, y: -0.4 }];
+  drawGeoMini('geo4Left', {
+    points: cubPts3,
+    curves: curvesThrough(cubPts3, 3, 5, 2),
+    showYIntercept: true
+  });
+  const cubPts4 = [{ x: 0.5, y: -0.6 }, { x: 1.6, y: 1.0 }, { x: 2.8, y: -0.7 }, { x: 3.8, y: 0.8 }];
+  drawGeoMini('geo4Right', {
+    points: cubPts4,
+    curves: [{ poly: computeLagrange(cubPts4), color: TOK.red, width: 2.2 }],
+    showYIntercept: true
+  });
+}
+
+/* ===================== Init ===================== */
+document.addEventListener('DOMContentLoaded', () => {
+  generatePolynomial();
+  drawAllGeoPrimers();
+  // If we load defaulting to Background, still keep the canvas ready
+  setTimeout(() => { /* canvas resize happens on tab switch */ }, 0);
+});
+</script>
 </body>
 </html>
