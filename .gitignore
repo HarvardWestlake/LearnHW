@@ -3,6 +3,8 @@
 
 .DS_Store
 
+.cursor/
+
 .firebase/
 
 public/app/assets/
