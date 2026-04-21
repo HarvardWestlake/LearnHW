@@ -945,9 +945,12 @@ body { background: #f2f0ec; }
   text-align: center;
   margin-bottom: 2rem;
 }
-.widgets-page h2 {
+.widgets-page > p {
+  padding-left: 1.5rem;
+}
+.widgets-page > h2 {
   color: #000;
-  margin: 2rem 0 1rem;
+  margin: 2rem 1.5rem 1rem;
   padding-bottom: 0.5rem;
   border-bottom: 2px solid var(--hw-red);
 }
@@ -955,7 +958,10 @@ body { background: #f2f0ec; }
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
   gap: 2rem;
-  padding: 1rem;
+  padding: 0;
+}
+.widgets-page > .widgets-grid {
+  padding-inline: 1.5rem;
 }
 .widget-card {
   display: block;

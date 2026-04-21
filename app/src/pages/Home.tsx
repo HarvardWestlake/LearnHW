@@ -63,12 +63,12 @@ export default function Home() {
       <div className="container widgets-page">
         <h1 className="h1">Class Resources</h1>
 
-        <h2>Subjects</h2>
+        <h2 className="h5 eyebrow">Subjects</h2>
         <div className="widgets-grid">
           {SUBJECTS.map(s => <SubjectCard key={s.key} subject={s} />)}
         </div>
 
-        <h2>Admin</h2>
+        <h2 className="h5 eyebrow">Admin</h2>
         <div className="widgets-grid">
           <Link className="widget-card" to="/admin">
             <div className="title-row">

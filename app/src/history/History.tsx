@@ -6,6 +6,7 @@ export default function History() {
       <div className="container widgets-page">
         <h1 className="h1">History</h1>
 
+        <h2 className="h5 eyebrow" style={{ marginTop: '2rem' }}>Tools &amp; Maps</h2>
         <div className="widgets-grid">
           <Link className="widget-card" to="/history/world">
             <div className="title-row">

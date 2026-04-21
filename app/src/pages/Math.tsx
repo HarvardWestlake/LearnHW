@@ -6,11 +6,9 @@ export default function Math() {
     <main className="page">
       <div className="container widgets-page">
         <h1 className="h1">Math</h1>
-        <p className="muted" style={{ marginTop: '.25rem' }}>
-          These are the original static math widgets, now accessible from inside the app.
-        </p>
 
-        <div className="widgets-grid" style={{ marginTop: '1rem' }}>
+        <h2 className="h5 eyebrow" style={{ marginTop: '2rem' }}>Interactive Tools</h2>
+        <div className="widgets-grid">
           {Object.entries(MATH_WIDGETS).map(([slug, w]) => (
             <Link key={slug} className="widget-card" to={`/math/${slug}`}>
               <div className="title-row">

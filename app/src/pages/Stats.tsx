@@ -6,11 +6,9 @@ export default function Stats() {
     <main className="page">
       <div className="container widgets-page">
         <h1 className="h1">Statistics</h1>
-        <p className="muted" style={{ marginTop: '.25rem' }}>
-          These are the original static stats widgets, now accessible from inside the app.
-        </p>
 
-        <div className="widgets-grid" style={{ marginTop: '1rem' }}>
+        <h2 className="h5 eyebrow" style={{ marginTop: '2rem' }}>Interactive Tools</h2>
+        <div className="widgets-grid">
           {Object.entries(STATS_WIDGETS).map(([slug, w]) => (
             <Link key={slug} className="widget-card" to={`/stats/${slug}`}>
               <div className="title-row">

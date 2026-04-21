@@ -51,6 +51,38 @@ export default function StyleGuide() {
           </div>
         </section>
 
+        {/* Subject Page Layout */}
+        <section className="panel">
+          <h2 className="h5 eyebrow">Subject Page Layout</h2>
+          <p className="muted">Demonstrates the standard subject page pattern: centered h1 title, subtitle, and one or more sectioned panels with eyebrow headers and widget grids.</p>
+          <div className="widgets-page" style={{ marginTop: '1rem' }}>
+            <h1 className="h1">Subject Name (Demo)</h1>
+            <p className="muted" style={{ marginTop: '.25rem' }}>
+              Short description of what this subject covers.
+            </p>
+            <section className="panel" style={{ marginTop: '2rem' }}>
+              <h2 className="h5 eyebrow">INTERACTIVE TOOLS</h2>
+              <p className="muted">Brief description of what this group of widgets covers.</p>
+              <div className="widgets-grid" style={{ marginTop: '1.25rem' }}>
+                <a className="widget-card" href="#">
+                  <div className="title-row">
+                    <h3>Widget Title</h3>
+                  </div>
+                  <p>Short description of what this widget does.</p>
+                  <span className="button">Open</span>
+                </a>
+                <a className="widget-card" href="#">
+                  <div className="title-row">
+                    <h3>Another Widget</h3>
+                  </div>
+                  <p>Short description of what this widget does.</p>
+                  <span className="button">Open</span>
+                </a>
+              </div>
+            </section>
+          </div>
+        </section>
+
         {/* Typography */}
         <section className="panel">
           <h2 className="h5 eyebrow">Typography Scale</h2>

@@ -5,11 +5,9 @@ export default function Econ() {
     <main className="page">
       <div className="container widgets-page">
         <h1 className="h1">Economics</h1>
-        <p className="muted" style={{ marginTop: '.25rem' }}>
-          These are the original static widgets, now accessible from inside the app.
-        </p>
 
-        <div className="widgets-grid" style={{ marginTop: '1rem' }}>
+        <h2 className="h5 eyebrow" style={{ marginTop: '2rem' }}>Interactive Tools</h2>
+        <div className="widgets-grid">
           <Link className="widget-card" to="/econ/imperfect-competitor">
             <div className="title-row">
               <h3>Imperfect Competitor</h3>
