@@ -22,6 +22,14 @@ export const MATH_WIDGETS: Record<string, WidgetInfo> = {
   'template': { title: 'Transformations Template', src: '/static/math/widgets/template/transformations-template.html' }
 }
 
+export const HTCS_LESSON_WIDGETS: Record<string, WidgetInfo> = {
+  'htcs-unit-6-day-1': { title: 'HTCS Unit 6 Day 1', src: '/static/code/lessons/HTCS/HTCS_Unit6_Day1.html' },
+  'htcs-unit-6-day-2': { title: 'HTCS Unit 6 Day 2', src: '/static/code/lessons/HTCS/HTCS_Unit6_Day2.html' },
+  'htcs-unit-6-day-3': { title: 'HTCS Unit 6 Day 3', src: '/static/code/lessons/HTCS/HTCS_Unit6_Day3.html' },
+  'htcs-unit-6-day-4': { title: 'HTCS Unit 6 Day 4', src: '/static/code/lessons/HTCS/HTCS_Unit6_Day4.html' },
+  'htcs-unit-6-day-5': { title: 'HTCS Unit 6 Day 5', src: '/static/code/lessons/HTCS/HTCS_Unit6_Day5.html' },
+}
+
 export const CODE_WIDGETS: Record<string, WidgetInfo> = {
   'array-list': { title: 'Java ArrayList — Memory Visualizer', src: '/static/code/widgets/array-list/array-list.html' },
   'blob-creation': { title: 'Blob Creation (Git-style)', src: '/static/code/widgets/blob-creation/blob-creation.html' },

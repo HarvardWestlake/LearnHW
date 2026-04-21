@@ -11,6 +11,24 @@ export default function Code() {
           and foundational computing concepts.
         </p>
 
+        {/* Lessons */}
+        <section className="panel" style={{ marginTop: '2rem' }}>
+          <h2 className="h5 eyebrow">LESSONS</h2>
+          <p className="muted">
+            Lecture presentations and lesson materials for the course.
+          </p>
+          <div className="widgets-grid" style={{ marginTop: '1.25rem' }}>
+            <Link className="widget-card" to="/code/htcs-lessons">
+              <div className="title-row">
+                <h3>Honors Topics in Computer Science</h3>
+              </div>
+              <p>Browse lesson presentations for the HTCS course, organized by unit and day.</p>
+              <span className="button">Open</span>
+            </Link>
+          </div>
+          <div className="divider" style={{ margin: '2rem 0' }} />
+        </section>
+
         {/* Memory & Data Structures */}
         <section className="panel" style={{ marginTop: '2rem' }}>
           <h2 className="h5 eyebrow">MEMORY &amp; DATA STRUCTURES</h2>

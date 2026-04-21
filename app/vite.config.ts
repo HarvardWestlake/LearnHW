@@ -44,7 +44,15 @@ export default defineConfig({
     host: '127.0.0.1',
     port: 5180,
     strictPort: true,
-    hmr: { host: '127.0.0.1', port: 5180 }
+    hmr: { host: '127.0.0.1', port: 5180 },
+    // #region agent log
+    proxy: {
+      '/ingest/': {
+        target: 'http://127.0.0.1:7510',
+        changeOrigin: true,
+      },
+    },
+    // #endregion
   },
   resolve: {
     dedupe: ['three']

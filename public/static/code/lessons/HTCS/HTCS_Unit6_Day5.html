@@ -1,0 +1,1693 @@
+<!DOCTYPE html>
+<html lang="en">
+
+  <head>
+    <meta charset="UTF-8" />
+    <title>HTCS · Day 05 · Lightning Networks</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Source+Serif+4:ital,opsz,wght@0,8..60,300..700;1,8..60,300..700&family=Inter+Tight:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap"
+      rel="stylesheet">
+    <style>
+      html,
+      body {
+        margin: 0;
+        padding: 0;
+        background: #000;
+        overflow: hidden;
+        height: 100%;
+      }
+
+      body {
+        font-family: "Source Serif 4", Georgia, serif;
+      }
+
+      textarea {
+        font-family: "JetBrains Mono", monospace;
+      }
+
+      button {
+        font-family: "Inter Tight", sans-serif;
+      }
+
+      * {
+        -webkit-font-smoothing: antialiased;
+      }
+    </style>
+
+    <script type="application/json" id="speaker-notes">
+[
+  "Cover — Day 5: Lightning Networks. Open with the question: if Bitcoin is so great, why can't you use it to buy a $4 coffee? The answer is speed, and Lightning is Bitcoin's answer.",
+  "Agenda — four questions, four parts. We trace from Bitcoin's 7 TPS ceiling all the way to a planet-scale payment network. Each part builds on the last.",
+  "Part 1 bridge — Before Lightning makes sense, we need to feel the problem. Bitcoin is deliberately slow — and the numbers compared to Visa are jarring.",
+  "The numbers say it all. Visa processes 4,000 TPS normally, with a hardware ceiling of 65,000. Bitcoin: 7 TPS. The 1 MB block limit and 10-minute block time are the bottleneck. Ask: why doesn't Bitcoin just raise the block size?",
+  "Scalability — Bigger blocks mean fewer people can run full nodes, which threatens decentralization. So Bitcoin deliberately keeps blocks small. To go faster, we need a layer that doesn't use the blockchain for every payment.",
+  "Part 2 bridge — Lightning's answer: don't put every transaction on the blockchain. Open a private bilateral ledger and settle only the final balance on-chain.",
+  "Lightning is a second layer. It doesn't change Bitcoin's rules — it adds a channel abstraction on top. Think of running a tab at a bar: you don't pay for each drink, you settle once at the end.",
+  "Opening a channel means establishing a direct private line between two parties. Bob and the Coffeeshop agree to transact. The channel is their shared, cryptographically secured ledger.",
+  "The funding mechanism is a 2-of-2 multi-signature Bitcoin address. Bob locks 0.05 BTC in the shared address. Neither party can spend the funds without both signatures — cryptographic escrow, no middleman.",
+  "The first balance sheet is signed by both parties. Bob will get: 0.05 BTC. Coffeeshop will get: 0 BTC. Both sign and keep a copy. This is their mutual agreement about the current state of funds.",
+  "Opening the channel requires exactly one blockchain transaction: the funding tx. After confirmation, Bob and the Coffeeshop can exchange millions of payments without ever touching the blockchain again.",
+  "Part 3 bridge — How do payments actually happen inside the channel? And what stops either party from cheating by submitting an old, more favorable balance sheet?",
+  "Every coffee purchase is an off-chain update. Bob pays 0.005 BTC for a coffee. He and the Coffeeshop agree on new balances: Bob 0.045, Coffeeshop 0.005. No blockchain transaction. No fee. Instant.",
+  "Each new balance sheet supersedes the previous one. Both cross out the old numbers, write new ones, and both sign. The replacement is bilateral — neither can update unilaterally.",
+  "After each update, both parties exchange signed copies. Bob holds the Coffeeshop's signature on the latest sheet; the Coffeeshop holds Bob's. Neither can unilaterally claim old balances.",
+  "To close the channel, either party broadcasts the latest signed balance sheet. The multi-sig releases funds: Bob 0.045 BTC, Coffeeshop 0.005 BTC. Total on-chain transactions: 2 — open and close.",
+  "100 coffees, 2 blockchain transactions. The whole point. The bottleneck never applies because the chain was never involved. Fees paid once. Confirmation latency paid once.",
+  "What stops Bob from broadcasting an earlier sheet where he had 0.05 BTC? The revocation mechanism: if a revoked sheet is broadcast, the other party can claim the entire channel balance. Cheating is self-defeating.",
+  "Part 4 bridge — Two-party channels are useful. But channels chaining together is the real breakthrough. The Lightning Network routes payments across chains of channels.",
+  "Alice and Bob open their own channel. Bob also has a channel with the Coffeeshop. Alice doesn't need a direct channel with the Coffeeshop to pay it.",
+  "Alice can pay the Coffeeshop by routing through Bob. Alice's channel with Bob updates; Bob's channel with the Coffeeshop updates — atomically. Bob earns a tiny routing fee.",
+  "The mechanism that makes routing trustless is the Hash Time-Locked Contract (HTLC). Alice locks her payment with a hash; the Coffeeshop reveals the preimage to claim it; each hop only collects if it successfully forwards.",
+  "At scale, the Lightning Network is a web of channels. Routing algorithms find paths. Payments hop across multiple nodes, each collecting a tiny fee. The blockchain never sees any of it.",
+  "Recap — Lightning: open a 2-of-2 multi-sig channel on-chain, trade off-chain with signed balance sheets, close on-chain once. Network routing makes any two people reachable without a direct channel.",
+  "Next class preview — Smart Contracts and Ethereum. Bitcoin scripts verify signatures. What if the script could verify anything a general-purpose programming language can express? Ask students to think about what you could build."
+]
+</script>
+  </head>
+
+  <body>
+    <deck-stage width="1920" height="1080"></deck-stage>
+    <div id="deck-root"></div>
+
+    <script>
+      (() => {
+        const DESIGN_W_DEFAULT = 1920;
+        const DESIGN_H_DEFAULT = 1080;
+        const STORAGE_PREFIX = 'deck-stage:slide:';
+        const OVERLAY_HIDE_MS = 1800;
+        const VALIDATE_ATTR = 'no_overflowing_text,no_overlapping_text,slide_sized_text';
+
+        const pad2 = (n) => String(n).padStart(2, '0');
+
+        const stylesheet = `
+    :host {
+      position: fixed;
+      inset: 0;
+      display: block;
+      background: #000;
+      color: #fff;
+      font-family: -apple-system, BlinkMacSystemFont, "Helvetica Neue", Helvetica, Arial, sans-serif;
+      overflow: hidden;
+    }
+
+    .stage {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .canvas {
+      position: relative;
+      transform-origin: center center;
+      flex-shrink: 0;
+      background: #fff;
+      will-change: transform;
+    }
+
+    ::slotted(*) {
+      position: absolute !important;
+      inset: 0 !important;
+      width: 100% !important;
+      height: 100% !important;
+      box-sizing: border-box !important;
+      overflow: hidden;
+      opacity: 0;
+      pointer-events: none;
+      visibility: hidden;
+    }
+    ::slotted([data-deck-active]) {
+      opacity: 1;
+      pointer-events: auto;
+      visibility: visible;
+    }
+
+    .tapzones {
+      position: fixed;
+      inset: 0;
+      display: flex;
+      z-index: 2147482000;
+      pointer-events: none;
+    }
+    .tapzone {
+      flex: 1;
+      pointer-events: auto;
+      -webkit-tap-highlight-color: transparent;
+    }
+    @media (hover: hover) and (pointer: fine) {
+      .tapzones { display: none; }
+    }
+
+    .overlay {
+      position: fixed;
+      left: 50%;
+      bottom: 22px;
+      transform: translate(-50%, 6px) scale(0.92);
+      filter: blur(6px);
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      padding: 4px;
+      background: #000;
+      color: #fff;
+      border-radius: 999px;
+      font-size: 12px;
+      font-feature-settings: "tnum" 1;
+      letter-spacing: 0.01em;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 260ms ease, transform 260ms cubic-bezier(.2,.8,.2,1), filter 260ms ease;
+      transform-origin: center bottom;
+      z-index: 2147483000;
+      user-select: none;
+    }
+    .overlay[data-visible] {
+      opacity: 1;
+      pointer-events: auto;
+      transform: translate(-50%, 0) scale(1);
+      filter: blur(0);
+    }
+
+    .btn {
+      appearance: none;
+      -webkit-appearance: none;
+      background: transparent;
+      border: 0;
+      margin: 0;
+      padding: 0;
+      color: inherit;
+      font: inherit;
+      cursor: default;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      height: 28px;
+      min-width: 28px;
+      border-radius: 999px;
+      color: rgba(255,255,255,0.72);
+      transition: background 140ms ease, color 140ms ease;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .btn:hover { background: rgba(255,255,255,0.12); color: #fff; }
+    .btn:active { background: rgba(255,255,255,0.18); }
+    .btn:focus { outline: none; }
+    .btn:focus-visible { outline: none; }
+    .btn::-moz-focus-inner { border: 0; }
+    .btn svg { width: 14px; height: 14px; display: block; }
+    .btn.reset,
+    .btn.presenter {
+      font-size: 11px;
+      font-weight: 500;
+      letter-spacing: 0.02em;
+      padding: 0 10px 0 12px;
+      gap: 6px;
+      color: rgba(255,255,255,0.72);
+    }
+    .btn.reset .kbd,
+    .btn.presenter .kbd {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 16px;
+      height: 16px;
+      padding: 0 4px;
+      font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+      font-size: 10px;
+      line-height: 1;
+      color: rgba(255,255,255,0.88);
+      background: rgba(255,255,255,0.12);
+      border-radius: 4px;
+    }
+
+    .count {
+      font-variant-numeric: tabular-nums;
+      color: #fff;
+      font-weight: 500;
+      padding: 0 8px;
+      min-width: 42px;
+      text-align: center;
+      font-size: 12px;
+    }
+    .count .sep { color: rgba(255,255,255,0.45); margin: 0 3px; font-weight: 400; }
+    .count .total { color: rgba(255,255,255,0.55); }
+
+    .divider {
+      width: 1px;
+      height: 14px;
+      background: rgba(255,255,255,0.18);
+      margin: 0 2px;
+    }
+
+    @media print {
+      :host {
+        position: static;
+        inset: auto;
+        background: none;
+        overflow: visible;
+        color: inherit;
+      }
+      .stage { position: static; display: block; }
+      .canvas {
+        transform: none !important;
+        width: auto !important;
+        height: auto !important;
+        background: none;
+        will-change: auto;
+      }
+      ::slotted(*) {
+        position: relative !important;
+        inset: auto !important;
+        width: var(--deck-design-w) !important;
+        height: var(--deck-design-h) !important;
+        box-sizing: border-box !important;
+        opacity: 1 !important;
+        visibility: visible !important;
+        pointer-events: auto;
+        break-after: page;
+        page-break-after: always;
+        break-inside: avoid;
+        overflow: hidden;
+      }
+      ::slotted(*:last-child) {
+        break-after: auto;
+        page-break-after: auto;
+      }
+      .overlay, .tapzones { display: none !important; }
+    }
+  `;
+
+        class DeckStage extends HTMLElement {
+          static get observedAttributes() { return ['width', 'height', 'noscale']; }
+
+          constructor() {
+            super();
+            this._root = this.attachShadow({ mode: 'open' });
+            this._index = 0;
+            this._slides = [];
+            this._notes = [];
+            this._hideTimer = null;
+            this._mouseIdleTimer = null;
+            this._storageKey = STORAGE_PREFIX + (location.pathname || '/');
+
+            this._onKey = this._onKey.bind(this);
+            this._onResize = this._onResize.bind(this);
+            this._onSlotChange = this._onSlotChange.bind(this);
+            this._onMouseMove = this._onMouseMove.bind(this);
+            this._onTapBack = this._onTapBack.bind(this);
+            this._onTapForward = this._onTapForward.bind(this);
+          }
+
+          get designWidth() {
+            return parseInt(this.getAttribute('width'), 10) || DESIGN_W_DEFAULT;
+          }
+          get designHeight() {
+            return parseInt(this.getAttribute('height'), 10) || DESIGN_H_DEFAULT;
+          }
+
+          connectedCallback() {
+            this._render();
+            this._loadNotes();
+            this._syncPrintPageRule();
+            window.addEventListener('keydown', this._onKey);
+            window.addEventListener('resize', this._onResize);
+            window.addEventListener('mousemove', this._onMouseMove, { passive: true });
+          }
+
+          disconnectedCallback() {
+            window.removeEventListener('keydown', this._onKey);
+            window.removeEventListener('resize', this._onResize);
+            window.removeEventListener('mousemove', this._onMouseMove);
+            if (this._hideTimer) clearTimeout(this._hideTimer);
+            if (this._mouseIdleTimer) clearTimeout(this._mouseIdleTimer);
+          }
+
+          attributeChangedCallback() {
+            if (this._canvas) {
+              this._canvas.style.width = this.designWidth + 'px';
+              this._canvas.style.height = this.designHeight + 'px';
+              this._canvas.style.setProperty('--deck-design-w', this.designWidth + 'px');
+              this._canvas.style.setProperty('--deck-design-h', this.designHeight + 'px');
+              this._fit();
+              this._syncPrintPageRule();
+            }
+          }
+
+          _render() {
+            const style = document.createElement('style');
+            style.textContent = stylesheet;
+
+            const stage = document.createElement('div');
+            stage.className = 'stage';
+
+            const canvas = document.createElement('div');
+            canvas.className = 'canvas';
+            canvas.style.width = this.designWidth + 'px';
+            canvas.style.height = this.designHeight + 'px';
+            canvas.style.setProperty('--deck-design-w', this.designWidth + 'px');
+            canvas.style.setProperty('--deck-design-h', this.designHeight + 'px');
+
+            const slot = document.createElement('slot');
+            slot.addEventListener('slotchange', this._onSlotChange);
+            canvas.appendChild(slot);
+            stage.appendChild(canvas);
+
+            const tapzones = document.createElement('div');
+            tapzones.className = 'tapzones export-hidden';
+            tapzones.setAttribute('aria-hidden', 'true');
+            const tzBack = document.createElement('div');
+            tzBack.className = 'tapzone tapzone--back';
+            const tzMid = document.createElement('div');
+            tzMid.className = 'tapzone tapzone--mid';
+            tzMid.style.pointerEvents = 'none';
+            const tzFwd = document.createElement('div');
+            tzFwd.className = 'tapzone tapzone--fwd';
+            tzBack.addEventListener('click', this._onTapBack);
+            tzFwd.addEventListener('click', this._onTapForward);
+            tapzones.append(tzBack, tzMid, tzFwd);
+
+            const overlay = document.createElement('div');
+            overlay.className = 'overlay export-hidden';
+            overlay.setAttribute('role', 'toolbar');
+            overlay.setAttribute('aria-label', 'Deck controls');
+            overlay.innerHTML = `
+        <button class="btn prev" type="button" aria-label="Previous slide" title="Previous (←)">
+          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 3L5 8l5 5"/></svg>
+        </button>
+        <span class="count" aria-live="polite"><span class="current">1</span><span class="sep">/</span><span class="total">1</span></span>
+        <button class="btn next" type="button" aria-label="Next slide" title="Next (→)">
+          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 3l5 5-5 5"/></svg>
+        </button>
+        <span class="divider"></span>
+        <button class="btn reset" type="button" aria-label="Reset to first slide" title="Reset (R)">Reset<span class="kbd">R</span></button>
+        <button class="btn presenter" type="button" aria-label="Open presenter view" title="Presenter view (P)">Presenter<span class="kbd">P</span></button>
+      `;
+
+            overlay.querySelector('.prev').addEventListener('click', () => this._go(this._index - 1, 'click'));
+            overlay.querySelector('.next').addEventListener('click', () => this._go(this._index + 1, 'click'));
+            overlay.querySelector('.reset').addEventListener('click', () => this._go(0, 'click'));
+            overlay.querySelector('.presenter').addEventListener('click', () => {
+              window.dispatchEvent(new KeyboardEvent('keydown', { key: 'p', bubbles: true }));
+            });
+
+            this._root.append(style, stage, tapzones, overlay);
+            this._canvas = canvas;
+            this._slot = slot;
+            this._overlay = overlay;
+            this._countEl = overlay.querySelector('.current');
+            this._totalEl = overlay.querySelector('.total');
+          }
+
+          _syncPrintPageRule() {
+            const id = 'deck-stage-print-page';
+            let tag = document.getElementById(id);
+            if (!tag) {
+              tag = document.createElement('style');
+              tag.id = id;
+              document.head.appendChild(tag);
+            }
+            tag.textContent =
+              '@page { size: ' + this.designWidth + 'px ' + this.designHeight + 'px; margin: 0; } ' +
+              '@media print { html, body { margin: 0 !important; padding: 0 !important; background: none !important; overflow: visible !important; height: auto !important; } ' +
+              '* { -webkit-print-color-adjust: exact; print-color-adjust: exact; } }';
+          }
+
+          _onSlotChange() {
+            this._collectSlides();
+            this._restoreIndex();
+            this._applyIndex({ showOverlay: false, broadcast: true, reason: 'init' });
+            this._fit();
+          }
+
+          _collectSlides() {
+            const assigned = this._slot.assignedElements({ flatten: true });
+            this._slides = assigned.filter((el) => {
+              const tag = el.tagName;
+              return tag !== 'TEMPLATE' && tag !== 'SCRIPT' && tag !== 'STYLE';
+            });
+
+            this._slides.forEach((slide, i) => {
+              const n = i + 1;
+              let label = slide.getAttribute('data-label');
+              if (!label) {
+                const existing = slide.getAttribute('data-screen-label');
+                if (existing) {
+                  label = existing.replace(/^\s*\d+\s*/, '').trim() || existing;
+                }
+              }
+              if (!label) {
+                const h = slide.querySelector('h1, h2, h3, [data-title]');
+                if (h) label = (h.textContent || '').trim().slice(0, 40);
+              }
+              if (!label) label = 'Slide';
+              slide.setAttribute('data-screen-label', `${pad2(n)} ${label}`);
+
+              if (!slide.hasAttribute('data-om-validate')) {
+                slide.setAttribute('data-om-validate', VALIDATE_ATTR);
+              }
+
+              slide.setAttribute('data-deck-slide', String(i));
+            });
+
+            if (this._totalEl) this._totalEl.textContent = String(this._slides.length || 1);
+            if (this._index >= this._slides.length) this._index = Math.max(0, this._slides.length - 1);
+          }
+
+          _loadNotes() {
+            const tag = document.getElementById('speaker-notes');
+            if (!tag) { this._notes = []; return; }
+            try {
+              const parsed = JSON.parse(tag.textContent || '[]');
+              if (Array.isArray(parsed)) this._notes = parsed;
+            } catch (e) {
+              console.warn('[deck-stage] Failed to parse #speaker-notes JSON:', e);
+              this._notes = [];
+            }
+          }
+
+          _restoreIndex() {
+            try {
+              const raw = localStorage.getItem(this._storageKey);
+              if (raw != null) {
+                const n = parseInt(raw, 10);
+                if (Number.isFinite(n) && n >= 0 && n < this._slides.length) {
+                  this._index = n;
+                }
+              }
+            } catch (e) { /* ignore */ }
+          }
+
+          _persistIndex() {
+            try { localStorage.setItem(this._storageKey, String(this._index)); }
+            catch (e) { /* ignore */ }
+          }
+
+          _applyIndex({ showOverlay = true, broadcast = true, reason = 'init' } = {}) {
+            if (!this._slides.length) return;
+            const prev = this._prevIndex == null ? -1 : this._prevIndex;
+            const curr = this._index;
+            this._slides.forEach((s, i) => {
+              if (i === curr) s.setAttribute('data-deck-active', '');
+              else s.removeAttribute('data-deck-active');
+            });
+            if (this._countEl) this._countEl.textContent = String(curr + 1);
+            this._persistIndex();
+
+            if (broadcast) {
+              try { window.postMessage({ slideIndexChanged: curr }, '*'); } catch (e) { }
+
+              const detail = {
+                index: curr,
+                previousIndex: prev,
+                total: this._slides.length,
+                slide: this._slides[curr] || null,
+                previousSlide: prev >= 0 ? (this._slides[prev] || null) : null,
+                reason: reason,
+              };
+              this.dispatchEvent(new CustomEvent('slidechange', {
+                detail,
+                bubbles: true,
+                composed: true,
+              }));
+            }
+
+            this._prevIndex = curr;
+            if (showOverlay) this._flashOverlay();
+          }
+
+          _flashOverlay() {
+            if (!this._overlay) return;
+            this._overlay.setAttribute('data-visible', '');
+            if (this._hideTimer) clearTimeout(this._hideTimer);
+            this._hideTimer = setTimeout(() => {
+              this._overlay.removeAttribute('data-visible');
+            }, OVERLAY_HIDE_MS);
+          }
+
+          _fit() {
+            if (!this._canvas) return;
+            if (this.hasAttribute('noscale')) {
+              this._canvas.style.transform = 'none';
+              return;
+            }
+            const vw = window.innerWidth;
+            const vh = window.innerHeight;
+            const s = Math.min(vw / this.designWidth, vh / this.designHeight);
+            this._canvas.style.transform = `scale(${s})`;
+          }
+
+          _onResize() { this._fit(); }
+          _onMouseMove() { this._flashOverlay(); }
+
+          _onTapBack(e) {
+            e.preventDefault();
+            this._go(this._index - 1, 'tap');
+          }
+
+          _onTapForward(e) {
+            e.preventDefault();
+            this._go(this._index + 1, 'tap');
+          }
+
+          _onKey(e) {
+            const t = e.target;
+            if (t && (t.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName))) return;
+            if (e.metaKey || e.ctrlKey || e.altKey) return;
+
+            const key = e.key;
+            let handled = true;
+
+            if (key === 'ArrowRight' || key === 'PageDown' || key === ' ' || key === 'Spacebar') {
+              this._go(this._index + 1, 'keyboard');
+            } else if (key === 'ArrowLeft' || key === 'PageUp') {
+              this._go(this._index - 1, 'keyboard');
+            } else if (key === 'Home') {
+              this._go(0, 'keyboard');
+            } else if (key === 'End') {
+              this._go(this._slides.length - 1, 'keyboard');
+            } else if (key === 'r' || key === 'R') {
+              this._go(0, 'keyboard');
+            } else if (/^[0-9]$/.test(key)) {
+              const n = key === '0' ? 9 : parseInt(key, 10) - 1;
+              if (n < this._slides.length) this._go(n, 'keyboard');
+            } else {
+              handled = false;
+            }
+
+            if (handled) {
+              e.preventDefault();
+              this._flashOverlay();
+            }
+          }
+
+          _go(i, reason = 'api') {
+            if (!this._slides.length) return;
+            const clamped = Math.max(0, Math.min(this._slides.length - 1, i));
+            if (clamped === this._index) {
+              this._flashOverlay();
+              return;
+            }
+            this._index = clamped;
+            this._applyIndex({ showOverlay: true, broadcast: true, reason });
+          }
+
+          get index() { return this._index; }
+          get length() { return this._slides.length; }
+          goTo(i) { this._go(i, 'api'); }
+          next() { this._go(this._index + 1, 'api'); }
+          prev() { this._go(this._index - 1, 'api'); }
+          reset() { this._go(0, 'api'); }
+        }
+
+        if (!customElements.get('deck-stage')) {
+          customElements.define('deck-stage', DeckStage);
+        }
+      })();
+
+    </script>
+    <script src="https://unpkg.com/react@18.3.1/umd/react.development.js"
+      integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L"
+      crossorigin="anonymous"></script>
+    <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js"
+      integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm"
+      crossorigin="anonymous"></script>
+    <script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js"
+      integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y"
+      crossorigin="anonymous"></script>
+
+    <script>
+      (() => {
+        const COLORS = {
+          cream: '#F5EFE3', creamDark: '#ECE4D2', paper: '#FBF7EE',
+          ink: '#0F1F3A', inkSoft: '#2B3A5B',
+          rule: '#C9BFA7', ruleFaint: '#E2D9C3',
+          accent: '#A8341E', accentSoft: '#C96A52', gold: '#B8893B',
+          muted: '#7E7560', danger: '#9B2A1B', ok: '#3B6E4A',
+        };
+        const TYPE_SCALE = { eyebrow: 26, small: 26, body: 32, bodyLg: 36, subtitle: 44, titleSm: 56, title: 72, titleLg: 96, display: 140 };
+        const SPACING = { paddingTop: 100, paddingBottom: 90, paddingX: 120, titleGap: 52, itemGap: 28, sectionGap: 64 };
+        const FONTS = {
+          serif: '"Source Serif 4", "Source Serif Pro", "Iowan Old Style", Georgia, "Times New Roman", serif',
+          sans: '"Inter Tight", "Söhne", "Helvetica Neue", Helvetica, Arial, sans-serif',
+          mono: '"JetBrains Mono", "IBM Plex Mono", "SF Mono", Menlo, Consolas, monospace',
+        };
+        window.HTCS_TOKENS = { COLORS, TYPE_SCALE, SPACING, FONTS };
+      })();
+    </script>
+
+    <script type="text/babel" data-presets="react">
+      {
+        /* global React */
+        const { COLORS, TYPE_SCALE, SPACING, FONTS } = window.HTCS_TOKENS;
+
+        function SlideFrame({ variant = 'page', pad = true, footer = true, slideNo, children, style = {} }) {
+          const bg = variant === 'ink' ? COLORS.ink
+            : variant === 'paper' ? COLORS.paper
+              : variant === 'bleed' ? COLORS.cream
+                : COLORS.cream;
+          const fg = variant === 'ink' ? COLORS.paper : COLORS.ink;
+
+          return (
+            <div style={{
+              width: '100%', height: '100%', background: bg, color: fg,
+              fontFamily: FONTS.serif, position: 'relative', overflow: 'hidden', ...style,
+            }}>
+              <div style={{
+                position: 'absolute', inset: 0,
+                padding: pad ? `${SPACING.paddingTop}px ${SPACING.paddingX}px ${SPACING.paddingBottom}px` : 0,
+                display: 'flex', flexDirection: 'column',
+              }}>
+                {children}
+              </div>
+              {footer && <SlideFooter variant={variant} slideNo={slideNo} />}
+            </div>
+          );
+        }
+
+        function SlideFooter({ variant, slideNo }) {
+          const dim = variant === 'ink' ? 'rgba(245,239,227,0.45)' : COLORS.muted;
+          const rule = variant === 'ink' ? 'rgba(245,239,227,0.18)' : COLORS.ruleFaint;
+          return (
+            <div style={{
+              position: 'absolute', left: SPACING.paddingX, right: SPACING.paddingX, bottom: 36,
+              display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+              fontFamily: FONTS.sans, fontSize: 24, letterSpacing: '0.16em', textTransform: 'uppercase',
+              color: dim, borderTop: `1px solid ${rule}`, paddingTop: 18,
+            }}>
+              <span>HTCS · Unit 6 · Day 05</span>
+              <span>Lightning Networks</span>
+            </div>
+          );
+        }
+
+        function Eyebrow({ children, color, style = {} }) {
+          return (
+            <div style={{
+              fontFamily: FONTS.sans, fontSize: TYPE_SCALE.eyebrow, letterSpacing: '0.24em',
+              textTransform: 'uppercase', fontWeight: 500, color: color || COLORS.accent,
+              marginBottom: 24, ...style,
+            }}>{children}</div>
+          );
+        }
+
+        function Title({ children, size = 'title', color, style = {} }) {
+          const fs = TYPE_SCALE[size] || TYPE_SCALE.title;
+          return (
+            <h1 style={{
+              fontFamily: FONTS.serif, fontWeight: 500, fontSize: fs, lineHeight: 1.05,
+              letterSpacing: '-0.015em', color: color || COLORS.ink, margin: 0,
+              textWrap: 'balance', ...style,
+            }}>{children}</h1>
+          );
+        }
+
+        function Subtitle({ children, color, style = {} }) {
+          return (
+            <div style={{
+              fontFamily: FONTS.serif, fontStyle: 'italic', fontSize: TYPE_SCALE.subtitle,
+              lineHeight: 1.2, color: color || COLORS.inkSoft, margin: 0, marginTop: 20,
+              textWrap: 'balance', ...style,
+            }}>{children}</div>
+          );
+        }
+
+        function Body({ children, size = 'body', color, style = {} }) {
+          return (
+            <div style={{
+              fontFamily: FONTS.serif, fontSize: TYPE_SCALE[size] || TYPE_SCALE.body,
+              lineHeight: 1.38, color: color || COLORS.inkSoft, textWrap: 'pretty', ...style,
+            }}>{children}</div>
+          );
+        }
+
+        function Rule({ color, style = {} }) {
+          return <div style={{ height: 1, background: color || COLORS.rule, width: '100%', ...style }} />;
+        }
+
+        function Mono({ children, style = {} }) {
+          return (
+            <span style={{
+              fontFamily: FONTS.mono, fontSize: '0.88em', letterSpacing: '-0.01em',
+              color: COLORS.ink, ...style,
+            }}>{children}</span>
+          );
+        }
+
+        function Numeral({ n, color, style = {} }) {
+          return (
+            <div style={{
+              fontFamily: FONTS.serif, fontStyle: 'italic', fontWeight: 400,
+              fontSize: 56, color: color || COLORS.accent, lineHeight: 1, ...style,
+            }}>{String(n).padStart(2, '0')}</div>
+          );
+        }
+
+        function Callout({ kicker, children, tone = 'default', style = {} }) {
+          const c = tone === 'danger' ? COLORS.danger : tone === 'ok' ? COLORS.ok : COLORS.accent;
+          return (
+            <div style={{ borderTop: `1px solid ${COLORS.rule}`, borderBottom: `1px solid ${COLORS.rule}`, padding: '28px 0', ...style }}>
+              {kicker && <Eyebrow color={c} style={{ marginBottom: 14 }}>{kicker}</Eyebrow>}
+              <div style={{ fontFamily: FONTS.serif, fontSize: TYPE_SCALE.bodyLg, color: COLORS.ink, lineHeight: 1.3 }}>
+                {children}
+              </div>
+            </div>
+          );
+        }
+
+        Object.assign(window, { SlideFrame, SlideFooter, Eyebrow, Title, Subtitle, Body, Rule, Mono, Numeral, Callout });
+      }
+    </script>
+
+    <script type="text/babel" data-presets="react">
+      {
+        /* global React */
+        const { COLORS, TYPE_SCALE, SPACING, FONTS } = window.HTCS_TOKENS;
+        const { SlideFrame, Eyebrow, Title, Subtitle, Body, Rule, Mono, Numeral, Callout } = window;
+
+        // ── 01 · Cover ──────────────────────────────────────────────────────────────
+        function SlideCover() {
+          return (
+            <SlideFrame variant="bleed" footer={false} pad={false}>
+              <div style={{ position: 'absolute', inset: 0, display: 'grid', gridTemplateColumns: '1fr 1fr' }}>
+                <div style={{ padding: '100px 120px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+                  <div>
+                    <div style={{ fontFamily: FONTS.sans, fontSize: 24, letterSpacing: '0.28em', textTransform: 'uppercase', color: COLORS.accent, marginBottom: 32 }}>Honors Topics in Computer Science</div>
+                    <div style={{ fontFamily: FONTS.serif, fontStyle: 'italic', fontSize: 40, color: COLORS.inkSoft, marginBottom: 28 }}>Day 05</div>
+                    <Title size="titleLg" style={{ fontSize: 110, lineHeight: 0.98 }}>
+                      Lightning<br />
+                      <span style={{ fontStyle: 'italic', color: COLORS.accent }}>Networks</span>
+                    </Title>
+                    <Subtitle style={{ fontSize: 38, marginTop: 40 }}>
+                      How Bitcoin moves at the speed of light with off-chain payment channels.
+                    </Subtitle>
+                  </div>
+                  <div style={{ display: 'flex', gap: 48, fontFamily: FONTS.sans, fontSize: 24, letterSpacing: '0.2em', textTransform: 'uppercase', color: COLORS.muted }}>
+                    <span>HTCS · Unit 6 · Day 05</span>
+                    <span>lecture + demo</span>
+                  </div>
+                </div>
+
+                <div style={{ background: COLORS.ink, position: 'relative', overflow: 'hidden' }}>
+                  <div style={{ position: 'absolute', top: 60, left: 60, right: 60, bottom: 260 }}>
+                    <svg width="100%" height="100%" viewBox="0 0 760 580" preserveAspectRatio="xMidYMid meet">
+                      <line x1="380" y1="290" x2="120" y2="140" stroke="rgba(184,137,59,0.4)" strokeWidth="2.5"/>
+                      <line x1="380" y1="290" x2="640" y2="140" stroke="rgba(184,137,59,0.4)" strokeWidth="2.5"/>
+                      <line x1="380" y1="290" x2="120" y2="440" stroke="rgba(184,137,59,0.4)" strokeWidth="2.5"/>
+                      <line x1="380" y1="290" x2="640" y2="440" stroke="rgba(184,137,59,0.4)" strokeWidth="2.5"/>
+                      <line x1="120" y1="140" x2="640" y2="140" stroke="rgba(184,137,59,0.22)" strokeWidth="1.5"/>
+                      <line x1="120" y1="440" x2="640" y2="440" stroke="rgba(184,137,59,0.22)" strokeWidth="1.5"/>
+                      <line x1="120" y1="140" x2="120" y2="440" stroke="rgba(184,137,59,0.22)" strokeWidth="1.5"/>
+                      <line x1="640" y1="140" x2="640" y2="440" stroke="rgba(184,137,59,0.22)" strokeWidth="1.5"/>
+                      <line x1="380" y1="50" x2="380" y2="290" stroke="rgba(184,137,59,0.28)" strokeWidth="1.5"/>
+                      <line x1="380" y1="290" x2="380" y2="530" stroke="rgba(184,137,59,0.28)" strokeWidth="1.5"/>
+                      <circle cx="380" cy="290" r="20" fill={COLORS.gold} opacity="0.9"/>
+                      <circle cx="120" cy="140" r="13" fill="rgba(184,137,59,0.65)"/>
+                      <circle cx="640" cy="140" r="13" fill="rgba(184,137,59,0.65)"/>
+                      <circle cx="120" cy="440" r="13" fill="rgba(184,137,59,0.65)"/>
+                      <circle cx="640" cy="440" r="13" fill="rgba(184,137,59,0.65)"/>
+                      <circle cx="380" cy="50"  r="9"  fill="rgba(184,137,59,0.38)"/>
+                      <circle cx="380" cy="530" r="9"  fill="rgba(184,137,59,0.38)"/>
+                    </svg>
+                  </div>
+                  <div style={{ position: 'absolute', bottom: 60, left: 60, right: 60, borderTop: '1px solid rgba(245,239,227,0.35)', paddingTop: 24, color: COLORS.paper, fontFamily: FONTS.serif, fontStyle: 'italic', fontSize: 32, lineHeight: 1.3, background: COLORS.ink }}>
+                    &ldquo;The blockchain settles debts, not coffees.&rdquo;
+                  </div>
+                </div>
+              </div>
+            </SlideFrame>
+          );
+        }
+
+        // ── 02 · Agenda ─────────────────────────────────────────────────────────────
+        function SlideAgenda() {
+          const items = [
+            ['01', 'The Problem',       'Why is Bitcoin too slow for everyday payments?'],
+            ['02', 'Payment Channels',  'How do two parties trade off-chain without trust?'],
+            ['03', 'Channel Mechanics', 'How do signed balance sheets enforce honesty?'],
+            ['04', 'The Network',       'How does routing let anyone pay anyone?'],
+          ];
+          return (
+            <SlideFrame>
+              <Eyebrow>Today&rsquo;s agenda</Eyebrow>
+              <Title>Four questions about <em style={{ fontStyle: 'italic', color: COLORS.accent }}>Lightning.</em></Title>
+              <div style={{ marginTop: 50, flex: 1 }}>
+                {items.map(([n, t, d], i) => (
+                  <div key={n} style={{ display: 'grid', gridTemplateColumns: '90px 1.1fr 2fr', gap: 34, padding: '20px 0', borderTop: `1px solid ${COLORS.ruleFaint}`, borderBottom: i === items.length - 1 ? `1px solid ${COLORS.ruleFaint}` : 'none' }}>
+                    <Numeral n={n} />
+                    <div style={{ fontFamily: FONTS.serif, fontSize: 40 }}>{t}</div>
+                    <Body size="bodyLg">{d}</Body>
+                  </div>
+                ))}
+              </div>
+            </SlideFrame>
+          );
+        }
+
+        // ── 03 · Part 01 divider ────────────────────────────────────────────────────
+        function SlidePart1Divider() {
+          return (
+            <SlideFrame variant="ink" footer={false}>
+              <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+                <div style={{ fontFamily: FONTS.sans, fontSize: 26, letterSpacing: '0.32em', textTransform: 'uppercase', color: COLORS.gold, marginBottom: 36 }}>Part 01</div>
+                <Title color={COLORS.paper} size="display" style={{ lineHeight: 0.95, fontSize: 180 }}>
+                  The<br />Problem.
+                </Title>
+                <Subtitle color="rgba(245,239,227,0.75)" style={{ fontSize: 40, marginTop: 48, maxWidth: 1100 }}>
+                  Bitcoin processes 7 transactions per second &mdash; why does that matter?
+                </Subtitle>
+              </div>
+            </SlideFrame>
+          );
+        }
+
+        // ── 04 · Visa vs Bitcoin ────────────────────────────────────────────────────
+        function SlideVisaVsBitcoin() {
+          return (
+            <SlideFrame>
+              <Eyebrow>Bitcoin vs Visa</Eyebrow>
+              <Title>a tale of <em style={{ fontStyle: 'italic', color: COLORS.accent }}>two speeds</em></Title>
+              <div style={{ marginTop: 52, flex: 1, display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 40 }}>
+                <div style={{ border: `1px solid ${COLORS.rule}`, borderRadius: 8, padding: '48px 52px', display: 'flex', flexDirection: 'column', gap: 24 }}>
+                  <div style={{ fontFamily: FONTS.sans, fontSize: 22, letterSpacing: '0.28em', textTransform: 'uppercase', color: COLORS.muted }}>Visa</div>
+                  <div style={{ fontFamily: FONTS.serif, fontSize: 80, fontWeight: 400, lineHeight: 1, color: COLORS.ink }}>4,000</div>
+                  <Body size="bodyLg">transactions / second (avg)</Body>
+                  <Rule />
+                  <div style={{ display: 'flex', alignItems: 'baseline', gap: 12 }}>
+                    <span style={{ fontFamily: FONTS.mono, fontSize: 36, color: COLORS.ok }}>65,000 TPS</span>
+                    <Body size="body" style={{ color: COLORS.muted }}>peak capacity</Body>
+                  </div>
+                </div>
+                <div style={{ border: `1px solid ${COLORS.rule}`, borderRadius: 8, padding: '48px 52px', display: 'flex', flexDirection: 'column', gap: 24, background: COLORS.creamDark }}>
+                  <div style={{ fontFamily: FONTS.sans, fontSize: 22, letterSpacing: '0.28em', textTransform: 'uppercase', color: COLORS.muted }}>Bitcoin</div>
+                  <div style={{ fontFamily: FONTS.serif, fontSize: 80, fontWeight: 400, lineHeight: 1, color: COLORS.accent }}>7</div>
+                  <Body size="bodyLg">transactions / second</Body>
+                  <Rule />
+                  <div style={{ display: 'flex', alignItems: 'baseline', gap: 12 }}>
+                    <span style={{ fontFamily: FONTS.mono, fontSize: 36, color: COLORS.accent }}>1 MB</span>
+                    <Body size="body" style={{ color: COLORS.muted }}>block size limit</Body>
+                  </div>
+                </div>
+              </div>
+            </SlideFrame>
+          );
+        }
+
+        // ── 05 · Scalability ────────────────────────────────────────────────────────
+        function SlideScalability() {
+          return (
+            <SlideFrame>
+              <Eyebrow>The bottleneck</Eyebrow>
+              <Title>every transaction waits for a <em style={{ fontStyle: 'italic', color: COLORS.accent }}>new block</em></Title>
+              <Body size="bodyLg" style={{ marginTop: 48, maxWidth: 1300 }}>
+                Bitcoin adds a block roughly every 10 minutes. With a 1 MB block size, the network handles about 7 transactions per second &mdash; a hard ceiling. Raising the limit seems obvious, but larger blocks mean fewer people can run full nodes, threatening decentralization.
+              </Body>
+              <Callout kicker="The trilemma" style={{ marginTop: 52, maxWidth: 1300 }}>
+                Bitcoin deliberately chose decentralization and security over speed. To gain speed, we need a layer that doesn&rsquo;t ask the blockchain to record every payment.
+              </Callout>
+            </SlideFrame>
+          );
+        }
+
+        // ── 06 · Part 02 divider ────────────────────────────────────────────────────
+        function SlidePart2Divider() {
+          return (
+            <SlideFrame variant="ink" footer={false}>
+              <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+                <div style={{ fontFamily: FONTS.sans, fontSize: 26, letterSpacing: '0.32em', textTransform: 'uppercase', color: COLORS.gold, marginBottom: 36 }}>Part 02</div>
+                <Title color={COLORS.paper} size="display" style={{ lineHeight: 0.95, fontSize: 180 }}>
+                  Payment<br />Channels.
+                </Title>
+                <Subtitle color="rgba(245,239,227,0.75)" style={{ fontSize: 40, marginTop: 48, maxWidth: 1100 }}>
+                  How two parties open a private off-chain ledger and touch the blockchain only to open and close it.
+                </Subtitle>
+              </div>
+            </SlideFrame>
+          );
+        }
+
+        // ── 07 · Lightning intro ────────────────────────────────────────────────────
+        function SlideLightningIntro() {
+          return (
+            <SlideFrame>
+              <Eyebrow>The solution</Eyebrow>
+              <Title>Lightning moves payments <em style={{ fontStyle: 'italic', color: COLORS.accent }}>off-chain</em></Title>
+              <Body size="bodyLg" style={{ marginTop: 48, maxWidth: 1300 }}>
+                The Lightning Network is a second layer built on top of Bitcoin. Instead of writing every payment to the blockchain, two parties open a <em>payment channel</em> &mdash; a private, cryptographically secured ledger they update between themselves.
+              </Body>
+              <Body size="bodyLg" style={{ marginTop: 36, maxWidth: 1300 }}>
+                The blockchain only records two events: the channel opening and the final closing balance. Everything in between is off-chain &mdash; instant and nearly free.
+              </Body>
+            </SlideFrame>
+          );
+        }
+
+        // ── 08 · Opening a channel ──────────────────────────────────────────────────
+        function SlideOpeningAChannel() {
+          return (
+            <SlideFrame>
+              <Eyebrow>Step 1</Eyebrow>
+              <Title>Bob opens a channel with the <em style={{ fontStyle: 'italic', color: COLORS.accent }}>Coffeeshop</em></Title>
+              <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <svg width="1100" height="260" viewBox="0 0 1100 260">
+                  <rect x="60" y="70" width="240" height="120" rx="8" fill={COLORS.creamDark} stroke={COLORS.rule} strokeWidth="2"/>
+                  <text x="180" y="140" textAnchor="middle" fontFamily={FONTS.serif} fontSize="46" fill={COLORS.ink}>Bob</text>
+                  <line x1="300" y1="130" x2="760" y2="130" stroke={COLORS.accent} strokeWidth="6" strokeLinecap="round"/>
+                  <polygon points="760,117 782,130 760,143" fill={COLORS.accent}/>
+                  <polygon points="300,117 278,130 300,143" fill={COLORS.accent}/>
+                  <text x="530" y="103" textAnchor="middle" fontFamily={FONTS.sans} fontSize="26" letterSpacing="0.12em" fill={COLORS.muted}>PAYMENT CHANNEL</text>
+                  <rect x="760" y="70" width="280" height="120" rx="8" fill={COLORS.creamDark} stroke={COLORS.rule} strokeWidth="2"/>
+                  <text x="900" y="140" textAnchor="middle" fontFamily={FONTS.serif} fontSize="42" fill={COLORS.ink}>Coffeeshop</text>
+                </svg>
+              </div>
+              <Body size="bodyLg" style={{ maxWidth: 1300 }}>
+                A payment channel is a direct, private connection between two parties. Before any trading begins, both agree to open it &mdash; establishing the cryptographic link that secures their transactions.
+              </Body>
+            </SlideFrame>
+          );
+        }
+
+        // ── 09 · Multi-sig funding ──────────────────────────────────────────────────
+        function SlideMultiSigFunding() {
+          return (
+            <SlideFrame>
+              <Eyebrow>Funding the channel</Eyebrow>
+              <Title>funds are locked in a <em style={{ fontStyle: 'italic', color: COLORS.accent }}>multi-sig address</em></Title>
+              <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <svg width="960" height="340" viewBox="0 0 960 340">
+                  <rect x="330" y="16" width="300" height="110" rx="8" fill={COLORS.ink} stroke={COLORS.gold} strokeWidth="2.5"/>
+                  <text x="480" y="62" textAnchor="middle" fontFamily={FONTS.sans} fontSize="22" letterSpacing="0.14em" fill={COLORS.gold}>2-OF-2 MULTI-SIG</text>
+                  <text x="480" y="100" textAnchor="middle" fontFamily={FONTS.serif} fontStyle="italic" fontSize="28" fill="rgba(245,239,227,0.7)">cryptographic escrow</text>
+                  <rect x="40" y="200" width="220" height="110" rx="8" fill={COLORS.creamDark} stroke={COLORS.rule} strokeWidth="2"/>
+                  <text x="150" y="253" textAnchor="middle" fontFamily={FONTS.serif} fontSize="42" fill={COLORS.ink}>Bob</text>
+                  <text x="150" y="292" textAnchor="middle" fontFamily={FONTS.mono} fontSize="28" fill={COLORS.accent}>0.05 BTC</text>
+                  <rect x="700" y="200" width="220" height="110" rx="8" fill={COLORS.creamDark} stroke={COLORS.rule} strokeWidth="2"/>
+                  <text x="810" y="248" textAnchor="middle" fontFamily={FONTS.serif} fontSize="38" fill={COLORS.ink}>Coffeeshop</text>
+                  <text x="810" y="290" textAnchor="middle" fontFamily={FONTS.mono} fontSize="28" fill={COLORS.muted}>0 BTC</text>
+                  <line x1="200" y1="200" x2="395" y2="126" stroke={COLORS.accent} strokeWidth="2.5"/>
+                  <polygon points="395,126 380,116 388,132" fill={COLORS.accent}/>
+                  <line x1="760" y1="200" x2="565" y2="126" stroke={COLORS.rule} strokeWidth="2.5"/>
+                  <polygon points="565,126 550,118 568,130" fill={COLORS.rule}/>
+                </svg>
+              </div>
+              <Body size="body" style={{ color: COLORS.inkSoft, maxWidth: 1300 }}>
+                Neither party can withdraw without the other&rsquo;s signature &mdash; the funds are in cryptographic escrow until the channel closes.
+              </Body>
+            </SlideFrame>
+          );
+        }
+
+        // ── 10 · Initial balance sheet ──────────────────────────────────────────────
+        function SlideInitialBalanceSheet() {
+          return (
+            <SlideFrame>
+              <Eyebrow>The ledger</Eyebrow>
+              <Title>both parties sign an <em style={{ fontStyle: 'italic', color: COLORS.accent }}>initial balance sheet</em></Title>
+              <div style={{ flex: 1, display: 'flex', gap: 80, alignItems: 'flex-start', marginTop: 52 }}>
+                <div style={{ flex: 1 }}>
+                  <Body size="bodyLg" style={{ marginBottom: 36 }}>
+                    Before any transactions, both parties agree on the starting state. They each sign a balance sheet and keep a copy.
+                  </Body>
+                  <Body size="bodyLg">
+                    This signed document is legally binding in the blockchain sense: either party can submit it at any time to close the channel and claim the stated funds.
+                  </Body>
+                </div>
+                <div style={{ width: 540, background: COLORS.ink, borderRadius: 8, padding: '40px 48px' }}>
+                  <div style={{ fontFamily: FONTS.sans, fontSize: 22, letterSpacing: '0.2em', textTransform: 'uppercase', color: COLORS.gold, marginBottom: 32 }}>Balance Sheet — Initial</div>
+                  <div style={{ marginBottom: 28 }}>
+                    <div style={{ fontFamily: FONTS.sans, fontSize: 20, color: 'rgba(245,239,227,0.55)', letterSpacing: '0.12em', textTransform: 'uppercase', marginBottom: 8 }}>Bob will get</div>
+                    <div style={{ fontFamily: FONTS.mono, fontSize: 52, color: COLORS.paper, lineHeight: 1 }}>0.05 BTC</div>
+                  </div>
+                  <div style={{ height: 1, background: 'rgba(245,239,227,0.15)', marginBottom: 28 }} />
+                  <div>
+                    <div style={{ fontFamily: FONTS.sans, fontSize: 20, color: 'rgba(245,239,227,0.55)', letterSpacing: '0.12em', textTransform: 'uppercase', marginBottom: 8 }}>Coffeeshop will get</div>
+                    <div style={{ fontFamily: FONTS.mono, fontSize: 52, color: COLORS.paper, lineHeight: 1 }}>0.00 BTC</div>
+                  </div>
+                  <div style={{ marginTop: 36, fontFamily: FONTS.serif, fontStyle: 'italic', fontSize: 24, color: 'rgba(245,239,227,0.5)' }}>signed by both parties</div>
+                </div>
+              </div>
+            </SlideFrame>
+          );
+        }
+
+        // ── 11 · On-chain open ──────────────────────────────────────────────────────
+        function SlideOnChainOpen() {
+          return (
+            <SlideFrame>
+              <Eyebrow>On the blockchain</Eyebrow>
+              <Title>opening the channel is <em style={{ fontStyle: 'italic', color: COLORS.accent }}>one transaction</em></Title>
+              <Body size="bodyLg" style={{ marginTop: 48, maxWidth: 1300 }}>
+                The funding transaction is broadcast to the Bitcoin network and confirmed in a block &mdash; this is the <em>only</em> on-chain event needed to open the channel. After confirmation, Bob and the Coffeeshop can trade back and forth as many times as they like.
+              </Body>
+              <Callout kicker="The key insight" style={{ marginTop: 52, maxWidth: 1300 }}>
+                None of those intermediate payments ever touch the blockchain. The miner fee is paid once, not per coffee.
+              </Callout>
+            </SlideFrame>
+          );
+        }
+
+        // ── 12 · Part 03 divider ────────────────────────────────────────────────────
+        function SlidePart3Divider() {
+          return (
+            <SlideFrame variant="ink" footer={false}>
+              <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+                <div style={{ fontFamily: FONTS.sans, fontSize: 26, letterSpacing: '0.32em', textTransform: 'uppercase', color: COLORS.gold, marginBottom: 36 }}>Part 03</div>
+                <Title color={COLORS.paper} size="display" style={{ lineHeight: 0.95, fontSize: 180 }}>
+                  Channel<br />Mechanics.
+                </Title>
+                <Subtitle color="rgba(245,239,227,0.75)" style={{ fontSize: 40, marginTop: 48, maxWidth: 1100 }}>
+                  How off-chain balance sheets track state, and why only the latest one counts.
+                </Subtitle>
+              </div>
+            </SlideFrame>
+          );
+        }
+
+        // ── 13 · Bob buys coffee ────────────────────────────────────────────────────
+        function SlideBobBuysCoffee() {
+          return (
+            <SlideFrame>
+              <Eyebrow>First transaction</Eyebrow>
+              <Title>Bob buys a coffee <em style={{ fontStyle: 'italic', color: COLORS.accent }}>off-chain</em></Title>
+              <Body size="bodyLg" style={{ marginTop: 48, maxWidth: 1300 }}>
+                Bob wants to pay 0.005 BTC for a coffee. He and the Coffeeshop agree on an updated balance: Bob&rsquo;s drops from 0.05 to 0.045 BTC; the Coffeeshop&rsquo;s rises from 0 to 0.005 BTC.
+              </Body>
+              <Body size="bodyLg" style={{ marginTop: 36, maxWidth: 1300, color: COLORS.accent }}>
+                No blockchain transaction. No miner fee. No waiting for block confirmation. The payment is instant.
+              </Body>
+              <Body size="bodyLg" style={{ marginTop: 36, maxWidth: 1300 }}>
+                They can repeat this process for every coffee Bob buys &mdash; updating the private balance sheet each time without touching the chain.
+              </Body>
+            </SlideFrame>
+          );
+        }
+
+        // ── 14 · Updated sheet ──────────────────────────────────────────────────────
+        function SlideUpdatedSheet() {
+          return (
+            <SlideFrame>
+              <Eyebrow>New balance</Eyebrow>
+              <Title>both parties sign the <em style={{ fontStyle: 'italic', color: COLORS.accent }}>updated sheet</em></Title>
+              <div style={{ flex: 1, display: 'flex', gap: 80, alignItems: 'flex-start', marginTop: 52 }}>
+                <div style={{ flex: 1 }}>
+                  <Body size="bodyLg" style={{ marginBottom: 36 }}>
+                    The old balance sheet is superseded. Both parties agree on new figures and both sign the replacement.
+                  </Body>
+                  <Body size="bodyLg">
+                    Each party now holds the other&rsquo;s signature on the new balance &mdash; a mutual, cryptographic commitment to the updated state.
+                  </Body>
+                </div>
+                <div style={{ width: 540, background: COLORS.ink, borderRadius: 8, padding: '40px 48px' }}>
+                  <div style={{ fontFamily: FONTS.sans, fontSize: 22, letterSpacing: '0.2em', textTransform: 'uppercase', color: COLORS.gold, marginBottom: 32 }}>Balance Sheet &mdash; Updated</div>
+                  <div style={{ marginBottom: 28 }}>
+                    <div style={{ fontFamily: FONTS.sans, fontSize: 20, color: 'rgba(245,239,227,0.55)', letterSpacing: '0.12em', textTransform: 'uppercase', marginBottom: 8 }}>Bob will get</div>
+                    <div style={{ fontFamily: FONTS.mono, fontSize: 34, color: COLORS.muted, textDecoration: 'line-through', lineHeight: 1 }}>0.05 BTC</div>
+                    <div style={{ fontFamily: FONTS.mono, fontSize: 52, color: COLORS.paper, lineHeight: 1.1, marginTop: 6 }}>0.045 BTC</div>
+                  </div>
+                  <div style={{ height: 1, background: 'rgba(245,239,227,0.15)', marginBottom: 28 }} />
+                  <div>
+                    <div style={{ fontFamily: FONTS.sans, fontSize: 20, color: 'rgba(245,239,227,0.55)', letterSpacing: '0.12em', textTransform: 'uppercase', marginBottom: 8 }}>Coffeeshop will get</div>
+                    <div style={{ fontFamily: FONTS.mono, fontSize: 34, color: COLORS.muted, textDecoration: 'line-through', lineHeight: 1 }}>0.00 BTC</div>
+                    <div style={{ fontFamily: FONTS.mono, fontSize: 52, color: COLORS.paper, lineHeight: 1.1, marginTop: 6 }}>0.005 BTC</div>
+                  </div>
+                  <div style={{ marginTop: 36, fontFamily: FONTS.serif, fontStyle: 'italic', fontSize: 24, color: 'rgba(245,239,227,0.5)' }}>signed by both parties</div>
+                </div>
+              </div>
+            </SlideFrame>
+          );
+        }
+
+        // ── 15 · Exchanging sheets ──────────────────────────────────────────────────
+        function SlideExchangingSheets() {
+          return (
+            <SlideFrame>
+              <Eyebrow>Mutual custody</Eyebrow>
+              <Title>each party holds the <em style={{ fontStyle: 'italic', color: COLORS.accent }}>other&rsquo;s</em> signed copy</Title>
+              <Body size="bodyLg" style={{ marginTop: 48, maxWidth: 1300 }}>
+                After every update, Bob and the Coffeeshop exchange signed copies of the new balance sheet. Bob holds the Coffeeshop&rsquo;s signature; the Coffeeshop holds Bob&rsquo;s.
+              </Body>
+              <Callout kicker="Why this matters" style={{ marginTop: 52, maxWidth: 1300 }}>
+                If either party tries to close the channel with an older, more favorable balance sheet, the other can submit their signed copy of the newer state to override it. The blockchain always enforces the latest agreement.
+              </Callout>
+            </SlideFrame>
+          );
+        }
+
+        // ── 16 · Closing channel ────────────────────────────────────────────────────
+        function SlideClosingChannel() {
+          return (
+            <SlideFrame>
+              <Eyebrow>Settlement</Eyebrow>
+              <Title>closing the channel <em style={{ fontStyle: 'italic', color: COLORS.accent }}>settles on-chain</em></Title>
+              <div style={{ marginTop: 48, flex: 1, display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 48 }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 28 }}>
+                  <Body size="bodyLg">
+                    Either party broadcasts the latest signed balance sheet to Bitcoin. The 2-of-2 multi-signature address releases its funds in accordance with the agreed split.
+                  </Body>
+                  <Body size="bodyLg">
+                    The channel closes with one on-chain transaction &mdash; regardless of how many payments happened inside it.
+                  </Body>
+                </div>
+                <div style={{ background: COLORS.creamDark, borderRadius: 8, padding: '36px 44px', display: 'flex', flexDirection: 'column', gap: 20 }}>
+                  <div style={{ fontFamily: FONTS.sans, fontSize: 22, letterSpacing: '0.2em', textTransform: 'uppercase', color: COLORS.muted }}>Final settlement</div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '18px 0', borderBottom: `1px solid ${COLORS.ruleFaint}` }}>
+                    <span style={{ fontFamily: FONTS.serif, fontSize: 36, color: COLORS.ink }}>Bob receives</span>
+                    <span style={{ fontFamily: FONTS.mono, fontSize: 36, color: COLORS.ink }}>0.045 BTC</span>
+                  </div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '18px 0', borderBottom: `1px solid ${COLORS.ruleFaint}` }}>
+                    <span style={{ fontFamily: FONTS.serif, fontSize: 36, color: COLORS.ink }}>Coffeeshop receives</span>
+                    <span style={{ fontFamily: FONTS.mono, fontSize: 36, color: COLORS.ink }}>0.005 BTC</span>
+                  </div>
+                  <div style={{ fontFamily: FONTS.serif, fontStyle: 'italic', fontSize: 28, color: COLORS.muted, marginTop: 8 }}>
+                    Total on-chain transactions: 2
+                  </div>
+                </div>
+              </div>
+            </SlideFrame>
+          );
+        }
+
+        // ── 17 · Reduced load ───────────────────────────────────────────────────────
+        function SlideReducedLoad() {
+          return (
+            <SlideFrame>
+              <Eyebrow>The benefit</Eyebrow>
+              <Title>fewer transactions on the <em style={{ fontStyle: 'italic', color: COLORS.accent }}>blockchain</em></Title>
+              <Callout kicker="100 coffees. 2 blockchain transactions." style={{ marginTop: 52, maxWidth: 1400 }}>
+                No matter how many times Bob updates the balance sheet with the Coffeeshop, the blockchain sees exactly two transactions: open and close.
+              </Callout>
+              <Body size="bodyLg" style={{ marginTop: 48, maxWidth: 1300 }}>
+                This is the throughput breakthrough. The bottleneck never applies because the chain is never involved. Fees are paid once. Confirmation latency is paid once. The channel can run indefinitely.
+              </Body>
+            </SlideFrame>
+          );
+        }
+
+        // ── 18 · Latest sheet valid ─────────────────────────────────────────────────
+        function SlideLatestSheetValid() {
+          return (
+            <SlideFrame>
+              <Eyebrow>Cheating is expensive</Eyebrow>
+              <Title>only the <em style={{ fontStyle: 'italic', color: COLORS.accent }}>latest</em> balance sheet is valid</Title>
+              <Body size="bodyLg" style={{ marginTop: 48, maxWidth: 1300 }}>
+                What stops Bob from broadcasting an older sheet where he had 0.05 BTC instead of 0.045?
+              </Body>
+              <Callout kicker="The penalty mechanism" style={{ marginTop: 36, maxWidth: 1300 }}>
+                Every time both parties sign a new balance sheet, the previous one is revoked. If a revoked sheet is broadcast, the other party can submit a cryptographic proof and claim the <em>entire</em> channel balance as a penalty.
+              </Callout>
+              <Body size="body" style={{ marginTop: 36, color: COLORS.muted, maxWidth: 1300 }}>
+                Cheating is self-defeating: the cheater loses everything. Honesty is the only rational strategy.
+              </Body>
+            </SlideFrame>
+          );
+        }
+
+        // ── 19 · Part 04 divider ────────────────────────────────────────────────────
+        function SlidePart4Divider() {
+          return (
+            <SlideFrame variant="ink" footer={false}>
+              <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+                <div style={{ fontFamily: FONTS.sans, fontSize: 26, letterSpacing: '0.32em', textTransform: 'uppercase', color: COLORS.gold, marginBottom: 36 }}>Part 04</div>
+                <Title color={COLORS.paper} size="display" style={{ lineHeight: 0.95, fontSize: 180 }}>
+                  The<br />Network.
+                </Title>
+                <Subtitle color="rgba(245,239,227,0.75)" style={{ fontSize: 40, marginTop: 48, maxWidth: 1100 }}>
+                  How channels chain together so anyone can pay anyone without a direct channel.
+                </Subtitle>
+              </div>
+            </SlideFrame>
+          );
+        }
+
+        // ── 20 · Alice-Bob channel ──────────────────────────────────────────────────
+        function SlideAliceBobChannel() {
+          return (
+            <SlideFrame>
+              <Eyebrow>Expanding the network</Eyebrow>
+              <Title>Alice and Bob open their own <em style={{ fontStyle: 'italic', color: COLORS.accent }}>channel</em></Title>
+              <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <svg width="1000" height="260" viewBox="0 0 1000 260">
+                  <rect x="40" y="70" width="240" height="120" rx="8" fill={COLORS.creamDark} stroke={COLORS.rule} strokeWidth="2"/>
+                  <text x="160" y="140" textAnchor="middle" fontFamily={FONTS.serif} fontSize="46" fill={COLORS.ink}>Alice</text>
+                  <line x1="280" y1="130" x2="680" y2="130" stroke={COLORS.accent} strokeWidth="6" strokeLinecap="round"/>
+                  <polygon points="680,117 702,130 680,143" fill={COLORS.accent}/>
+                  <polygon points="280,117 258,130 280,143" fill={COLORS.accent}/>
+                  <text x="480" y="103" textAnchor="middle" fontFamily={FONTS.sans} fontSize="26" letterSpacing="0.12em" fill={COLORS.muted}>PAYMENT CHANNEL</text>
+                  <rect x="700" y="70" width="240" height="120" rx="8" fill={COLORS.creamDark} stroke={COLORS.rule} strokeWidth="2"/>
+                  <text x="820" y="140" textAnchor="middle" fontFamily={FONTS.serif} fontSize="46" fill={COLORS.ink}>Bob</text>
+                </svg>
+              </div>
+              <Body size="bodyLg" style={{ maxWidth: 1300 }}>
+                Alice funds her own payment channel with Bob. Bob, in turn, already has a channel with the Coffeeshop. The network is beginning to form.
+              </Body>
+            </SlideFrame>
+          );
+        }
+
+        // ── 21 · Alice to Coffeeshop ────────────────────────────────────────────────
+        function SlideAliceToShop() {
+          return (
+            <SlideFrame>
+              <Eyebrow>Routing</Eyebrow>
+              <Title>Alice can pay the Coffeeshop <em style={{ fontStyle: 'italic', color: COLORS.accent }}>through Bob</em></Title>
+              <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <svg width="1560" height="240" viewBox="0 0 1560 240">
+                  <rect x="30" y="55" width="240" height="120" rx="8" fill={COLORS.creamDark} stroke={COLORS.accent} strokeWidth="2.5"/>
+                  <text x="150" y="118" textAnchor="middle" fontFamily={FONTS.serif} fontSize="42" fill={COLORS.ink}>Alice</text>
+                  <text x="150" y="158" textAnchor="middle" fontFamily={FONTS.mono} fontSize="26" fill={COLORS.accent}>(has BTC)</text>
+                  <line x1="270" y1="115" x2="540" y2="115" stroke={COLORS.accent} strokeWidth="5" strokeLinecap="round"/>
+                  <polygon points="540,102 562,115 540,128" fill={COLORS.accent}/>
+                  <text x="405" y="95" textAnchor="middle" fontFamily={FONTS.sans} fontSize="22" fill={COLORS.muted}>channel</text>
+                  <rect x="562" y="55" width="240" height="120" rx="8" fill={COLORS.creamDark} stroke={COLORS.rule} strokeWidth="2"/>
+                  <text x="682" y="118" textAnchor="middle" fontFamily={FONTS.serif} fontSize="42" fill={COLORS.ink}>Bob</text>
+                  <text x="682" y="158" textAnchor="middle" fontFamily={FONTS.sans} fontSize="22" fill={COLORS.muted}>(routes)</text>
+                  <line x1="802" y1="115" x2="1072" y2="115" stroke={COLORS.rule} strokeWidth="5" strokeLinecap="round" strokeDasharray="14,7"/>
+                  <polygon points="1072,102 1094,115 1072,128" fill={COLORS.rule}/>
+                  <text x="937" y="95" textAnchor="middle" fontFamily={FONTS.sans} fontSize="22" fill={COLORS.muted}>channel</text>
+                  <rect x="1094" y="55" width="430" height="120" rx="8" fill={COLORS.creamDark} stroke={COLORS.rule} strokeWidth="2"/>
+                  <text x="1309" y="118" textAnchor="middle" fontFamily={FONTS.serif} fontSize="42" fill={COLORS.ink}>Coffeeshop</text>
+                  <text x="1309" y="158" textAnchor="middle" fontFamily={FONTS.sans} fontSize="22" fill={COLORS.muted}>(destination)</text>
+                </svg>
+              </div>
+              <Body size="bodyLg" style={{ maxWidth: 1300 }}>
+                Alice has no direct channel with the Coffeeshop, but Bob is connected to both. Her payment routes through Bob&rsquo;s existing channels &mdash; no new on-chain transaction needed.
+              </Body>
+            </SlideFrame>
+          );
+        }
+
+        // ── 22 · Routing payment ────────────────────────────────────────────────────
+        function SlideRoutingPayment() {
+          return (
+            <SlideFrame>
+              <Eyebrow>Atomic routing</Eyebrow>
+              <Title>the payment hops <em style={{ fontStyle: 'italic', color: COLORS.accent }}>without trust</em></Title>
+              <Body size="bodyLg" style={{ marginTop: 48, maxWidth: 1400 }}>
+                How does Alice know Bob won&rsquo;t pocket her BTC instead of forwarding it? The answer is Hash Time-Locked Contracts (HTLCs):
+              </Body>
+              <div style={{ marginTop: 40, display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 36, maxWidth: 1560 }}>
+                {[
+                  ['01', 'Alice locks the BTC',        'with a cryptographic hash that only the Coffeeshop can unlock.'],
+                  ['02', 'Coffeeshop reveals the secret', 'and claims the payment &mdash; proving delivery.'],
+                  ['03', 'Bob collects his routing fee', 'only if the secret propagates back through the chain.'],
+                ].map(([n, t, d]) => (
+                  <div key={n} style={{ borderTop: `2px solid ${COLORS.accent}`, paddingTop: 22 }}>
+                    <Numeral n={n} style={{ fontSize: 44, marginBottom: 14 }} />
+                    <div style={{ fontFamily: FONTS.serif, fontSize: 36, color: COLORS.ink, marginBottom: 12 }}>{t}</div>
+                    <Body size="body">{d}</Body>
+                  </div>
+                ))}
+              </div>
+            </SlideFrame>
+          );
+        }
+
+        // ── 23 · Network map ────────────────────────────────────────────────────────
+        function SlideNetworkMap() {
+          return (
+            <SlideFrame>
+              <Eyebrow>At scale</Eyebrow>
+              <Title>a web of channels routes <em style={{ fontStyle: 'italic', color: COLORS.accent }}>any payment</em></Title>
+              <div style={{ flex: 1, display: 'flex', gap: 80, alignItems: 'center' }}>
+                <div style={{ flex: 1 }}>
+                  <Body size="bodyLg" style={{ marginBottom: 36 }}>
+                    Every node opens channels with a few neighbors. Routing algorithms find a path through the web to deliver payments anywhere &mdash; instantly, with tiny fees.
+                  </Body>
+                  <Body size="bodyLg">
+                    Person A and Person B don&rsquo;t need a direct channel. They just need a connected path. The blockchain never sees a single intermediate hop.
+                  </Body>
+                </div>
+                <div style={{ width: 580 }}>
+                  <svg width="580" height="500" viewBox="0 0 580 500">
+                    <line x1="290" y1="250" x2="100" y2="110" stroke="rgba(184,137,59,0.32)" strokeWidth="2"/>
+                    <line x1="290" y1="250" x2="480" y2="110" stroke="rgba(184,137,59,0.32)" strokeWidth="2"/>
+                    <line x1="290" y1="250" x2="100" y2="390" stroke="rgba(184,137,59,0.32)" strokeWidth="2"/>
+                    <line x1="290" y1="250" x2="480" y2="390" stroke="rgba(184,137,59,0.32)" strokeWidth="2"/>
+                    <line x1="100" y1="110" x2="480" y2="110" stroke="rgba(184,137,59,0.2)" strokeWidth="1.5"/>
+                    <line x1="100" y1="390" x2="480" y2="390" stroke="rgba(184,137,59,0.2)" strokeWidth="1.5"/>
+                    <line x1="100" y1="110" x2="100" y2="390" stroke="rgba(184,137,59,0.2)" strokeWidth="1.5"/>
+                    <line x1="480" y1="110" x2="480" y2="390" stroke="rgba(184,137,59,0.2)" strokeWidth="1.5"/>
+                    <line x1="290" y1="40"  x2="290" y2="250" stroke="rgba(184,137,59,0.2)" strokeWidth="1.5"/>
+                    <line x1="290" y1="250" x2="290" y2="460" stroke="rgba(184,137,59,0.2)" strokeWidth="1.5"/>
+                    <line x1="100" y1="110" x2="290" y2="250" stroke={COLORS.accent} strokeWidth="4.5"/>
+                    <line x1="290" y1="250" x2="480" y2="390" stroke={COLORS.accent} strokeWidth="4.5"/>
+                    <circle cx="290" cy="250" r="17" fill={COLORS.ink} stroke={COLORS.gold} strokeWidth="3"/>
+                    <circle cx="100" cy="110" r="15" fill={COLORS.accent}/>
+                    <circle cx="480" cy="390" r="15" fill={COLORS.ok}/>
+                    <circle cx="480" cy="110" r="10" fill={COLORS.creamDark} stroke={COLORS.rule} strokeWidth="2"/>
+                    <circle cx="100" cy="390" r="10" fill={COLORS.creamDark} stroke={COLORS.rule} strokeWidth="2"/>
+                    <circle cx="290" cy="40"  r="8"  fill={COLORS.creamDark} stroke={COLORS.rule} strokeWidth="2"/>
+                    <circle cx="290" cy="460" r="8"  fill={COLORS.creamDark} stroke={COLORS.rule} strokeWidth="2"/>
+                    <text x="100" y="82"  textAnchor="middle" fontFamily={FONTS.sans} fontSize="24" fill={COLORS.ink} fontWeight="600">Person A</text>
+                    <text x="480" y="422" textAnchor="middle" fontFamily={FONTS.sans} fontSize="24" fill={COLORS.ink} fontWeight="600">Person B</text>
+                  </svg>
+                </div>
+              </div>
+            </SlideFrame>
+          );
+        }
+
+        // ── 24 · Recap ──────────────────────────────────────────────────────────────
+        function SlideRecap() {
+          return (
+            <SlideFrame>
+              <Eyebrow>Takeaways</Eyebrow>
+              <Title>How to explain Lightning <em style={{ fontStyle: 'italic', color: COLORS.accent }}>in one minute.</em></Title>
+              <Callout kicker="Mental model" style={{ marginTop: 42 }}>
+                Lightning opens a 2-of-2 multi-sig channel on-chain, then lets both parties exchange signed balance sheets off-chain indefinitely. Only the final close transaction settles on Bitcoin.
+              </Callout>
+              <Body size="bodyLg" style={{ marginTop: 36 }}>
+                The network of channels turns this into a payment layer for the entire world &mdash; anyone can pay anyone by routing through whoever is already connected, with HTLCs making each hop trustless.
+              </Body>
+            </SlideFrame>
+          );
+        }
+
+        // ── 25 · Next class ─────────────────────────────────────────────────────────
+        function SlideNextClass() {
+          return (
+            <SlideFrame variant="ink" footer={false}>
+              <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+                <div style={{ fontFamily: FONTS.sans, fontSize: 24, letterSpacing: '0.26em', textTransform: 'uppercase', color: COLORS.gold }}>Next class</div>
+                <Title color={COLORS.paper} size="titleLg" style={{ marginTop: 24, fontSize: 118, lineHeight: 0.97 }}>
+                  Smart Contracts<br />
+                  <em style={{ fontStyle: 'italic' }}>&amp; Ethereum</em>
+                </Title>
+                <Subtitle color="rgba(245,239,227,0.75)" style={{ marginTop: 36, fontSize: 36, maxWidth: 1200 }}>
+                  If Bitcoin scripts verify signatures, what happens when the script can do anything a programming language can express?
+                </Subtitle>
+              </div>
+            </SlideFrame>
+          );
+        }
+
+        Object.assign(window, {
+          SlideCover, SlideAgenda,
+          SlidePart1Divider, SlideVisaVsBitcoin, SlideScalability,
+          SlidePart2Divider, SlideLightningIntro, SlideOpeningAChannel, SlideMultiSigFunding, SlideInitialBalanceSheet, SlideOnChainOpen,
+          SlidePart3Divider, SlideBobBuysCoffee, SlideUpdatedSheet, SlideExchangingSheets, SlideClosingChannel, SlideReducedLoad, SlideLatestSheetValid,
+          SlidePart4Divider, SlideAliceBobChannel, SlideAliceToShop, SlideRoutingPayment, SlideNetworkMap,
+          SlideRecap, SlideNextClass,
+        });
+      }
+    </script>
+
+    <script type="text/babel" data-presets="react">
+      {
+        function whenReady(cb) {
+          if (window.SlideCover && window.SlideNextClass && window.HTCS_TOKENS) return cb();
+          setTimeout(() => whenReady(cb), 60);
+        }
+
+        whenReady(() => {
+          const stage = document.querySelector('deck-stage');
+
+          const SLIDES = [
+            ['Cover',              SlideCover],
+            ['Agenda',             SlideAgenda],
+            ['Part 01',            SlidePart1Divider],
+            ['Visa vs Bitcoin',    SlideVisaVsBitcoin],
+            ['Scalability',        SlideScalability],
+            ['Part 02',            SlidePart2Divider],
+            ['Lightning Intro',    SlideLightningIntro],
+            ['Opening a Channel',  SlideOpeningAChannel],
+            ['Multi-Sig Funding',  SlideMultiSigFunding],
+            ['Balance Sheet',      SlideInitialBalanceSheet],
+            ['On-chain Open',      SlideOnChainOpen],
+            ['Part 03',            SlidePart3Divider],
+            ['Bob Buys Coffee',    SlideBobBuysCoffee],
+            ['Updated Sheet',      SlideUpdatedSheet],
+            ['Exchanging Sheets',  SlideExchangingSheets],
+            ['Closing Channel',    SlideClosingChannel],
+            ['Reduced Load',       SlideReducedLoad],
+            ['Latest Sheet Valid', SlideLatestSheetValid],
+            ['Part 04',            SlidePart4Divider],
+            ['Alice-Bob Channel',  SlideAliceBobChannel],
+            ['Alice to Coffeeshop', SlideAliceToShop],
+            ['Routing Payment',    SlideRoutingPayment],
+            ['Network Map',        SlideNetworkMap],
+            ['Recap',              SlideRecap],
+            ['Next Class',         SlideNextClass],
+          ];
+
+          SLIDES.forEach(([label, Comp], i) => {
+            const section = document.createElement('section');
+            section.setAttribute('data-label', String(i + 1).padStart(2, '0') + ' ' + label);
+            stage.appendChild(section);
+            const root = ReactDOM.createRoot(section);
+            root.render(<Comp />);
+          });
+        });
+      }
+    </script>
+
+    <script>
+      (() => {
+        const PARAM = 'presenter';
+        const STORAGE_KEY = 'deck-stage:slide:' + (location.pathname || '/');
+        const inPresenter = new URLSearchParams(location.search).has(PARAM);
+
+        const readNotes = () => {
+          const tag = document.getElementById('speaker-notes');
+          if (!tag) return [];
+          try {
+            const parsed = JSON.parse(tag.textContent || '[]');
+            return Array.isArray(parsed) ? parsed : [];
+          } catch (_) { return []; }
+        };
+
+        if (inPresenter) mountPresenter();
+        else mountAudience();
+
+        function mountAudience() {
+          let presenterWin = null;
+
+          const stage = () => document.querySelector('deck-stage');
+
+          const currentIndex = () => {
+            const s = stage();
+            if (!s) return { index: 0, total: 1 };
+            const slides = s.querySelectorAll(':scope > [data-deck-slide]');
+            let idx = 0;
+            slides.forEach((el, i) => { if (el.hasAttribute('data-deck-active')) idx = i; });
+            return { index: idx, total: slides.length || 1 };
+          };
+
+          const pushSlide = (target) => {
+            const win = target || presenterWin;
+            if (!win) return;
+            try {
+              const cur = currentIndex();
+              win.postMessage({ type: 'slide', index: cur.index, total: cur.total }, '*');
+            } catch (_) {}
+          };
+
+          const openPresenter = () => {
+            if (presenterWin && !presenterWin.closed) {
+              try { presenterWin.focus(); } catch (_) {}
+              return;
+            }
+            const url = location.pathname + '?' + PARAM + '=1' + location.hash;
+            const w = window.open(url, 'htcs-presenter', 'popup=yes,width=1100,height=820,menubar=no,toolbar=no,location=no,status=no');
+            if (!w) { flashHint('Allow popups to use presenter mode (P)'); return; }
+            presenterWin = w;
+          };
+
+          const wireStage = () => {
+            const s = stage();
+            if (!s) { setTimeout(wireStage, 100); return; }
+            s.addEventListener('slidechange', (e) => {
+              if (!presenterWin || presenterWin.closed) return;
+              try { presenterWin.postMessage({ type: 'slide', index: e.detail.index, total: e.detail.total }, '*'); } catch (_) {}
+            });
+          };
+          wireStage();
+
+          window.addEventListener('message', (e) => {
+            const m = e && e.data;
+            if (!m || typeof m !== 'object') return;
+            if (m.type === 'ready' || m.type === 'nav') {
+              if (e.source && (!presenterWin || presenterWin.closed)) presenterWin = e.source;
+            }
+            if (m.type === 'ready') { pushSlide(e.source || presenterWin); return; }
+            if (m.type === 'nav') {
+              const map = { prev: 'ArrowLeft', next: 'ArrowRight', first: 'Home', last: 'End' };
+              const key = map[m.dir];
+              if (!key) return;
+              window.dispatchEvent(new KeyboardEvent('keydown', { key, bubbles: true }));
+            }
+          });
+
+          window.addEventListener('keydown', (ev) => {
+            if (ev.metaKey || ev.ctrlKey || ev.altKey) return;
+            const t = ev.target;
+            if (t && (t.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName))) return;
+            if (ev.key === 'p' || ev.key === 'P') { ev.preventDefault(); openPresenter(); }
+          });
+
+          function flashHint(text) {
+            let el = document.getElementById('presenter-hint');
+            if (!el) {
+              el = document.createElement('div');
+              el.id = 'presenter-hint';
+              Object.assign(el.style, {
+                position: 'fixed', top: '16px', left: '50%', transform: 'translateX(-50%)',
+                background: 'rgba(0,0,0,0.85)', color: '#fff', padding: '10px 16px', borderRadius: '999px',
+                fontFamily: '-apple-system, BlinkMacSystemFont, "Helvetica Neue", Helvetica, Arial, sans-serif',
+                fontSize: '13px', zIndex: 2147483647, opacity: '0', transition: 'opacity 200ms ease', pointerEvents: 'none',
+              });
+              document.body.appendChild(el);
+            }
+            el.textContent = text;
+            requestAnimationFrame(() => { el.style.opacity = '1'; });
+            clearTimeout(flashHint._t);
+            flashHint._t = setTimeout(() => { el.style.opacity = '0'; }, 2200);
+          }
+        }
+
+        function mountPresenter() {
+          const stage = document.querySelector('deck-stage');
+          if (stage) stage.remove();
+          const root = document.getElementById('deck-root');
+          if (root) root.remove();
+
+          const notes = readNotes();
+          const title = (document.title || 'Deck').replace(/\s+/g, ' ').trim();
+          document.title = title + ' — Presenter';
+
+          const style = document.createElement('style');
+          style.textContent = `
+            html, body { background: #0c0c0e !important; color: #f5f3ee !important; overflow: auto !important; height: auto !important; min-height: 100%; margin: 0; padding: 0; }
+            .pv-app { box-sizing: border-box; display: grid; grid-template-rows: auto 1fr auto auto auto; gap: 16px; min-height: 100vh; padding: 24px clamp(20px, 4vw, 56px) 28px; font-family: "Source Serif 4", Georgia, serif; }
+            .pv-head { display: flex; align-items: center; justify-content: space-between; gap: 24px; flex-wrap: wrap; font-family: "Inter Tight", -apple-system, sans-serif; }
+            .pv-title { font-size: 13px; letter-spacing: 0.08em; text-transform: uppercase; opacity: 0.6; }
+            .pv-meta { display: flex; align-items: center; gap: 14px; font-feature-settings: "tnum" 1; }
+            .pv-counter { font-size: 15px; opacity: 0.85; }
+            .pv-counter b { font-weight: 600; }
+            .pv-timer { font-family: "JetBrains Mono", ui-monospace, monospace; font-size: 22px; background: #1a1a1f; padding: 6px 12px; border-radius: 8px; min-width: 92px; text-align: center; }
+            .pv-tbtn { font: inherit; font-family: "Inter Tight", -apple-system, sans-serif; font-size: 12px; letter-spacing: 0.04em; background: #1a1a1f; color: #f5f3ee; border: 1px solid #2a2a31; padding: 6px 12px; border-radius: 8px; cursor: pointer; }
+            .pv-tbtn:hover { background: #25252c; }
+            .pv-now { background: #14141a; border-radius: 14px; padding: clamp(20px, 3vw, 36px); display: flex; flex-direction: column; gap: 12px; min-height: 0; overflow: hidden; }
+            .pv-now-label, .pv-next-label { font-family: "Inter Tight", -apple-system, sans-serif; font-size: 11px; letter-spacing: 0.18em; text-transform: uppercase; opacity: 0.55; }
+            .pv-now-text { font-size: clamp(22px, 2.4vw, 34px); line-height: 1.45; overflow-y: auto; padding-right: 8px; }
+            .pv-next { background: #101015; border-radius: 12px; padding: 18px clamp(18px, 3vw, 30px); opacity: 0.62; max-height: 22vh; overflow: hidden; }
+            .pv-next-text { font-size: clamp(14px, 1.2vw, 18px); line-height: 1.45; margin-top: 8px; display: -webkit-box; -webkit-line-clamp: 4; -webkit-box-orient: vertical; overflow: hidden; }
+            .pv-empty { opacity: 0.45; font-style: italic; }
+            .pv-nav { display: flex; justify-content: center; gap: 12px; flex-wrap: wrap; font-family: "Inter Tight", -apple-system, sans-serif; }
+            .pv-nav button { font: inherit; font-size: 14px; background: #1a1a1f; color: #f5f3ee; border: 1px solid #2a2a31; padding: 10px 22px; border-radius: 10px; cursor: pointer; min-width: 130px; }
+            .pv-nav button:hover { background: #25252c; }
+            .pv-nav button:active { background: #303038; }
+            .pv-status { text-align: center; font-family: "Inter Tight", -apple-system, sans-serif; font-size: 12px; opacity: 0.5; margin-top: -6px; min-height: 1em; }
+          `;
+          document.head.appendChild(style);
+
+          const app = document.createElement('div');
+          app.className = 'pv-app';
+          app.innerHTML = `
+            <header class="pv-head">
+              <div class="pv-title"></div>
+              <div class="pv-meta">
+                <div class="pv-counter">Slide <b class="pv-cur">–</b> / <span class="pv-total">–</span></div>
+                <div class="pv-timer" data-timer>00:00</div>
+                <button class="pv-tbtn" data-timer-toggle>Start</button>
+                <button class="pv-tbtn" data-timer-reset>Reset</button>
+              </div>
+            </header>
+            <section class="pv-now">
+              <div class="pv-now-label">Now speaking</div>
+              <div class="pv-now-text"></div>
+            </section>
+            <section class="pv-next">
+              <div class="pv-next-label">Up next</div>
+              <div class="pv-next-text"></div>
+            </section>
+            <nav class="pv-nav">
+              <button data-nav="first">⏮ First</button>
+              <button data-nav="prev">◀ Prev</button>
+              <button data-nav="next">Next ▶</button>
+              <button data-nav="last">Last ⏭</button>
+            </nav>
+            <div class="pv-status"></div>
+          `;
+          document.body.appendChild(app);
+
+          const $ = (sel) => app.querySelector(sel);
+          $('.pv-title').textContent = title;
+          const statusEl = $('.pv-status');
+          const setStatus = (msg) => { statusEl.textContent = msg || ''; };
+
+          let curIdx = 0;
+          let total = Math.max(notes.length || 1, 1);
+
+          const render = (idx) => {
+            curIdx = Math.max(0, Math.min(total - 1, idx | 0));
+            $('.pv-cur').textContent = String(curIdx + 1);
+            $('.pv-total').textContent = String(total);
+            const cur = notes[curIdx];
+            const next = notes[curIdx + 1];
+            const nowEl = $('.pv-now-text');
+            const nextEl = $('.pv-next-text');
+            if (cur && String(cur).trim()) { nowEl.classList.remove('pv-empty'); nowEl.textContent = cur; }
+            else { nowEl.classList.add('pv-empty'); nowEl.textContent = '(no notes for this slide)'; }
+            if (next && String(next).trim()) { nextEl.classList.remove('pv-empty'); nextEl.textContent = next; }
+            else if (curIdx + 1 >= total) { nextEl.classList.add('pv-empty'); nextEl.textContent = '(end of deck)'; }
+            else { nextEl.classList.add('pv-empty'); nextEl.textContent = '(no notes for next slide)'; }
+          };
+
+          try { const raw = localStorage.getItem(STORAGE_KEY); const n = raw == null ? 0 : parseInt(raw, 10); render(Number.isFinite(n) ? n : 0); } catch (_) { render(0); }
+
+          const tEl = $('[data-timer]');
+          const tToggle = $('[data-timer-toggle]');
+          const tReset = $('[data-timer-reset]');
+          let tStart = 0, tAccum = 0, tRunning = false, tTick = null;
+
+          const fmt = (ms) => { const s = Math.floor(ms / 1000); const mm = Math.floor(s / 60), ss = s % 60; if (mm >= 60) { const hh = Math.floor(mm / 60), m2 = mm % 60; return hh + ':' + String(m2).padStart(2, '0') + ':' + String(ss).padStart(2, '0'); } return String(mm).padStart(2, '0') + ':' + String(ss).padStart(2, '0'); };
+          const paint = () => { const elapsed = tAccum + (tRunning ? (Date.now() - tStart) : 0); tEl.textContent = fmt(elapsed); };
+          const startStop = () => { if (tRunning) { tAccum += Date.now() - tStart; tRunning = false; tToggle.textContent = 'Resume'; clearInterval(tTick); tTick = null; } else { tStart = Date.now(); tRunning = true; tToggle.textContent = 'Pause'; tTick = setInterval(paint, 250); } paint(); };
+          const resetTimer = () => { tAccum = 0; tStart = Date.now(); if (!tRunning) tToggle.textContent = 'Start'; paint(); };
+          tToggle.addEventListener('click', startStop);
+          tReset.addEventListener('click', resetTimer);
+          paint();
+
+          const sendNav = (dir) => {
+            if (window.opener && !window.opener.closed) { try { window.opener.postMessage({ type: 'nav', dir }, '*'); return; } catch (_) {} }
+            setStatus('Deck window not reachable — open the deck in another window and press P to link them.');
+          };
+          app.querySelectorAll('[data-nav]').forEach((btn) => { btn.addEventListener('click', () => sendNav(btn.getAttribute('data-nav'))); });
+
+          window.addEventListener('keydown', (ev) => {
+            if (ev.metaKey || ev.ctrlKey || ev.altKey) return;
+            const k = ev.key;
+            if (k === 'ArrowRight' || k === 'PageDown') { ev.preventDefault(); sendNav('next'); }
+            else if (k === 'ArrowLeft' || k === 'PageUp') { ev.preventDefault(); sendNav('prev'); }
+            else if (k === 'Home') { ev.preventDefault(); sendNav('first'); }
+            else if (k === 'End') { ev.preventDefault(); sendNav('last'); }
+            else if (k === ' ' || k === 'Spacebar') { ev.preventDefault(); startStop(); }
+            else if (k === 'r' || k === 'R') { ev.preventDefault(); resetTimer(); }
+          });
+
+          window.addEventListener('message', (e) => {
+            const m = e && e.data;
+            if (!m || typeof m !== 'object') return;
+            if (m.type === 'slide') { if (typeof m.total === 'number' && m.total > 0) total = m.total; render(m.index | 0); setStatus(''); }
+          });
+
+          window.addEventListener('storage', (e) => {
+            if (e.key !== STORAGE_KEY || e.newValue == null) return;
+            const n = parseInt(e.newValue, 10);
+            if (Number.isFinite(n)) render(n);
+            sayReady();
+          });
+
+          const sayReady = () => { if (window.opener && !window.opener.closed) { try { window.opener.postMessage({ type: 'ready' }, '*'); } catch (_) {} } };
+          if (!window.opener || window.opener.closed) setStatus('Standalone mode — open the deck in another window and press P to link them.');
+          sayReady();
+          setTimeout(sayReady, 250);
+        }
+      })();
+    </script>
+  </body>
+
+</html>

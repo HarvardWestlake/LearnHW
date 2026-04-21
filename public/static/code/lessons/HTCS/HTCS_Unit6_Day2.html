@@ -1,0 +1,3566 @@
+<!DOCTYPE html>
+<html lang="en">
+
+  <head>
+    <meta charset="UTF-8" />
+    <title>HTCS · Day 02 · Peer-to-Peer Networks</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Source+Serif+4:ital,opsz,wght@0,8..60,300..700;1,8..60,300..700&family=Inter+Tight:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap"
+      rel="stylesheet">
+    <style>
+      html,
+      body {
+        margin: 0;
+        padding: 0;
+        background: #000;
+        overflow: hidden;
+        height: 100%;
+      }
+
+      body {
+        font-family: "Source Serif 4", Georgia, serif;
+      }
+
+      textarea {
+        font-family: "JetBrains Mono", monospace;
+      }
+
+      button {
+        font-family: "Inter Tight", sans-serif;
+      }
+
+      * {
+        -webkit-font-smoothing: antialiased;
+      }
+    </style>
+
+    <script type="application/json" id="speaker-notes">
+[
+"Today is Day 2, and we are zooming out from keys and hashes to network architecture. A peer-to-peer network is not just a technical pattern, it is a political and economic choice: who stores data, who controls access, and who can shut the system down.",
+"Quick roadmap of the four parts. Part 01 is the architectural contrast between centralized and peer-to-peer. Part 02 is the mechanics of how a swarm actually moves a file. Part 03 is how cryptographic hashes let us trust an untrusted swarm piece by piece. Part 04 is what survives in the real world — resilience, permanence, and the honest trade-offs that come with all of this.",
+"Part 01. Before we talk about how peer-to-peer works mechanically, we have to understand what it is replacing. Three slides on the architectural choice of who controls the system — the data, the traffic, and the uptime — and what changes when no single party owns it.",
+"Open with the side-by-side animated comparison so the class sees the contrast in one frame. In a centralized model every participant is a client and one server is the authority. In P2P, each participant can be both a client and a server — every machine is a node, and useful behavior emerges from the swarm rather than a central operator. Step the visualization from nodes only, to links, to moving packets so they see the same five peers laid out as a star versus a mesh.",
+"Centralization is not just a technical choice — it transfers ownership. Use Instagram as the canonical example: every photo you upload is licensed to Meta, surfaced or hidden by their ranking, and deletable on their schedule. Then ground it locally: anything written on the school's tools belongs to the school. Same pattern at any employer. The takeaway is that centralized systems concentrate the power to delete, censor, and monetize.",
+"Run the topology demo. Toggle modes and fail nodes. In centralized mode, one failure can collapse service. In P2P mode, traffic reroutes around failures if enough peers remain connected. This is the visceral version of the architectural argument from the previous two slides.",
+"Part 02. Now that the contrast is clear, here is how a swarm actually moves a file from many peers to many peers. Four slides: chunking, the tracker that introduces peers to each other, what happens when peers come and go, and the vocabulary you need to read any torrent client.",
+"The key scaling trick in P2P file sharing is chunking. A file is split into many pieces, and different peers host different subsets. Downloaders request many pieces in parallel rather than waiting on one source.",
+"Explain the tracker before the hashing slide so they understand how peers even find each other. The tracker only stores the piece-to-peer map — file bytes never flow through it. Emphasize that this is why takedowns are slippery: shut down a tracker and DHT or peer-exchange replaces it. Pieces themselves can sit on machines all over the world.",
+"Use the resilience demo to remove peers one by one. Students can see exactly when the swarm still reconstructs the file and when availability finally fails. This is the mechanical version of resilience — we will revisit it as a cultural property in Part 04.",
+"Lock in the terminology before moving on: node, peer, seeder, leecher, tracker, piece, and swarm. Students should leave fluent in this language so the rest of the deck — and any torrent client they open later — reads cleanly.",
+"Part 03. Resilience to losing peers is the easy half. The harder half: any peer can lie about the bytes they send. This is where the hash properties from Day 1 earn their keep. One slide and one demo on how a single property — same input always produces the same digest — turns an untrusted swarm into trustworthy data.",
+"Run the malicious-peer demo. Toggle hash verification OFF first so the class watches Mallory's red-flagged pieces fill the file and the INFECTED stamp lands. Then toggle ON and show how each bad piece is rejected and refetched in green from an honest peer. Click any slot to surface the actual expected vs observed hash for forensic confirmation.",
+"Part 04. Once a healthy swarm exists, the protocol takes on a life of its own. The same property that lets it survive node outages also lets it survive takedowns. Four slides plus a live demo: internet permanence, why torrents are effectively undeletable, the honest trade-offs, and finally a real client running in front of the class.",
+"Reframe the resilience demo culturally. The same property that lets a swarm survive outages also lets it survive takedowns. Use the embarrassing-video metaphor — you can ask hosts to remove copies, but you can never prove every copy is gone. Internet permanence is the user-facing consequence of P2P resilience.",
+"Walk through why a torrent is effectively undeletable. Site takedowns require jurisdiction (PirateBay's servers were seized but mirrors reappeared). The torrent file itself is tiny metadata — one upload to an offshore host and the swarm reconnects. ISPs can issue cease-and-desist letters but only to subscribers in their legal reach. And 'unhosting' just removes you from the swarm; the bytes still sit on your disk and on every other seeder's. The point: the protocol has no off switch — jurisdiction does.",
+"Address trade-offs honestly. P2P improves resilience and distribution cost, but creates challenges in moderation, legal compliance, abuse response, and quality control.",
+"Time for the live demo. Open a real torrent client. Show the peers panel — point out IP addresses from multiple countries so they see this is global. Switch to the pieces view and watch the grid fill in non-sequentially. Pause and resume the download to demonstrate that progress is preserved. If time allows, open Popcorn Time as a bonus to show streaming-while-downloading on top of the same protocol.",
+"Recap the mental model: centralized systems optimize control; P2P systems optimize redundancy and participation. Hashes provide trust in data integrity even when peers are untrusted.",
+"Bridge to next class: if anyone can join and publish, how do we establish identity and trust at scale?"
+]
+</script>
+  </head>
+
+  <body>
+    <deck-stage width="1920" height="1080"></deck-stage>
+    <div id="deck-root"></div>
+
+    <script>
+      /**
+       * <deck-stage> — reusable web component for HTML decks.
+       *
+       * Handles:
+       *  (a) speaker notes — reads <script type="application/json" id="speaker-notes">
+       *      and posts {slideIndexChanged: N} to the parent window on nav.
+       *  (b) keyboard navigation — ←/→, PgUp/PgDn, Space, Home/End, number keys.
+       *  (c) press R to reset to slide 0 (with a tasteful keyboard hint).
+       *  (d) bottom-center overlay showing slide count + hints, fades out on idle.
+       *  (e) auto-scaling — inner canvas is a fixed design size (default 1920×1080)
+       *      scaled with `transform: scale()` to fit the viewport, letterboxed.
+       *      Set the `noscale` attribute to render at authored size (1:1) — the
+       *      PPTX exporter sets this so its DOM capture sees unscaled geometry.
+       *  (f) print — `@media print` lays every slide out as its own page at the
+       *      design size, so the browser's Print → Save as PDF produces a clean
+       *      one-page-per-slide PDF with no extra setup.
+       *
+       * Slides are HIDDEN, not unmounted. Non-active slides stay in the DOM with
+       * `visibility: hidden` + `opacity: 0`, so their state (videos, iframes,
+       * form inputs, React trees) is preserved across navigation.
+       *
+       * Lifecycle event — the component dispatches a `slidechange` CustomEvent on
+       * itself whenever the active slide changes (including the initial mount).
+       * The event bubbles and composes out of shadow DOM, so you can listen on
+       * the <deck-stage> element or on document:
+       *
+       *   document.querySelector('deck-stage').addEventListener('slidechange', (e) => {
+       *     e.detail.index         // new 0-based index
+       *     e.detail.previousIndex // previous index, or -1 on init
+       *     e.detail.total         // total slide count
+       *     e.detail.slide         // the new active slide element
+       *     e.detail.previousSlide // the prior slide element, or null on init
+       *     e.detail.reason        // 'init' | 'keyboard' | 'click' | 'tap' | 'api'
+       *   });
+       *
+       * Persistence: current slide index is saved to localStorage keyed by the
+       * document path, so refresh returns you to the same place.
+       *
+       * Usage:
+       *   <deck-stage width="1920" height="1080">
+       *     <section data-label="Title">...</section>
+       *     <section data-label="Agenda">...</section>
+       *   </deck-stage>
+       *
+       * Slides are the direct element children of <deck-stage>. Each slide is
+       * automatically tagged with:
+       *   - data-screen-label="NN Label"   (1-indexed, for comment flow)
+       *   - data-om-validate="no_overflowing_text,no_overlapping_text,slide_sized_text"
+       */
+
+      (() => {
+        const DESIGN_W_DEFAULT = 1920;
+        const DESIGN_H_DEFAULT = 1080;
+        const STORAGE_PREFIX = 'deck-stage:slide:';
+        const OVERLAY_HIDE_MS = 1800;
+        const VALIDATE_ATTR = 'no_overflowing_text,no_overlapping_text,slide_sized_text';
+
+        const pad2 = (n) => String(n).padStart(2, '0');
+
+        const stylesheet = `
+    :host {
+      position: fixed;
+      inset: 0;
+      display: block;
+      background: #000;
+      color: #fff;
+      font-family: -apple-system, BlinkMacSystemFont, "Helvetica Neue", Helvetica, Arial, sans-serif;
+      overflow: hidden;
+    }
+
+    .stage {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .canvas {
+      position: relative;
+      transform-origin: center center;
+      flex-shrink: 0;
+      background: #fff;
+      will-change: transform;
+    }
+
+    /* Slides live in light DOM (via <slot>) so authored CSS still applies.
+       We absolutely position each slotted child to stack them. */
+    ::slotted(*) {
+      position: absolute !important;
+      inset: 0 !important;
+      width: 100% !important;
+      height: 100% !important;
+      box-sizing: border-box !important;
+      overflow: hidden;
+      opacity: 0;
+      pointer-events: none;
+      visibility: hidden;
+    }
+    ::slotted([data-deck-active]) {
+      opacity: 1;
+      pointer-events: auto;
+      visibility: visible;
+    }
+
+    /* Tap zones for mobile — back/forward thirds like Stories.
+       Transparent, no visible UI, don't block the overlay. */
+    .tapzones {
+      position: fixed;
+      inset: 0;
+      display: flex;
+      z-index: 2147482000;
+      pointer-events: none;
+    }
+    .tapzone {
+      flex: 1;
+      pointer-events: auto;
+      -webkit-tap-highlight-color: transparent;
+    }
+    /* Only activate tap zones on coarse pointers (touch devices). */
+    @media (hover: hover) and (pointer: fine) {
+      .tapzones { display: none; }
+    }
+
+    .overlay {
+      position: fixed;
+      left: 50%;
+      bottom: 22px;
+      transform: translate(-50%, 6px) scale(0.92);
+      filter: blur(6px);
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      padding: 4px;
+      background: #000;
+      color: #fff;
+      border-radius: 999px;
+      font-size: 12px;
+      font-feature-settings: "tnum" 1;
+      letter-spacing: 0.01em;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 260ms ease, transform 260ms cubic-bezier(.2,.8,.2,1), filter 260ms ease;
+      transform-origin: center bottom;
+      z-index: 2147483000;
+      user-select: none;
+    }
+    .overlay[data-visible] {
+      opacity: 1;
+      pointer-events: auto;
+      transform: translate(-50%, 0) scale(1);
+      filter: blur(0);
+    }
+
+    .btn {
+      appearance: none;
+      -webkit-appearance: none;
+      background: transparent;
+      border: 0;
+      margin: 0;
+      padding: 0;
+      color: inherit;
+      font: inherit;
+      cursor: default;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      height: 28px;
+      min-width: 28px;
+      border-radius: 999px;
+      color: rgba(255,255,255,0.72);
+      transition: background 140ms ease, color 140ms ease;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .btn:hover { background: rgba(255,255,255,0.12); color: #fff; }
+    .btn:active { background: rgba(255,255,255,0.18); }
+    .btn:focus { outline: none; }
+    .btn:focus-visible { outline: none; }
+    .btn::-moz-focus-inner { border: 0; }
+    .btn svg { width: 14px; height: 14px; display: block; }
+    .btn.reset,
+    .btn.presenter {
+      font-size: 11px;
+      font-weight: 500;
+      letter-spacing: 0.02em;
+      padding: 0 10px 0 12px;
+      gap: 6px;
+      color: rgba(255,255,255,0.72);
+    }
+    .btn.reset .kbd,
+    .btn.presenter .kbd {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 16px;
+      height: 16px;
+      padding: 0 4px;
+      font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+      font-size: 10px;
+      line-height: 1;
+      color: rgba(255,255,255,0.88);
+      background: rgba(255,255,255,0.12);
+      border-radius: 4px;
+    }
+
+    .count {
+      font-variant-numeric: tabular-nums;
+      color: #fff;
+      font-weight: 500;
+      padding: 0 8px;
+      min-width: 42px;
+      text-align: center;
+      font-size: 12px;
+    }
+    .count .sep { color: rgba(255,255,255,0.45); margin: 0 3px; font-weight: 400; }
+    .count .total { color: rgba(255,255,255,0.55); }
+
+    .divider {
+      width: 1px;
+      height: 14px;
+      background: rgba(255,255,255,0.18);
+      margin: 0 2px;
+    }
+
+    /* ── Print: one page per slide, no chrome ────────────────────────────
+       The screen layout stacks every slide at inset:0 inside a scaled
+       canvas; for print we want them in document flow at the authored
+       design size so the browser paginates one slide per sheet. The
+       @page size is set from the width/height attributes via the inline
+       <style id="deck-stage-print-page"> that connectedCallback injects
+       into <head> (the @page at-rule has no effect inside shadow DOM). */
+    @media print {
+      :host {
+        position: static;
+        inset: auto;
+        background: none;
+        overflow: visible;
+        color: inherit;
+      }
+      .stage { position: static; display: block; }
+      .canvas {
+        transform: none !important;
+        width: auto !important;
+        height: auto !important;
+        background: none;
+        will-change: auto;
+      }
+      ::slotted(*) {
+        position: relative !important;
+        inset: auto !important;
+        width: var(--deck-design-w) !important;
+        height: var(--deck-design-h) !important;
+        box-sizing: border-box !important;
+        opacity: 1 !important;
+        visibility: visible !important;
+        pointer-events: auto;
+        break-after: page;
+        page-break-after: always;
+        break-inside: avoid;
+        overflow: hidden;
+      }
+      ::slotted(*:last-child) {
+        break-after: auto;
+        page-break-after: auto;
+      }
+      .overlay, .tapzones { display: none !important; }
+    }
+  `;
+
+        class DeckStage extends HTMLElement {
+          static get observedAttributes() { return ['width', 'height', 'noscale']; }
+
+          constructor() {
+            super();
+            this._root = this.attachShadow({ mode: 'open' });
+            this._index = 0;
+            this._slides = [];
+            this._notes = [];
+            this._hideTimer = null;
+            this._mouseIdleTimer = null;
+            this._storageKey = STORAGE_PREFIX + (location.pathname || '/');
+
+            this._onKey = this._onKey.bind(this);
+            this._onResize = this._onResize.bind(this);
+            this._onSlotChange = this._onSlotChange.bind(this);
+            this._onMouseMove = this._onMouseMove.bind(this);
+            this._onTapBack = this._onTapBack.bind(this);
+            this._onTapForward = this._onTapForward.bind(this);
+          }
+
+          get designWidth() {
+            return parseInt(this.getAttribute('width'), 10) || DESIGN_W_DEFAULT;
+          }
+          get designHeight() {
+            return parseInt(this.getAttribute('height'), 10) || DESIGN_H_DEFAULT;
+          }
+
+          connectedCallback() {
+            this._render();
+            this._loadNotes();
+            this._syncPrintPageRule();
+            window.addEventListener('keydown', this._onKey);
+            window.addEventListener('resize', this._onResize);
+            window.addEventListener('mousemove', this._onMouseMove, { passive: true });
+            // Initial collection + layout happens via slotchange, which fires on mount.
+          }
+
+          disconnectedCallback() {
+            window.removeEventListener('keydown', this._onKey);
+            window.removeEventListener('resize', this._onResize);
+            window.removeEventListener('mousemove', this._onMouseMove);
+            if (this._hideTimer) clearTimeout(this._hideTimer);
+            if (this._mouseIdleTimer) clearTimeout(this._mouseIdleTimer);
+          }
+
+          attributeChangedCallback() {
+            if (this._canvas) {
+              this._canvas.style.width = this.designWidth + 'px';
+              this._canvas.style.height = this.designHeight + 'px';
+              this._canvas.style.setProperty('--deck-design-w', this.designWidth + 'px');
+              this._canvas.style.setProperty('--deck-design-h', this.designHeight + 'px');
+              this._fit();
+              this._syncPrintPageRule();
+            }
+          }
+
+          _render() {
+            const style = document.createElement('style');
+            style.textContent = stylesheet;
+
+            const stage = document.createElement('div');
+            stage.className = 'stage';
+
+            const canvas = document.createElement('div');
+            canvas.className = 'canvas';
+            canvas.style.width = this.designWidth + 'px';
+            canvas.style.height = this.designHeight + 'px';
+            canvas.style.setProperty('--deck-design-w', this.designWidth + 'px');
+            canvas.style.setProperty('--deck-design-h', this.designHeight + 'px');
+
+            const slot = document.createElement('slot');
+            slot.addEventListener('slotchange', this._onSlotChange);
+            canvas.appendChild(slot);
+            stage.appendChild(canvas);
+
+            // Tap zones (mobile): left third = back, right third = forward.
+            const tapzones = document.createElement('div');
+            tapzones.className = 'tapzones export-hidden';
+            tapzones.setAttribute('aria-hidden', 'true');
+            const tzBack = document.createElement('div');
+            tzBack.className = 'tapzone tapzone--back';
+            const tzMid = document.createElement('div');
+            tzMid.className = 'tapzone tapzone--mid';
+            tzMid.style.pointerEvents = 'none';
+            const tzFwd = document.createElement('div');
+            tzFwd.className = 'tapzone tapzone--fwd';
+            tzBack.addEventListener('click', this._onTapBack);
+            tzFwd.addEventListener('click', this._onTapForward);
+            tapzones.append(tzBack, tzMid, tzFwd);
+
+            // Overlay: compact, solid black, with clickable controls.
+            const overlay = document.createElement('div');
+            overlay.className = 'overlay export-hidden';
+            overlay.setAttribute('role', 'toolbar');
+            overlay.setAttribute('aria-label', 'Deck controls');
+            overlay.innerHTML = `
+        <button class="btn prev" type="button" aria-label="Previous slide" title="Previous (←)">
+          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 3L5 8l5 5"/></svg>
+        </button>
+        <span class="count" aria-live="polite"><span class="current">1</span><span class="sep">/</span><span class="total">1</span></span>
+        <button class="btn next" type="button" aria-label="Next slide" title="Next (→)">
+          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 3l5 5-5 5"/></svg>
+        </button>
+        <span class="divider"></span>
+        <button class="btn reset" type="button" aria-label="Reset to first slide" title="Reset (R)">Reset<span class="kbd">R</span></button>
+        <button class="btn presenter" type="button" aria-label="Open presenter view" title="Presenter view (P)">Presenter<span class="kbd">P</span></button>
+      `;
+
+            overlay.querySelector('.prev').addEventListener('click', () => this._go(this._index - 1, 'click'));
+            overlay.querySelector('.next').addEventListener('click', () => this._go(this._index + 1, 'click'));
+            overlay.querySelector('.reset').addEventListener('click', () => this._go(0, 'click'));
+            overlay.querySelector('.presenter').addEventListener('click', () => {
+              window.dispatchEvent(new KeyboardEvent('keydown', { key: 'p', bubbles: true }));
+            });
+
+            this._root.append(style, stage, tapzones, overlay);
+            this._canvas = canvas;
+            this._slot = slot;
+            this._overlay = overlay;
+            this._countEl = overlay.querySelector('.current');
+            this._totalEl = overlay.querySelector('.total');
+          }
+
+          /** @page must live in the document stylesheet — it's a no-op inside
+           *  shadow DOM. Inject/update a single <head> style tag so the print
+           *  sheet matches the design size and Save-as-PDF yields one slide per
+           *  page with no margins. */
+          _syncPrintPageRule() {
+            const id = 'deck-stage-print-page';
+            let tag = document.getElementById(id);
+            if (!tag) {
+              tag = document.createElement('style');
+              tag.id = id;
+              document.head.appendChild(tag);
+            }
+            tag.textContent =
+              '@page { size: ' + this.designWidth + 'px ' + this.designHeight + 'px; margin: 0; } ' +
+              '@media print { html, body { margin: 0 !important; padding: 0 !important; background: none !important; overflow: visible !important; height: auto !important; } ' +
+              '* { -webkit-print-color-adjust: exact; print-color-adjust: exact; } }';
+          }
+
+          _onSlotChange() {
+            this._collectSlides();
+            this._restoreIndex();
+            this._applyIndex({ showOverlay: false, broadcast: true, reason: 'init' });
+            this._fit();
+          }
+
+          _collectSlides() {
+            const assigned = this._slot.assignedElements({ flatten: true });
+            this._slides = assigned.filter((el) => {
+              // Skip template/style/script nodes even if someone slots them.
+              const tag = el.tagName;
+              return tag !== 'TEMPLATE' && tag !== 'SCRIPT' && tag !== 'STYLE';
+            });
+
+            this._slides.forEach((slide, i) => {
+              const n = i + 1;
+              // Determine a label for comment flow: prefer explicit data-label,
+              // then an existing data-screen-label, then first heading, else "Slide".
+              let label = slide.getAttribute('data-label');
+              if (!label) {
+                const existing = slide.getAttribute('data-screen-label');
+                if (existing) {
+                  // Strip any leading number the author may have included.
+                  label = existing.replace(/^\s*\d+\s*/, '').trim() || existing;
+                }
+              }
+              if (!label) {
+                const h = slide.querySelector('h1, h2, h3, [data-title]');
+                if (h) label = (h.textContent || '').trim().slice(0, 40);
+              }
+              if (!label) label = 'Slide';
+              slide.setAttribute('data-screen-label', `${pad2(n)} ${label}`);
+
+              // Validation attribute for comment flow / auto-checks.
+              if (!slide.hasAttribute('data-om-validate')) {
+                slide.setAttribute('data-om-validate', VALIDATE_ATTR);
+              }
+
+              slide.setAttribute('data-deck-slide', String(i));
+            });
+
+            if (this._totalEl) this._totalEl.textContent = String(this._slides.length || 1);
+            if (this._index >= this._slides.length) this._index = Math.max(0, this._slides.length - 1);
+          }
+
+          _loadNotes() {
+            const tag = document.getElementById('speaker-notes');
+            if (!tag) { this._notes = []; return; }
+            try {
+              const parsed = JSON.parse(tag.textContent || '[]');
+              if (Array.isArray(parsed)) this._notes = parsed;
+            } catch (e) {
+              console.warn('[deck-stage] Failed to parse #speaker-notes JSON:', e);
+              this._notes = [];
+            }
+          }
+
+          _restoreIndex() {
+            try {
+              const raw = localStorage.getItem(this._storageKey);
+              if (raw != null) {
+                const n = parseInt(raw, 10);
+                if (Number.isFinite(n) && n >= 0 && n < this._slides.length) {
+                  this._index = n;
+                }
+              }
+            } catch (e) { /* ignore */ }
+          }
+
+          _persistIndex() {
+            try { localStorage.setItem(this._storageKey, String(this._index)); }
+            catch (e) { /* ignore */ }
+          }
+
+          _applyIndex({ showOverlay = true, broadcast = true, reason = 'init' } = {}) {
+            if (!this._slides.length) return;
+            const prev = this._prevIndex == null ? -1 : this._prevIndex;
+            const curr = this._index;
+            this._slides.forEach((s, i) => {
+              if (i === curr) s.setAttribute('data-deck-active', '');
+              else s.removeAttribute('data-deck-active');
+            });
+            if (this._countEl) this._countEl.textContent = String(curr + 1);
+            this._persistIndex();
+
+            if (broadcast) {
+              // (1) Legacy: host-window postMessage for speaker-notes renderers.
+              try { window.postMessage({ slideIndexChanged: curr }, '*'); } catch (e) { }
+
+              // (2) In-page CustomEvent on the <deck-stage> element itself.
+              //     Bubbles and composes out of shadow DOM so slide code can listen:
+              //       document.querySelector('deck-stage').addEventListener('slidechange', e => {
+              //         e.detail.index, e.detail.previousIndex, e.detail.total, e.detail.slide, e.detail.reason
+              //       });
+              const detail = {
+                index: curr,
+                previousIndex: prev,
+                total: this._slides.length,
+                slide: this._slides[curr] || null,
+                previousSlide: prev >= 0 ? (this._slides[prev] || null) : null,
+                reason: reason, // 'init' | 'keyboard' | 'click' | 'tap' | 'api'
+              };
+              this.dispatchEvent(new CustomEvent('slidechange', {
+                detail,
+                bubbles: true,
+                composed: true,
+              }));
+            }
+
+            this._prevIndex = curr;
+            if (showOverlay) this._flashOverlay();
+          }
+
+          _flashOverlay() {
+            if (!this._overlay) return;
+            this._overlay.setAttribute('data-visible', '');
+            if (this._hideTimer) clearTimeout(this._hideTimer);
+            this._hideTimer = setTimeout(() => {
+              this._overlay.removeAttribute('data-visible');
+            }, OVERLAY_HIDE_MS);
+          }
+
+          _fit() {
+            if (!this._canvas) return;
+            // PPTX export sets noscale so the DOM capture sees authored-size
+            // geometry — the scaled canvas is in shadow DOM, so the exporter's
+            // resetTransformSelector can't reach .canvas.style.transform directly.
+            if (this.hasAttribute('noscale')) {
+              this._canvas.style.transform = 'none';
+              return;
+            }
+            const vw = window.innerWidth;
+            const vh = window.innerHeight;
+            const s = Math.min(vw / this.designWidth, vh / this.designHeight);
+            this._canvas.style.transform = `scale(${s})`;
+          }
+
+          _onResize() { this._fit(); }
+
+          _onMouseMove() {
+            // Keep overlay visible while mouse moves; hide after idle.
+            this._flashOverlay();
+          }
+
+          _onTapBack(e) {
+            e.preventDefault();
+            this._go(this._index - 1, 'tap');
+          }
+
+          _onTapForward(e) {
+            e.preventDefault();
+            this._go(this._index + 1, 'tap');
+          }
+
+          _onKey(e) {
+            // Ignore when the user is typing.
+            const t = e.target;
+            if (t && (t.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName))) return;
+            if (e.metaKey || e.ctrlKey || e.altKey) return;
+
+            const key = e.key;
+            let handled = true;
+
+            if (key === 'ArrowRight' || key === 'PageDown' || key === ' ' || key === 'Spacebar') {
+              this._go(this._index + 1, 'keyboard');
+            } else if (key === 'ArrowLeft' || key === 'PageUp') {
+              this._go(this._index - 1, 'keyboard');
+            } else if (key === 'Home') {
+              this._go(0, 'keyboard');
+            } else if (key === 'End') {
+              this._go(this._slides.length - 1, 'keyboard');
+            } else if (key === 'r' || key === 'R') {
+              this._go(0, 'keyboard');
+            } else if (/^[0-9]$/.test(key)) {
+              // 1..9 jump to that slide; 0 jumps to 10.
+              const n = key === '0' ? 9 : parseInt(key, 10) - 1;
+              if (n < this._slides.length) this._go(n, 'keyboard');
+            } else {
+              handled = false;
+            }
+
+            if (handled) {
+              e.preventDefault();
+              this._flashOverlay();
+            }
+          }
+
+          _go(i, reason = 'api') {
+            if (!this._slides.length) return;
+            const clamped = Math.max(0, Math.min(this._slides.length - 1, i));
+            if (clamped === this._index) {
+              this._flashOverlay();
+              return;
+            }
+            this._index = clamped;
+            this._applyIndex({ showOverlay: true, broadcast: true, reason });
+          }
+
+          // Public API ------------------------------------------------------------
+
+          /** Current slide index (0-based). */
+          get index() { return this._index; }
+          /** Total slide count. */
+          get length() { return this._slides.length; }
+          /** Programmatically navigate. */
+          goTo(i) { this._go(i, 'api'); }
+          next() { this._go(this._index + 1, 'api'); }
+          prev() { this._go(this._index - 1, 'api'); }
+          reset() { this._go(0, 'api'); }
+        }
+
+        if (!customElements.get('deck-stage')) {
+          customElements.define('deck-stage', DeckStage);
+        }
+      })();
+
+    </script>
+    <script src="https://unpkg.com/react@18.3.1/umd/react.development.js"
+      integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L"
+      crossorigin="anonymous"></script>
+    <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js"
+      integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm"
+      crossorigin="anonymous"></script>
+    <script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js"
+      integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y"
+      crossorigin="anonymous"></script>
+
+    <script>
+      (() => {
+        const COLORS = {
+          cream: '#F5EFE3', creamDark: '#ECE4D2', paper: '#FBF7EE',
+          ink: '#0F1F3A', inkSoft: '#2B3A5B',
+          rule: '#C9BFA7', ruleFaint: '#E2D9C3',
+          accent: '#A8341E', accentSoft: '#C96A52', gold: '#B8893B',
+          muted: '#7E7560', danger: '#9B2A1B', ok: '#3B6E4A',
+        };
+        const TYPE_SCALE = { eyebrow: 26, small: 26, body: 32, bodyLg: 36, subtitle: 44, titleSm: 56, title: 72, titleLg: 96, display: 140 };
+        const SPACING = { paddingTop: 100, paddingBottom: 90, paddingX: 120, titleGap: 52, itemGap: 28, sectionGap: 64 };
+        const FONTS = {
+          serif: '"Source Serif 4", "Source Serif Pro", "Iowan Old Style", Georgia, "Times New Roman", serif',
+          sans: '"Inter Tight", "Söhne", "Helvetica Neue", Helvetica, Arial, sans-serif',
+          mono: '"JetBrains Mono", "IBM Plex Mono", "SF Mono", Menlo, Consolas, monospace',
+        };
+        window.HTCS_TOKENS = { COLORS, TYPE_SCALE, SPACING, FONTS };
+      })();
+    </script>
+    <script type="text/babel" data-presets="react">
+      {
+
+        /* global React */
+        // Shared slide primitives — frame, title blocks, eyebrows, rules, footer.
+        // Consumes window.HTCS_TOKENS.
+
+        const { COLORS, TYPE_SCALE, SPACING, FONTS } = window.HTCS_TOKENS;
+
+        // ──────────────────────────────────────────────────────────────────────────
+        // SlideFrame — wraps every slide with consistent padding + optional chrome.
+        // variant: 'page' (cream) | 'paper' (lighter) | 'ink' (navy) | 'bleed'
+        // ──────────────────────────────────────────────────────────────────────────
+        function SlideFrame({ variant = 'page', pad = true, footer = true, slideNo, children, style = {} }) {
+          const bg = variant === 'ink' ? COLORS.ink
+            : variant === 'paper' ? COLORS.paper
+              : variant === 'bleed' ? COLORS.cream
+                : COLORS.cream;
+          const fg = variant === 'ink' ? COLORS.paper : COLORS.ink;
+
+          return (
+            <div style={{
+              width: '100%',
+              height: '100%',
+              background: bg,
+              color: fg,
+              fontFamily: FONTS.serif,
+              position: 'relative',
+              overflow: 'hidden',
+              ...style,
+            }}>
+              <div style={{
+                position: 'absolute',
+                inset: 0,
+                padding: pad ? `${SPACING.paddingTop}px ${SPACING.paddingX}px ${SPACING.paddingBottom}px` : 0,
+                display: 'flex',
+                flexDirection: 'column',
+              }}>
+                {children}
+              </div>
+              {footer && <SlideFooter variant={variant} slideNo={slideNo} />}
+            </div>
+          );
+        }
+
+        // Quiet running footer — course name left, slide number right.
+        function SlideFooter({ variant, slideNo }) {
+          const dim = variant === 'ink' ? 'rgba(245,239,227,0.45)' : COLORS.muted;
+          const rule = variant === 'ink' ? 'rgba(245,239,227,0.18)' : COLORS.ruleFaint;
+          return (
+            <div style={{
+              position: 'absolute',
+              left: SPACING.paddingX, right: SPACING.paddingX,
+              bottom: 36,
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              fontFamily: FONTS.sans,
+              fontSize: 24,
+              letterSpacing: '0.16em',
+              textTransform: 'uppercase',
+              color: dim,
+              borderTop: `1px solid ${rule}`,
+              paddingTop: 18,
+            }}>
+              <span>HTCS · Unit 6 · Day 02</span>
+              <span>Peer-to-Peer Networks</span>
+            </div>
+          );
+        }
+
+        // Small uppercase eyebrow / kicker text above a title.
+        function Eyebrow({ children, color, style = {} }) {
+          return (
+            <div style={{
+              fontFamily: FONTS.sans,
+              fontSize: TYPE_SCALE.eyebrow,
+              letterSpacing: '0.24em',
+              textTransform: 'uppercase',
+              fontWeight: 500,
+              color: color || COLORS.accent,
+              marginBottom: 24,
+              ...style,
+            }}>{children}</div>
+          );
+        }
+
+        // Big serif slide title. Supports accent phrase via <em>.
+        function Title({ children, size = 'title', color, style = {} }) {
+          const fs = TYPE_SCALE[size] || TYPE_SCALE.title;
+          return (
+            <h1 style={{
+              fontFamily: FONTS.serif,
+              fontWeight: 500,
+              fontSize: fs,
+              lineHeight: 1.05,
+              letterSpacing: '-0.015em',
+              color: color || COLORS.ink,
+              margin: 0,
+              textWrap: 'balance',
+              ...style,
+            }}>{children}</h1>
+          );
+        }
+
+        function Subtitle({ children, color, style = {} }) {
+          return (
+            <div style={{
+              fontFamily: FONTS.serif,
+              fontStyle: 'italic',
+              fontSize: TYPE_SCALE.subtitle,
+              lineHeight: 1.2,
+              color: color || COLORS.inkSoft,
+              margin: 0,
+              marginTop: 20,
+              textWrap: 'balance',
+              ...style,
+            }}>{children}</div>
+          );
+        }
+
+        // Regular body text block.
+        function Body({ children, size = 'body', color, style = {} }) {
+          return (
+            <div style={{
+              fontFamily: FONTS.serif,
+              fontSize: TYPE_SCALE[size] || TYPE_SCALE.body,
+              lineHeight: 1.38,
+              color: color || COLORS.inkSoft,
+              textWrap: 'pretty',
+              ...style,
+            }}>{children}</div>
+          );
+        }
+
+        // Horizontal hairline rule.
+        function Rule({ color, style = {} }) {
+          return <div style={{ height: 1, background: color || COLORS.rule, width: '100%', ...style }} />;
+        }
+
+        // Mono inline code / value chip.
+        function Mono({ children, style = {} }) {
+          return (
+            <span style={{
+              fontFamily: FONTS.mono,
+              fontSize: '0.88em',
+              letterSpacing: '-0.01em',
+              color: COLORS.ink,
+              ...style,
+            }}>{children}</span>
+          );
+        }
+
+        // Numeric marker used for agenda / property lists.
+        function Numeral({ n, color, style = {} }) {
+          return (
+            <div style={{
+              fontFamily: FONTS.serif,
+              fontStyle: 'italic',
+              fontWeight: 400,
+              fontSize: 56,
+              color: color || COLORS.accent,
+              lineHeight: 1,
+              ...style,
+            }}>{String(n).padStart(2, '0')}</div>
+          );
+        }
+
+        // Pull-quote style "card" — minimal, just a top/bottom rule.
+        function Callout({ kicker, children, tone = 'default', style = {} }) {
+          const c = tone === 'danger' ? COLORS.danger
+            : tone === 'ok' ? COLORS.ok
+              : COLORS.accent;
+          return (
+            <div style={{
+              borderTop: `1px solid ${COLORS.rule}`,
+              borderBottom: `1px solid ${COLORS.rule}`,
+              padding: '28px 0',
+              ...style,
+            }}>
+              {kicker && <Eyebrow color={c} style={{ marginBottom: 14 }}>{kicker}</Eyebrow>}
+              <div style={{ fontFamily: FONTS.serif, fontSize: TYPE_SCALE.bodyLg, color: COLORS.ink, lineHeight: 1.3 }}>
+                {children}
+              </div>
+            </div>
+          );
+        }
+
+        Object.assign(window, { SlideFrame, SlideFooter, Eyebrow, Title, Subtitle, Body, Rule, Mono, Numeral, Callout });
+      }
+    </script>
+
+    <script type="text/babel" data-presets="react">
+      {
+        const { COLORS, TYPE_SCALE, FONTS } = window.HTCS_TOKENS;
+        const { useState, useMemo, useEffect, useRef } = React;
+
+        // ── Animated network primitives (Day 02) ───────────────────────────────
+        function useAnimSeconds() {
+          const [sec, setSec] = useState(0);
+          useEffect(() => {
+            let raf = 0;
+            const loop = (t) => {
+              setSec(t / 1000);
+              raf = requestAnimationFrame(loop);
+            };
+            raf = requestAnimationFrame(loop);
+            return () => cancelAnimationFrame(raf);
+          }, []);
+          return sec;
+        }
+
+        /** SVG bust — matches Day 01 / AliceBob PersonSvg styling */
+        function NetworkPersonSvg({ name = 'Peer', scale = 1 }) {
+          const color = COLORS.ink;
+          const tint = '#E8DDC4';
+          return (
+            <g transform={`scale(${scale})`}>
+              <path d="M10 140 Q10 90 60 90 Q110 90 110 140 Z" fill={tint} stroke={color} strokeWidth="2" />
+              <rect x="50" y="78" width="20" height="14" fill={tint} stroke={color} strokeWidth="2" />
+              <circle cx="60" cy="48" r="32" fill={tint} stroke={color} strokeWidth="2" />
+              {name === 'Alice' && <path d="M28 50 Q28 18 60 18 Q92 18 92 50 Q92 42 82 40 Q70 36 60 38 Q50 36 38 40 Q28 42 28 50 Z" fill={color} />}
+              {name === 'Bob' && <path d="M30 40 Q30 20 60 20 Q90 20 90 40 Q82 32 60 32 Q38 32 30 40 Z" fill={color} />}
+              {(name !== 'Alice' && name !== 'Bob') && <path d="M32 42 Q32 22 60 22 Q88 22 88 42 Q82 34 60 34 Q38 34 32 42 Z" fill={color} />}
+              <circle cx="50" cy="50" r="2" fill={color} />
+              <circle cx="70" cy="50" r="2" fill={color} />
+              <path d="M52 62 Q60 68 68 62" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" />
+            </g>
+          );
+        }
+
+        function ServerRackSvg({ down = false, scale = 1 }) {
+          const c = down ? COLORS.muted : COLORS.ink;
+          return (
+            <g transform={`scale(${scale})`}>
+              <rect x="8" y="10" width="104" height="120" rx="4" fill={down ? '#E8E4D8' : COLORS.paper} stroke={c} strokeWidth="2" />
+              {[34, 58, 82].map((y, i) => (
+                <g key={i}>
+                  <rect x="18" y={y} width="84" height="18" fill={down ? COLORS.ruleFaint : '#f5f2ea'} stroke={c} strokeWidth="1" />
+                  <circle cx="88" cy={y + 9} r="4" fill={down ? COLORS.muted : COLORS.ok} />
+                </g>
+              ))}
+              <text x="60" y="148" textAnchor="middle" fontFamily={FONTS.sans} fontSize="14" letterSpacing="0.12em" fill={c}>HUB</text>
+            </g>
+          );
+        }
+
+        function NetworkLinkLine({ x1, y1, x2, y2, active = true, dashed = false }) {
+          return (
+            <line
+              x1={x1} y1={y1} x2={x2} y2={y2}
+              stroke={active ? COLORS.ink : COLORS.rule}
+              strokeWidth={active ? 2.5 : 1.5}
+              strokeDasharray={dashed ? '6 6' : 'none'}
+              opacity={active ? 1 : 0.35}
+            />
+          );
+        }
+
+        function PacketOnEdge({ x1, y1, x2, y2, t, phase = 0, color = COLORS.gold, r = 5 }) {
+          const u = ((t * 0.55 + phase) % 1 + 1) % 1;
+          const x = x1 + (x2 - x1) * u;
+          const y = y1 + (y2 - y1) * u;
+          return <circle cx={x} cy={y} r={r} fill={color} opacity={0.95} />;
+        }
+
+        const PEER_NAMES = ['Alice', 'Bob', 'Carol', 'Dana', 'Erin'];
+
+        /** Hub at center; peers on a wide ring (radius tuned so avatars clear the ~120px-wide hub). */
+        function getCentralizedLayout(w, h) {
+          const cx = w * 0.5;
+          const cy = h * 0.5;
+          const n = PEER_NAMES.length;
+          const r = Math.min(w, h) * 0.34;
+          const hub = { x: cx, y: cy, id: 'hub' };
+          const peers = PEER_NAMES.map((name, i) => {
+            const ang = -Math.PI / 2 + (i / n) * Math.PI * 2;
+            return {
+              id: `p-${i}`,
+              name,
+              x: cx + Math.cos(ang) * r,
+              y: cy + Math.sin(ang) * r,
+              i,
+            };
+          });
+          return { hub, peers };
+        }
+
+        /** Line from hub rim toward peer along the spoke (works for any peer angle). */
+        function centralizedSpokeEndpoints(hub, p, hubLead = 55, peerLead = 55) {
+          const dx = p.x - hub.x;
+          const dy = p.y - hub.y;
+          const len = Math.hypot(dx, dy) || 1;
+          const ux = dx / len;
+          const uy = dy / len;
+          return {
+            x1: hub.x + ux * hubLead,
+            y1: hub.y + uy * hubLead,
+            x2: p.x - ux * peerLead,
+            y2: p.y - uy * peerLead,
+          };
+        }
+
+        function getP2PLayout(w, h) {
+          const cx = w * 0.5;
+          const cy = h * 0.5;
+          const r = Math.min(w, h) * 0.32;
+          const peers = PEER_NAMES.map((name, i) => {
+            const ang = -Math.PI / 2 + (i / PEER_NAMES.length) * Math.PI * 2;
+            return {
+              id: `p-${i}`,
+              name,
+              x: cx + Math.cos(ang) * r,
+              y: cy + Math.sin(ang) * r,
+              i,
+            };
+          });
+          return { cx, cy, peers };
+        }
+
+        function TopologySvgVisualization({ mode, hubDown, peerDown, showPackets = true, revealStep = 3, compact = false }) {
+          const t = useAnimSeconds();
+          const w = compact ? 560 : 920;
+          const h = compact ? 530 : 530;
+          const { hub, peers } = getCentralizedLayout(w, h);
+          const p2 = getP2PLayout(w, h);
+          const failedIdx = 4;
+
+          const showLinks = revealStep >= 1;
+          const packetsOn = Boolean(showPackets) && revealStep >= 2;
+
+          const hubDead = mode === 'centralized' && hubDown;
+          const peerFailed = peerDown;
+
+          const activePeer = (idx) => {
+            if (peerFailed && idx === failedIdx) return false;
+            return true;
+          };
+
+          const edgesCentral = [];
+          if (showLinks && mode === 'centralized') {
+            peers.forEach((p) => {
+              const ok = !hubDead && activePeer(p.i);
+              const e = centralizedSpokeEndpoints(hub, p, 58, 72);
+              edgesCentral.push({ x1: e.x1, y1: e.y1, x2: e.x2, y2: e.y2, ok, key: `h-${p.i}` });
+            });
+          }
+
+          const edgesP2p = [];
+          if (showLinks && mode === 'p2p') {
+            const list = p2.peers.filter((p) => activePeer(p.i));
+            for (let a = 0; a < list.length; a++) {
+              for (let b = a + 1; b < list.length; b++) {
+                edgesP2p.push({
+                  x1: list[a].x, y1: list[a].y, x2: list[b].x, y2: list[b].y,
+                  ok: true, key: `${list[a].i}-${list[b].i}`,
+                });
+              }
+            }
+          }
+
+          return (
+            <svg viewBox={`0 0 ${w} ${h}`} width="100%" height={compact ? '100%' : 420} preserveAspectRatio="xMidYMid meet" style={{ display: 'block', width: '100%', height: compact ? '100%' : undefined, maxHeight: compact ? '100%' : 440, flex: compact ? '1 1 auto' : undefined, minHeight: 0 }}>
+              <defs>
+                <filter id="softShadow" x="-20%" y="-20%" width="140%" height="140%">
+                  <feDropShadow dx="0" dy="2" stdDeviation="2" floodOpacity="0.12" />
+                </filter>
+              </defs>
+              {mode === 'centralized' && (
+                <g>
+                  {edgesCentral.map((e, i) => (
+                    <g key={e.key}>
+                      <NetworkLinkLine x1={e.x1} y1={e.y1} x2={e.x2} y2={e.y2} active={e.ok} dashed={!e.ok} />
+                      {packetsOn && e.ok && (
+                        <>
+                          <PacketOnEdge x1={e.x1} y1={e.y1} x2={e.x2} y2={e.y2} t={t} phase={i * 0.17} />
+                          <PacketOnEdge x1={e.x1} y1={e.y1} x2={e.x2} y2={e.y2} t={t} phase={i * 0.17 + 0.5} color={COLORS.accentSoft} r={4} />
+                        </>
+                      )}
+                    </g>
+                  ))}
+                  <g transform={`translate(${hub.x - 60}, ${hub.y - 70})`} filter="url(#softShadow)">
+                    <ServerRackSvg down={hubDead} />
+                  </g>
+                  {peers.map((p) => {
+                    const ok = activePeer(p.i);
+                    const dim = hubDead || !ok;
+                    return (
+                      <g key={p.id} transform={`translate(${p.x - 60}, ${p.y - 70})`} opacity={dim ? 0.38 : 1}>
+                        <NetworkPersonSvg name={p.name} />
+                        <text x="60" y={p.name === 'Alice' ? 6 : 168} textAnchor="middle" fontFamily={FONTS.serif} fontStyle="italic" fontSize={compact ? 16 : 20} fill={dim ? COLORS.muted : COLORS.ink}>{p.name}</text>
+                        {!ok && (
+                          <text x="60" y="188" textAnchor="middle" fontFamily={FONTS.sans} fontSize={12} letterSpacing="0.14em" fill={COLORS.accent}>OFFLINE</text>
+                        )}
+                      </g>
+                    );
+                  })}
+                </g>
+              )}
+              {mode === 'p2p' && (
+                <g>
+                  {edgesP2p.map((e, i) => (
+                    <g key={e.key}>
+                      <NetworkLinkLine x1={e.x1} y1={e.y1} x2={e.x2} y2={e.y2} active />
+                      {packetsOn && (
+                        <>
+                          <PacketOnEdge x1={e.x1} y1={e.y1} x2={e.x2} y2={e.y2} t={t} phase={i * 0.09} />
+                          <PacketOnEdge x1={e.x2} y1={e.y2} x2={e.x1} y2={e.y1} t={t} phase={i * 0.09 + 0.33} color={COLORS.gold} r={4} />
+                        </>
+                      )}
+                    </g>
+                  ))}
+                  {p2.peers.map((p) => {
+                    const ok = activePeer(p.i);
+                    return (
+                      <g key={p.id} transform={`translate(${p.x - 60}, ${p.y - 70})`} opacity={ok ? 1 : 0.35}>
+                        <NetworkPersonSvg name={p.name} />
+                        <text x="60" y={p.name === 'Alice' ? 6 : 168} textAnchor="middle" fontFamily={FONTS.serif} fontStyle="italic" fontSize={compact ? 16 : 20} fill={ok ? COLORS.ink : COLORS.muted}>{p.name}</text>
+                        {!ok && (
+                          <text x="60" y="188" textAnchor="middle" fontFamily={FONTS.sans} fontSize={12} letterSpacing="0.14em" fill={COLORS.accent}>OFFLINE</text>
+                        )}
+                      </g>
+                    );
+                  })}
+                </g>
+              )}
+            </svg>
+          );
+        }
+
+        function topologyCaption(mode, hubDown, peerDown) {
+          if (mode === 'centralized' && hubDown) {
+            return 'Single point of failure: hub down. Alice, Bob, Carol, Dana, and Erin all lose service.';
+          }
+          if (mode === 'centralized' && peerDown) {
+            return 'Hub still up: Erin is offline, but the other four still receive from the hub.';
+          }
+          if (mode === 'p2p' && peerDown) {
+            return 'Mesh stays connected: Erin is offline; redundant paths keep the other peers linked.';
+          }
+          if (mode === 'centralized') {
+            return 'All traffic routes through the hub: simple control, one choke point.';
+          }
+          return 'Peers exchange directly: many paths, no single owner of all traffic.';
+        }
+
+        function CentralizedVsP2PStage() {
+          const cardStyle = { border: `1px solid ${COLORS.rule}`, padding: 20, display: 'flex', flexDirection: 'column', minHeight: 0 };
+          const eyebrowStyle = { fontFamily: FONTS.sans, fontSize: 16, letterSpacing: '0.2em', textTransform: 'uppercase', color: COLORS.muted, marginBottom: 8, flex: '0 0 auto' };
+          const vizStyle = { flex: '1 1 auto', minHeight: 0, display: 'flex' };
+          const bodyStyle = { marginTop: 14, fontSize: 28, lineHeight: 1.35, flex: '0 0 auto' };
+          return (
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 28, flex: 1, minHeight: 0 }}>
+              <div style={cardStyle}>
+                <div style={eyebrowStyle}>Centralized</div>
+                <div style={vizStyle}>
+                  <TopologySvgVisualization mode="centralized" hubDown={false} peerDown={false} revealStep={3} showPackets compact />
+                </div>
+                <Body size="body" style={bodyStyle}>
+                  Centralized systems optimize control: one authority stores and serves data, which simplifies policy but creates a single point of outage.
+                </Body>
+              </div>
+              <div style={cardStyle}>
+                <div style={eyebrowStyle}>Peer-to-peer</div>
+                <div style={vizStyle}>
+                  <TopologySvgVisualization mode="p2p" hubDown={false} peerDown={false} revealStep={3} showPackets compact />
+                </div>
+                <Body size="body" style={bodyStyle}>
+                  P2P systems optimize resilience: peers exchange data directly, distributing load and risk while making governance harder.
+                </Body>
+              </div>
+            </div>
+          );
+        }
+
+        function NetworkCompareMini() {
+          const t = useAnimSeconds();
+          const w = 520;
+          const h = 460;
+          const { hub, peers } = getCentralizedLayout(w, h);
+          const p2 = getP2PLayout(w, h);
+
+          const cEdges = peers.map((p, i) => {
+            const e = centralizedSpokeEndpoints(hub, p, 42, 44);
+            return (
+              <g key={`c-${i}`}>
+                <NetworkLinkLine x1={e.x1} y1={e.y1} x2={e.x2} y2={e.y2} active />
+                <PacketOnEdge x1={e.x1} y1={e.y1} x2={e.x2} y2={e.y2} t={t} phase={i * 0.2} />
+              </g>
+            );
+          });
+          const pEdges = [];
+          for (let a = 0; a < p2.peers.length; a++) {
+            for (let b = a + 1; b < p2.peers.length; b++) {
+              const e = { x1: p2.peers[a].x, y1: p2.peers[a].y, x2: p2.peers[b].x, y2: p2.peers[b].y, key: `p-${a}-${b}` };
+              pEdges.push(
+                <g key={e.key}>
+                  <NetworkLinkLine x1={e.x1} y1={e.y1} x2={e.x2} y2={e.y2} active />
+                  <PacketOnEdge x1={e.x1} y1={e.y1} x2={e.x2} y2={e.y2} t={t} phase={a * 0.07 + b * 0.03} />
+                </g>,
+              );
+            }
+          }
+
+          return (
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 24, marginTop: 20 }}>
+              <div style={{ border: `1px solid ${COLORS.ruleFaint}`, padding: 12, background: COLORS.paper }}>
+                <div style={{ fontFamily: FONTS.sans, fontSize: 14, letterSpacing: '0.18em', color: COLORS.muted, marginBottom: 6 }}>CENTRALIZED</div>
+                <svg viewBox={`0 0 ${w} ${h}`} width="100%" height={220}>
+                  {cEdges}
+                  <g transform={`translate(${hub.x - 44}, ${hub.y - 52})`}><ServerRackSvg scale={0.72} /></g>
+                  {peers.map((p) => (
+                    <g key={p.id} transform={`translate(${p.x - 36}, ${p.y - 42})`}><g transform="scale(0.6)"><NetworkPersonSvg name={p.name} /></g></g>
+                  ))}
+                </svg>
+              </div>
+              <div style={{ border: `1px solid ${COLORS.ruleFaint}`, padding: 12, background: COLORS.paper }}>
+                <div style={{ fontFamily: FONTS.sans, fontSize: 14, letterSpacing: '0.18em', color: COLORS.muted, marginBottom: 6 }}>PEER-TO-PEER</div>
+                <svg viewBox={`0 0 ${w} ${h}`} width="100%" height={220}>
+                  {pEdges}
+                  {p2.peers.map((p) => (
+                    <g key={p.id} transform={`translate(${p.x - 36}, ${p.y - 42})`}><g transform="scale(0.6)"><NetworkPersonSvg name={p.name} /></g></g>
+                  ))}
+                </svg>
+              </div>
+            </div>
+          );
+        }
+
+        function Bullet({ children }) {
+          return <li style={{ marginBottom: 14 }}>{children}</li>;
+        }
+
+        function TwoCol({ left, right, style: twoColStyle = {} }) {
+          return <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 56, marginTop: 44, flex: 1, ...twoColStyle }}>{left}{right}</div>;
+        }
+
+        function Card({ title, children }) {
+          return (
+            <div style={{ border: `1px solid ${COLORS.rule}`, padding: 28, background: COLORS.paper }}>
+              <div style={{ fontFamily: FONTS.sans, letterSpacing: '0.14em', textTransform: 'uppercase', fontSize: 18, color: COLORS.muted, marginBottom: 12 }}>{title}</div>
+              <div style={{ fontFamily: FONTS.serif, fontSize: 30, color: COLORS.ink, lineHeight: 1.35 }}>{children}</div>
+            </div>
+          );
+        }
+
+        function SlideD2Cover() {
+          // Hand-tuned mesh of peer nodes for the right-hand panel.
+          // 800×740 viewBox so the mesh feels organic, not a perfect ring.
+          const nodes = [
+            { x: 140, y: 120, r: 14 },
+            { x: 420, y:  70, r: 18 },
+            { x: 680, y: 150, r: 14 },
+            { x: 110, y: 360, r: 16 },
+            { x: 380, y: 300, r: 22 },
+            { x: 660, y: 380, r: 16 },
+            { x: 200, y: 580, r: 14 },
+            { x: 470, y: 600, r: 18 },
+            { x: 700, y: 590, r: 14 },
+          ];
+          const edges = [
+            [0, 1], [1, 2], [0, 3], [1, 4], [2, 4], [2, 5],
+            [3, 4], [4, 5], [3, 6], [4, 6], [4, 7], [4, 8],
+            [5, 8], [6, 7], [7, 8], [0, 4], [5, 7], [3, 7],
+          ];
+          // A gold "live transfer" path threaded through the swarm.
+          const goldEdges = new Set(['0-3', '3-6', '6-7', '4-7', '2-4']);
+          const packets = [
+            { e: [0, 3], t: 0.55 },
+            { e: [3, 6], t: 0.30 },
+            { e: [6, 7], t: 0.65 },
+            { e: [4, 7], t: 0.45 },
+            { e: [2, 4], t: 0.70 },
+            { e: [1, 4], t: 0.40 },
+            { e: [5, 8], t: 0.55 },
+          ];
+          const lerp = (a, b, t) => a + (b - a) * t;
+
+          return (
+            <SlideFrame variant="bleed" footer={false} pad={false}>
+              <div style={{ position: 'absolute', inset: 0, display: 'grid', gridTemplateColumns: '1fr 1fr' }}>
+                {/* LEFT — cream panel mirrors Day 01's cover */}
+                <div style={{ padding: '100px 120px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+                  <div>
+                    <div style={{ fontFamily: FONTS.sans, fontSize: 24, letterSpacing: '0.28em', textTransform: 'uppercase', color: COLORS.accent, marginBottom: 32 }}>Honors Topics in Computer Science</div>
+                    <div style={{ fontFamily: FONTS.serif, fontStyle: 'italic', fontSize: 40, color: COLORS.inkSoft, marginBottom: 28 }}>Day 02</div>
+                    <Title size="titleLg" style={{ fontSize: 116, lineHeight: 0.98 }}>
+                      Peer<span style={{ fontStyle: 'italic', color: COLORS.accent }}>-to-</span>Peer<br />
+                      Networks
+                    </Title>
+                    <Subtitle style={{ fontSize: 38, marginTop: 40 }}>
+                      When every machine is both client and server, no one owns the network.
+                    </Subtitle>
+                  </div>
+                  <div style={{ display: 'flex', gap: 48, fontFamily: FONTS.sans, fontSize: 24, letterSpacing: '0.2em', textTransform: 'uppercase', color: COLORS.muted }}>
+                    <span>HTCS · Unit 6 · Day 02</span>
+                    <span>lecture + demo</span>
+                  </div>
+                </div>
+
+                {/* RIGHT — ink panel with peer mesh + bottom quote */}
+                <div style={{ background: COLORS.ink, position: 'relative', overflow: 'hidden' }}>
+                  <svg
+                    viewBox="0 0 800 740"
+                    preserveAspectRatio="xMidYMid slice"
+                    style={{ position: 'absolute', top: 40, left: 40, right: 40, bottom: 240, width: 'calc(100% - 80px)', height: 'calc(100% - 280px)' }}
+                  >
+                    {/* faint dotted background grid */}
+                    <g opacity="0.08">
+                      {Array.from({ length: 9 }).map((_, i) => (
+                        <line key={`gv-${i}`} x1={i * 100} y1={0} x2={i * 100} y2={740} stroke={COLORS.paper} strokeWidth="1" />
+                      ))}
+                      {Array.from({ length: 8 }).map((_, i) => (
+                        <line key={`gh-${i}`} x1={0} y1={i * 100} x2={800} y2={i * 100} stroke={COLORS.paper} strokeWidth="1" />
+                      ))}
+                    </g>
+
+                    {/* edges */}
+                    {edges.map(([a, b]) => {
+                      const key = `${a}-${b}`;
+                      const isGold = goldEdges.has(key);
+                      return (
+                        <line
+                          key={`e-${key}`}
+                          x1={nodes[a].x} y1={nodes[a].y}
+                          x2={nodes[b].x} y2={nodes[b].y}
+                          stroke={isGold ? COLORS.gold : 'rgba(245,239,227,0.28)'}
+                          strokeWidth={isGold ? 2.25 : 1.25}
+                          opacity={isGold ? 0.95 : 0.75}
+                        />
+                      );
+                    })}
+
+                    {/* in-flight piece markers */}
+                    {packets.map(({ e: [a, b], t }, i) => {
+                      const px = lerp(nodes[a].x, nodes[b].x, t);
+                      const py = lerp(nodes[a].y, nodes[b].y, t);
+                      const isGold = goldEdges.has(`${a}-${b}`);
+                      return (
+                        <g key={`pkt-${i}`}>
+                          <circle cx={px} cy={py} r={isGold ? 10 : 7} fill={isGold ? COLORS.gold : COLORS.accentSoft} opacity="0.22" />
+                          <circle cx={px} cy={py} r={isGold ? 5 : 4} fill={isGold ? COLORS.gold : COLORS.paper} />
+                        </g>
+                      );
+                    })}
+
+                    {/* nodes */}
+                    {nodes.map((n, i) => (
+                      <g key={`n-${i}`}>
+                        <circle cx={n.x} cy={n.y} r={n.r + 8} fill={COLORS.gold} opacity="0.10" />
+                        <circle cx={n.x} cy={n.y} r={n.r} fill={COLORS.paper} stroke={COLORS.gold} strokeWidth="2" />
+                        <circle cx={n.x} cy={n.y} r={Math.max(2, n.r - 6)} fill={COLORS.ink} opacity="0.85" />
+                      </g>
+                    ))}
+                  </svg>
+
+                  <div style={{ position: 'absolute', bottom: 60, left: 60, right: 60, borderTop: `1px solid rgba(245,239,227,0.35)`, paddingTop: 24, color: COLORS.paper, fontFamily: FONTS.serif, fontStyle: 'italic', fontSize: 32, lineHeight: 1.3, background: COLORS.ink }}>
+                    &ldquo;Pull a wire and the swarm reroutes around it. The&nbsp;protocol has no off switch.&rdquo;
+                  </div>
+                </div>
+              </div>
+            </SlideFrame>
+          );
+        }
+
+        function SlideD2Agenda() {
+          return (
+            <SlideFrame>
+              <Eyebrow>Today&apos;s arc</Eyebrow>
+              <Title>From single-server thinking to <em>distributed swarms.</em></Title>
+              <div style={{ marginTop: 50, flex: 1 }}>
+                {[
+                  ['01', 'Centralized vs P2P', 'Who controls the system: data, traffic, and uptime.'],
+                  ['02', 'How swarms share files', 'Chunking, parallel transfer, and the peer vocabulary.'],
+                  ['03', 'Why hashes matter', 'Piece-by-piece verification in an untrusted network.'],
+                  ['04', 'What survives failure', 'Resilience, permanence, and trade-offs in the wild.'],
+                ].map(([n, t, d], i) => (
+                  <div key={n} style={{ display: 'grid', gridTemplateColumns: '90px 1.1fr 2fr', gap: 34, padding: '20px 0', borderTop: `1px solid ${COLORS.ruleFaint}`, borderBottom: i === 3 ? `1px solid ${COLORS.ruleFaint}` : 'none' }}>
+                    <Numeral n={n} />
+                    <div style={{ fontFamily: FONTS.serif, fontSize: 40 }}>{t}</div>
+                    <Body size="bodyLg">{d}</Body>
+                  </div>
+                ))}
+              </div>
+            </SlideFrame>
+          );
+        }
+
+        // ── Part dividers ─────────────────────────────────────────────────────────
+        // One per agenda item, ink variant, gold eyebrow, two-word display title.
+        function SlideD2Part1Divider() {
+          return (
+            <SlideFrame variant="ink" footer={false}>
+              <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+                <div style={{ fontFamily: FONTS.sans, fontSize: 26, letterSpacing: '0.32em', textTransform: 'uppercase', color: COLORS.gold, marginBottom: 36 }}>Part 01</div>
+                <Title color={COLORS.paper} size="display" style={{ lineHeight: 0.95, fontSize: 180 }}>
+                  Centralized<br />vs P2P.
+                </Title>
+                <Subtitle color="rgba(245,239,227,0.75)" style={{ fontSize: 40, marginTop: 48, maxWidth: 1100 }}>
+                  Who controls the system &mdash; the data, the traffic, the uptime &mdash; and what changes when no single party owns it.
+                </Subtitle>
+              </div>
+            </SlideFrame>
+          );
+        }
+
+        function SlideD2Part2Divider() {
+          return (
+            <SlideFrame variant="ink" footer={false}>
+              <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+                <div style={{ fontFamily: FONTS.sans, fontSize: 26, letterSpacing: '0.32em', textTransform: 'uppercase', color: COLORS.gold, marginBottom: 36 }}>Part 02</div>
+                <Title color={COLORS.paper} size="display" style={{ lineHeight: 0.95, fontSize: 180 }}>
+                  Swarm<br />Mechanics.
+                </Title>
+                <Subtitle color="rgba(245,239,227,0.75)" style={{ fontSize: 40, marginTop: 48, maxWidth: 1100 }}>
+                  Chunking, the tracker, peers coming and going &mdash; and the vocabulary you need to read any torrent client.
+                </Subtitle>
+              </div>
+            </SlideFrame>
+          );
+        }
+
+        function SlideD2Part3Divider() {
+          return (
+            <SlideFrame variant="ink" footer={false}>
+              <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+                <div style={{ fontFamily: FONTS.sans, fontSize: 26, letterSpacing: '0.32em', textTransform: 'uppercase', color: COLORS.gold, marginBottom: 36 }}>Part 03</div>
+                <Title color={COLORS.paper} size="display" style={{ lineHeight: 0.95, fontSize: 180 }}>
+                  Trust the<br />Bytes.
+                </Title>
+                <Subtitle color="rgba(245,239,227,0.75)" style={{ fontSize: 40, marginTop: 48, maxWidth: 1100 }}>
+                  Any peer can lie about what they send &mdash; piece-by-piece hash verification is what makes an untrusted swarm trustworthy.
+                </Subtitle>
+              </div>
+            </SlideFrame>
+          );
+        }
+
+        function SlideD2Part4Divider() {
+          return (
+            <SlideFrame variant="ink" footer={false}>
+              <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+                <div style={{ fontFamily: FONTS.sans, fontSize: 26, letterSpacing: '0.32em', textTransform: 'uppercase', color: COLORS.gold, marginBottom: 36 }}>Part 04</div>
+                <Title color={COLORS.paper} size="display" style={{ lineHeight: 0.95, fontSize: 180 }}>
+                  In the<br />Wild.
+                </Title>
+                <Subtitle color="rgba(245,239,227,0.75)" style={{ fontSize: 40, marginTop: 48, maxWidth: 1100 }}>
+                  Permanence, takedowns, honest trade-offs, and a live demo on a real client &mdash; the protocol with no off switch.
+                </Subtitle>
+              </div>
+            </SlideFrame>
+          );
+        }
+
+        function TopologyDemo() {
+          const [mode, setMode] = useState('centralized');
+          const [hubDown, setHubDown] = useState(false);
+          const [peerDown, setPeerDown] = useState(false);
+          const online = useMemo(() => {
+            if (mode === 'centralized') return hubDown ? 0 : (peerDown ? 4 : 5);
+            return peerDown ? 4 : 5;
+          }, [mode, hubDown, peerDown]);
+          const cap = topologyCaption(mode, hubDown, peerDown);
+          const animPause = mode === 'centralized' && hubDown;
+          const groupLabel = { fontFamily: FONTS.sans, fontSize: 13, letterSpacing: '0.14em', color: COLORS.muted, textTransform: 'uppercase' };
+          const segBase = { padding: '10px 14px', border: `1px solid ${COLORS.rule}` };
+          const failBase = { padding: '10px 14px', border: `1px solid ${COLORS.rule}` };
+          const hubDisabled = mode !== 'centralized';
+          return (
+            <div style={{ border: `1px solid ${COLORS.rule}`, padding: 24, marginTop: 24 }}>
+              <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 12, marginBottom: 18 }}>
+                <span style={groupLabel}>Mode</span>
+                <div style={{ display: 'flex', gap: 0 }}>
+                  <button
+                    type="button"
+                    onClick={() => setMode('centralized')}
+                    aria-pressed={mode === 'centralized'}
+                    style={{
+                      ...segBase,
+                      borderRight: 'none',
+                      background: mode === 'centralized' ? COLORS.ink : COLORS.paper,
+                      color: mode === 'centralized' ? COLORS.paper : COLORS.ink,
+                    }}
+                  >Centralized</button>
+                  <button
+                    type="button"
+                    onClick={() => setMode('p2p')}
+                    aria-pressed={mode === 'p2p'}
+                    style={{
+                      ...segBase,
+                      background: mode === 'p2p' ? COLORS.ink : COLORS.paper,
+                      color: mode === 'p2p' ? COLORS.paper : COLORS.ink,
+                    }}
+                  >Peer-to-peer</button>
+                </div>
+              </div>
+              <TopologySvgVisualization mode={mode} hubDown={hubDown} peerDown={peerDown} revealStep={3} showPackets={!animPause} />
+              <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 12, marginTop: 18 }}>
+                <span style={groupLabel}>Failures</span>
+                <div style={{ display: 'flex', gap: 10 }}>
+                  <button
+                    type="button"
+                    onClick={() => setHubDown((v) => !v)}
+                    disabled={hubDisabled}
+                    aria-pressed={hubDown}
+                    title="Toggle hub fail"
+                    style={{
+                      ...failBase,
+                      background: hubDown && !hubDisabled ? COLORS.ink : COLORS.paper,
+                      color: hubDown && !hubDisabled ? COLORS.paper : COLORS.ink,
+                      opacity: hubDisabled ? 0.45 : 1,
+                      cursor: hubDisabled ? 'default' : 'pointer',
+                    }}
+                  >Hub</button>
+                  <button
+                    type="button"
+                    onClick={() => setPeerDown((v) => !v)}
+                    aria-pressed={peerDown}
+                    title="Toggle Erin offline"
+                    style={{
+                      ...failBase,
+                      background: peerDown ? COLORS.ink : COLORS.paper,
+                      color: peerDown ? COLORS.paper : COLORS.ink,
+                    }}
+                  >Erin</button>
+                </div>
+              </div>
+              <Body size="bodyLg" style={{ marginTop: 18, marginBottom: 10 }}>
+                Peers receiving data: <strong>{online}/5</strong> (Alice, Bob, Carol, Dana, Erin).
+              </Body>
+              <Body size="body" style={{ fontSize: 28, color: COLORS.ink, fontStyle: 'italic', lineHeight: 1.35 }}>{cap}</Body>
+            </div>
+          );
+        }
+
+        const PEER_COLORS = {
+          Alice: COLORS.gold,
+          Bob:   COLORS.ok,
+          Carol: COLORS.accentSoft,
+          Dana:  '#6B8F9E',
+          Erin:  '#8B7355',
+        };
+
+        // Slide 6 demo — three-stage walk-through of how a file is split,
+        // why a single host bottlenecks, and how a P2P swarm trades centralized
+        // bandwidth for parallel peers. Same per-source rate constant across
+        // stages so the speedup is honest (server upstream is divided across
+        // clients; each peer brings its own upload).
+        const CHUNK_PIECES = 24;
+        // One uplink's worth of bandwidth, in pieces/sec. Both the server's
+        // single uplink and each peer's individual uplink push at this rate,
+        // so the comparison stays apples-to-apples and the speedup is honest.
+        // Speedup = (N · R) / (R / N) = N²  — independent of R itself.
+        const CHUNK_UPLINK_RATE = 5;
+        const CHUNK_PEER_RATE = CHUNK_UPLINK_RATE;          // pieces/sec per peer uplink
+        const CHUNK_SERVER_TOTAL_RATE = CHUNK_UPLINK_RATE;  // server's total uplink, shared
+        const CHUNK_STAGES = ['1. Split', '2. Server', '3. Swarm'];
+
+        function ChunkStepper({ stage, setStage, onReset }) {
+          const last = CHUNK_STAGES.length - 1;
+          return (
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10, flexWrap: 'wrap' }}>
+              {CHUNK_STAGES.map((label, i) => {
+                const active = stage === i;
+                return (
+                  <button
+                    key={i}
+                    type="button"
+                    onClick={() => setStage(i)}
+                    style={{
+                      fontFamily: FONTS.sans,
+                      fontSize: 15,
+                      letterSpacing: '0.10em',
+                      padding: '7px 14px',
+                      border: `1.5px solid ${active ? COLORS.ink : COLORS.rule}`,
+                      background: active ? COLORS.ink : COLORS.paper,
+                      color: active ? COLORS.paper : COLORS.ink,
+                      cursor: 'pointer',
+                      textTransform: 'uppercase',
+                    }}
+                  >{label}</button>
+                );
+              })}
+              <div style={{ flex: 1 }} />
+              <button
+                type="button"
+                onClick={() => setStage(Math.max(0, stage - 1))}
+                disabled={stage === 0}
+                style={{ fontFamily: FONTS.sans, fontSize: 15, padding: '9px 14px', border: `1px solid ${COLORS.rule}`, background: COLORS.paper, cursor: stage === 0 ? 'not-allowed' : 'pointer', opacity: stage === 0 ? 0.4 : 1 }}
+              >‹ Back</button>
+              <button
+                type="button"
+                onClick={() => setStage(Math.min(last, stage + 1))}
+                disabled={stage === last}
+                style={{ fontFamily: FONTS.sans, fontSize: 15, padding: '9px 14px', border: `1px solid ${COLORS.ink}`, background: COLORS.ink, color: COLORS.paper, cursor: stage === last ? 'not-allowed' : 'pointer', opacity: stage === last ? 0.4 : 1 }}
+              >Next ›</button>
+              <button
+                type="button"
+                onClick={onReset}
+                style={{ fontFamily: FONTS.sans, fontSize: 15, padding: '9px 14px', border: `1px solid ${COLORS.rule}`, background: COLORS.paper, cursor: 'pointer' }}
+              >Reset</button>
+            </div>
+          );
+        }
+
+        function ChunkRealWorldNote() {
+          return (
+            <div style={{
+              marginTop: 10,
+              padding: '10px 16px',
+              background: COLORS.creamDark,
+              border: `1px solid ${COLORS.rule}`,
+              borderLeft: `4px solid ${COLORS.ink}`,
+            }}>
+              <div style={{ fontFamily: FONTS.sans, fontSize: 12, letterSpacing: '0.18em', color: COLORS.muted, marginBottom: 4, textTransform: 'uppercase' }}>In the wild: big platforms shed load with peer caches</div>
+              <div style={{ fontFamily: FONTS.serif, fontSize: 18, lineHeight: 1.35, color: COLORS.ink }}>
+                <strong>Apple's macOS Content Caching</strong> turns Macs on a local network into a peer cache for system updates, App Store apps, and iCloud assets. An office of Macs downloads each update once, then serves it to the rest. <strong>Microsoft's Windows Update Delivery Optimization</strong> does the same and also pulls update chunks from other PCs across the internet.
+              </div>
+            </div>
+          );
+        }
+
+        // Stage 1 — file is sliced into PIECES labeled, hash-addressable chunks.
+        function ChunkSplitStage({ elapsed }) {
+          const progress = Math.min(1, elapsed / 1.8);
+          const fileW = 1240;
+          const fileH = 70;
+          return (
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 20, padding: '6px 0' }}>
+              <div style={{ width: '100%', maxWidth: fileW }}>
+                <div style={{ fontFamily: FONTS.sans, fontSize: 13, letterSpacing: '0.18em', color: COLORS.muted, marginBottom: 6 }}>SOURCE FILE</div>
+                <svg viewBox={`0 0 ${fileW} ${fileH}`} width="100%" height={fileH} preserveAspectRatio="none" style={{ display: 'block' }}>
+                  <rect x="2" y="2" width={fileW - 4} height={fileH - 4} fill={COLORS.paper} stroke={COLORS.ink} strokeWidth="2" />
+                  {Array.from({ length: CHUNK_PIECES - 1 }).map((_, i) => {
+                    const reveal = (i + 1) / CHUNK_PIECES;
+                    if (progress < reveal * 0.55) return null;
+                    const x = ((i + 1) / CHUNK_PIECES) * fileW;
+                    return <line key={i} x1={x} y1="2" x2={x} y2={fileH - 2} stroke={COLORS.rule} strokeWidth="1" />;
+                  })}
+                  <text x={fileW / 2} y={fileH / 2 + 8} textAnchor="middle" fontFamily={FONTS.serif} fontStyle="italic" fontSize="22" fill={COLORS.ink}>movie.mp4 · 1.2 GB</text>
+                </svg>
+              </div>
+
+              <div style={{ fontSize: 28, color: COLORS.muted, opacity: progress > 0.5 ? 1 : 0, transition: 'opacity 220ms linear', lineHeight: 1 }}>↓</div>
+
+              <div style={{ width: '100%', maxWidth: fileW }}>
+                <div style={{ fontFamily: FONTS.sans, fontSize: 13, letterSpacing: '0.18em', color: COLORS.muted, marginBottom: 6 }}>{CHUNK_PIECES} INDEPENDENTLY ADDRESSABLE PIECES (LABEL · HASH)</div>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(12, 1fr)', gap: 6 }}>
+                  {Array.from({ length: CHUNK_PIECES }).map((_, i) => {
+                    const reveal = i / CHUNK_PIECES;
+                    const visible = progress >= 0.55 + reveal * 0.45;
+                    const label = `piece-${String(i + 1).padStart(2, '0')}`;
+                    const hash = simpleHash(label).slice(0, 6);
+                    const tint = PEER_COLORS[PEER_NAMES[i % PEER_NAMES.length]];
+                    return (
+                      <div key={i} style={{
+                        border: `1px solid ${COLORS.rule}`,
+                        background: visible ? `${tint}33` : 'transparent',
+                        opacity: visible ? 1 : 0,
+                        transform: visible ? 'translateY(0)' : 'translateY(-6px)',
+                        transition: 'opacity 220ms linear, background 220ms linear, transform 220ms ease-out',
+                        padding: '7px 4px',
+                        textAlign: 'center',
+                      }}>
+                        <div style={{ fontFamily: FONTS.mono, fontSize: 12, color: COLORS.ink, fontWeight: 600 }}>{label}</div>
+                        <div style={{ fontFamily: FONTS.mono, fontSize: 10, color: COLORS.muted, marginTop: 2 }}>{hash}</div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+
+              <div style={{ fontFamily: FONTS.serif, fontSize: 22, fontStyle: 'italic', color: COLORS.ink, textAlign: 'center', maxWidth: 1100, marginTop: 4 }}>
+                Files are broken into many fixed-size chunks. Each piece has a known hash, so any peer can serve any piece, and the receiver can verify it.
+              </div>
+            </div>
+          );
+        }
+
+        // Stage 2 — single server, 5 clients sharing one upstream pipe.
+        // YOU are one of the clients; your effective rate is SERVER_TOTAL / N.
+        function ChunkCentralizedStage({ elapsed, t }) {
+          const clientNames = PEER_NAMES;          // 5 clients
+          const N = clientNames.length;
+          const perClientRate = CHUNK_SERVER_TOTAL_RATE / N;
+          const yourPieces = Math.min(CHUNK_PIECES, Math.floor(elapsed * perClientRate));
+          const done = yourPieces >= CHUNK_PIECES;
+          const serverColor = COLORS.accent;
+
+          const w = 560, h = 530;
+          const { hub, peers: layoutPeers } = getCentralizedLayout(w, h);
+          const clients = layoutPeers.map((p) => ({ ...p, isYou: p.i === 0 }));
+
+          return (
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 28, alignItems: 'start' }}>
+              <div>
+                <div style={{ fontFamily: FONTS.sans, fontSize: 13, letterSpacing: '0.18em', color: COLORS.muted, marginBottom: 6 }}>ONE SERVER · {N} CLIENTS · SHARED UPLINK</div>
+                <svg viewBox={`0 0 ${w} ${h}`} width="100%" height={420} preserveAspectRatio="xMidYMid meet" style={{ display: 'block' }}>
+                  {clients.map((p) => {
+                    const e = centralizedSpokeEndpoints(hub, p, 58, 72);
+                    return (
+                      <g key={`edge-${p.i}`}>
+                        <NetworkLinkLine x1={e.x1} y1={e.y1} x2={e.x2} y2={e.y2} active />
+                        {!done && (
+                          <PacketOnEdge x1={e.x1} y1={e.y1} x2={e.x2} y2={e.y2} t={t * 0.35} phase={p.i * 0.2} color={serverColor} r={6} />
+                        )}
+                      </g>
+                    );
+                  })}
+                  <g transform={`translate(${hub.x - 60}, ${hub.y - 70})`}>
+                    <ServerRackSvg />
+                  </g>
+                  {clients.map((p) => (
+                    <g key={p.name} transform={`translate(${p.x - 60}, ${p.y - 70})`}>
+                      <NetworkPersonSvg name={p.name} />
+                      {p.isYou && <circle cx="60" cy="60" r="64" fill="none" stroke={COLORS.ink} strokeWidth="2" strokeDasharray="4 4" />}
+                      <text x="60" y={p.name === 'Alice' ? 6 : 168} textAnchor="middle" fontFamily={FONTS.serif} fontStyle="italic" fontSize="20" fill={COLORS.ink}>{p.isYou ? 'YOU' : p.name}</text>
+                    </g>
+                  ))}
+                </svg>
+                {/* Saturated indicator below the SVG so it never collides with the bottom peers. */}
+                <div style={{ marginTop: 8, padding: '6px 12px', background: serverColor, fontFamily: FONTS.sans, fontSize: 13, letterSpacing: '0.18em', color: COLORS.paper, textAlign: 'center', textTransform: 'uppercase' }}>
+                  Uplink saturated
+                </div>
+              </div>
+
+              <div style={{ display: 'flex', flexDirection: 'column' }}>
+                <div style={{ fontFamily: FONTS.sans, fontSize: 13, letterSpacing: '0.18em', color: COLORS.muted, marginBottom: 6 }}>YOUR FILE (PIECES ARRIVE FROM THE SERVER)</div>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(12, 1fr)', gap: 4, maxWidth: 560 }}>
+                  {Array.from({ length: CHUNK_PIECES }).map((_, i) => {
+                    const filled = i < yourPieces;
+                    return (
+                      <div key={i} title={filled ? `piece ${i + 1} from server` : `piece ${i + 1} (waiting)`} style={{
+                        aspectRatio: '1',
+                        minWidth: 12,
+                        background: filled ? serverColor : 'transparent',
+                        border: `1px solid ${COLORS.rule}`,
+                        transition: 'background 180ms linear',
+                      }} />
+                    );
+                  })}
+                </div>
+                <div style={{ fontFamily: FONTS.serif, fontSize: 22, marginTop: 12 }}>
+                  Downloaded <strong>{yourPieces}</strong> / {CHUNK_PIECES} pieces · elapsed <strong>{elapsed.toFixed(1)}s</strong>{done ? '. Complete.' : '...'}
+                </div>
+                <div style={{ fontFamily: FONTS.serif, fontSize: 17, color: COLORS.inkSoft, marginTop: 6, lineHeight: 1.4 }}>
+                  Server uplink: <strong>{CHUNK_SERVER_TOTAL_RATE.toFixed(0)} pieces/sec</strong>, split <strong>{N} ways</strong> → each client gets <strong>{perClientRate.toFixed(2)} pieces/sec</strong>.
+                </div>
+                <div style={{ marginTop: 12, padding: '10px 14px', background: `${serverColor}14`, border: `1px solid ${serverColor}`, borderLeftWidth: 4 }}>
+                  <div style={{ fontFamily: FONTS.serif, fontSize: 17, color: COLORS.ink, fontStyle: 'italic' }}>
+                    One source, many askers. Bandwidth and risk concentrate at the host. The more clients show up, the slower everyone gets.
+                  </div>
+                </div>
+              </div>
+            </div>
+          );
+        }
+
+        // Stage 3 — P2P swarm. YOU at center; each peer contributes its own
+        // upload bandwidth in parallel, so the total rate scales with peers.
+        function ChunkSwarmStage({ elapsed, t }) {
+          const N = PEER_NAMES.length;
+          const delivered = Math.min(CHUNK_PIECES, Math.floor(elapsed * N * CHUNK_PEER_RATE));
+          const done = delivered >= CHUNK_PIECES;
+          const owners = Array.from({ length: CHUNK_PIECES }, (_, i) => PEER_NAMES[i % N]);
+
+          const w = 560, h = 530;
+          const { cx, cy, peers: layoutPeers } = getP2PLayout(w, h);
+          const peers = layoutPeers.map((p) => ({ ...p, color: PEER_COLORS[p.name] }));
+          const hub = { x: cx, y: cy };
+
+          return (
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 28, alignItems: 'start' }}>
+              <div>
+                <div style={{ fontFamily: FONTS.sans, fontSize: 13, letterSpacing: '0.18em', color: COLORS.muted, marginBottom: 6 }}>SWARM · {N} PARALLEL PEERS</div>
+                <svg viewBox={`0 0 ${w} ${h}`} width="100%" height={420} preserveAspectRatio="xMidYMid meet" style={{ display: 'block' }}>
+                  {peers.map((p) => {
+                    const e = centralizedSpokeEndpoints(hub, p, 58, 72);
+                    return (
+                      <g key={`edge-${p.i}`}>
+                        <NetworkLinkLine x1={e.x1} y1={e.y1} x2={e.x2} y2={e.y2} active />
+                        {!done && (
+                          <>
+                            <PacketOnEdge x1={e.x2} y1={e.y2} x2={e.x1} y2={e.y1} t={t} phase={p.i * 0.17} color={p.color} r={6} />
+                            <PacketOnEdge x1={e.x2} y1={e.y2} x2={e.x1} y2={e.y1} t={t} phase={p.i * 0.17 + 0.5} color={p.color} r={4} />
+                          </>
+                        )}
+                      </g>
+                    );
+                  })}
+                  <g transform={`translate(${cx}, ${cy})`}>
+                    <circle r="44" fill={COLORS.ink} stroke={COLORS.ink} strokeWidth="2" />
+                    <text textAnchor="middle" y="6" fontFamily={FONTS.sans} fontSize="20" letterSpacing="0.12em" fill={COLORS.paper}>YOU</text>
+                  </g>
+                  {peers.map((p) => (
+                    <g key={p.name} transform={`translate(${p.x - 60}, ${p.y - 70})`}>
+                      <NetworkPersonSvg name={p.name} />
+                      <circle cx="106" cy="10" r="9" fill={p.color} stroke={COLORS.ink} strokeWidth="1.5" />
+                      <text x="60" y={p.name === 'Alice' ? 6 : 168} textAnchor="middle" fontFamily={FONTS.serif} fontStyle="italic" fontSize="20" fill={COLORS.ink}>{p.name}</text>
+                    </g>
+                  ))}
+                </svg>
+              </div>
+
+              <div style={{ display: 'flex', flexDirection: 'column' }}>
+                <div style={{ fontFamily: FONTS.sans, fontSize: 13, letterSpacing: '0.18em', color: COLORS.muted, marginBottom: 6 }}>YOUR FILE (PIECES COLOR-CODED BY SOURCE PEER)</div>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(12, 1fr)', gap: 4, maxWidth: 560 }}>
+                  {Array.from({ length: CHUNK_PIECES }).map((_, i) => {
+                    const filled = i < delivered;
+                    const owner = owners[i];
+                    return (
+                      <div key={i} title={filled ? `piece ${i + 1} from ${owner}` : `piece ${i + 1} (waiting)`} style={{
+                        aspectRatio: '1',
+                        minWidth: 12,
+                        background: filled ? PEER_COLORS[owner] : 'transparent',
+                        border: `1px solid ${COLORS.rule}`,
+                        transition: 'background 180ms linear',
+                      }} />
+                    );
+                  })}
+                </div>
+                <div style={{ fontFamily: FONTS.serif, fontSize: 22, marginTop: 12 }}>
+                  Downloaded <strong>{delivered}</strong> / {CHUNK_PIECES} pieces · elapsed <strong>{elapsed.toFixed(1)}s</strong>{done ? '. Complete.' : '...'}
+                </div>
+                <div style={{ fontFamily: FONTS.serif, fontSize: 17, color: COLORS.inkSoft, marginTop: 6, lineHeight: 1.4 }}>
+                  Each peer contributes <strong>{CHUNK_PEER_RATE.toFixed(0)} pieces/sec</strong>. With <strong>{N}</strong> peers in parallel, total throughput ≈ <strong>{(N * CHUNK_PEER_RATE).toFixed(0)} pieces/sec</strong>, about <strong>N² = {N * N}×</strong> the centralized rate.
+                </div>
+                <div style={{ marginTop: 12, padding: '10px 14px', background: `${COLORS.ok}14`, border: `1px solid ${COLORS.ok}`, borderLeftWidth: 4 }}>
+                  <div style={{ fontFamily: FONTS.serif, fontSize: 17, color: COLORS.ink, fontStyle: 'italic' }}>
+                    Many sources in parallel. Every new peer brings its own upload pipe; load and risk spread across the swarm instead of stacking on one host.
+                  </div>
+                </div>
+                <div style={{ marginTop: 12, display: 'flex', flexWrap: 'wrap', gap: 12 }}>
+                  {PEER_NAMES.map((name) => (
+                    <div key={name} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                      <span style={{ width: 14, height: 14, background: PEER_COLORS[name], border: `1px solid ${COLORS.ink}`, display: 'inline-block' }} />
+                      <span style={{ fontFamily: FONTS.serif, fontStyle: 'italic', fontSize: 16 }}>{name}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          );
+        }
+
+        function ChunkDistributionDemo() {
+          const [stage, setStage] = useState(0);
+          const [resetKey, setResetKey] = useState(0);
+          const t = useAnimSeconds();
+          const startRef = useRef(null);
+          const sigRef = useRef('');
+
+          // Reset the elapsed clock whenever the stage or reset button changes,
+          // so each stage starts from t=0 and stats stay legible.
+          const sig = `${stage}|${resetKey}`;
+          if (sigRef.current !== sig) {
+            sigRef.current = sig;
+            startRef.current = null;
+          }
+          if (startRef.current === null && t > 0) startRef.current = t;
+          const elapsed = startRef.current == null ? 0 : Math.max(0, t - startRef.current);
+
+          // Freeze the elapsed readout once the stage's download finishes,
+          // so the on-screen timer stops the moment the last piece arrives.
+          const N = PEER_NAMES.length;
+          const stageDuration =
+            stage === 1 ? CHUNK_PIECES / (CHUNK_SERVER_TOTAL_RATE / N) :
+            stage === 2 ? CHUNK_PIECES / (N * CHUNK_PEER_RATE) :
+            Infinity;
+          const elapsedShown = Math.min(elapsed, stageDuration);
+
+          return (
+            <div style={{ border: `1px solid ${COLORS.rule}`, padding: 12, marginTop: 10, display: 'flex', flexDirection: 'column' }}>
+              <ChunkStepper stage={stage} setStage={setStage} onReset={() => setResetKey((k) => k + 1)} />
+              {stage === 0 && <ChunkSplitStage elapsed={elapsed} />}
+              {stage === 1 && <ChunkCentralizedStage elapsed={elapsedShown} t={t} />}
+              {stage === 2 && <ChunkSwarmStage elapsed={elapsedShown} t={t} />}
+              <ChunkRealWorldNote />
+            </div>
+          );
+        }
+
+        function simpleHash(text) {
+          let hash = 0;
+          for (let i = 0; i < text.length; i++) hash = (hash * 31 + text.charCodeAt(i)) >>> 0;
+          return hash.toString(16).padStart(8, '0');
+        }
+
+        // Slide 6 demo — animated 5-peer swarm with one masked attacker (Mallory).
+        // A single Hash Verification toggle decides whether her poisoned pieces are
+        // quietly accepted (file ends up INFECTED) or caught and refetched from
+        // honest peers (file ends up clean). Click any filled/infected slot to
+        // surface the actual expected vs observed hash.
+        function MaliciousPeerDemo() {
+          const PIECES = 12;
+          const PIECE_INTERVAL = 0.75;          // sec between piece arrivals
+          const REJECT_FLASH = 0.55;             // sec the rejected slot pulses red
+          const REFETCH_TIME = 0.55;             // sec for honest re-fetch packet to fly
+          const HONEST = ['Alice', 'Bob', 'Carol', 'Dana'];
+          const MALLORY_PIECES = new Set([2, 5, 9]); // 3 of 12 are malicious
+
+          const ownerOf = (i) => MALLORY_PIECES.has(i) ? 'Mallory' : HONEST[i % HONEST.length];
+          const refetcherOf = (i) => HONEST[(i * 3 + 1) % HONEST.length];
+          const pieceLabel = (i) => `piece-${String(i + 1).padStart(2, '0')}`;
+
+          const [hashOn, setHashOn] = useState(false);
+          const [resetKey, setResetKey] = useState(0);
+          const [inspectIdx, setInspectIdx] = useState(null);
+          const t = useAnimSeconds();
+          const startRef = useRef(null);
+          const sigRef = useRef('');
+
+          // Reset start clock when toggling verification or pressing Reset.
+          const sig = `${hashOn}|${resetKey}`;
+          if (sigRef.current !== sig) {
+            sigRef.current = sig;
+            startRef.current = null;
+          }
+          if (startRef.current === null && t > 0) startRef.current = t;
+          const elapsed = startRef.current == null ? 0 : Math.max(0, t - startRef.current);
+
+          useEffect(() => { setInspectIdx(null); }, [resetKey, hashOn]);
+
+          // Compute deterministic per-piece state from elapsed seconds.
+          // phases: 'pending' | 'inflight' | 'rejected' | 'refetching' | 'filled' | 'infected'
+          const pieceStates = [];
+          for (let i = 0; i < PIECES; i++) {
+            const arrival = (i + 1) * PIECE_INTERVAL;
+            const owner = ownerOf(i);
+            const isMal = owner === 'Mallory';
+            let st;
+            if (elapsed < arrival - PIECE_INTERVAL) {
+              st = { phase: 'pending', owner, isMal };
+            } else if (elapsed < arrival) {
+              st = {
+                phase: 'inflight',
+                owner,
+                isMal,
+                flightT: 1 - (arrival - elapsed) / PIECE_INTERVAL,
+              };
+            } else if (!isMal) {
+              st = { phase: 'filled', owner, color: PEER_COLORS[owner], isMal: false };
+            } else if (!hashOn) {
+              st = { phase: 'infected', owner: 'Mallory', color: COLORS.danger, isMal: true };
+            } else {
+              const since = elapsed - arrival;
+              if (since < REJECT_FLASH) {
+                st = { phase: 'rejected', owner, isMal: true };
+              } else if (since < REJECT_FLASH + REFETCH_TIME) {
+                const refetcher = refetcherOf(i);
+                st = {
+                  phase: 'refetching',
+                  owner: refetcher,
+                  originalOwner: 'Mallory',
+                  isMal: true,
+                  flightT: (since - REJECT_FLASH) / REFETCH_TIME,
+                };
+              } else {
+                const refetcher = refetcherOf(i);
+                st = {
+                  phase: 'filled',
+                  owner: refetcher,
+                  color: PEER_COLORS[refetcher],
+                  isMal: false,
+                  wasMal: true,
+                };
+              }
+            }
+            pieceStates.push(st);
+          }
+
+          const allDone = pieceStates.every(s => s.phase === 'filled' || s.phase === 'infected');
+          const blocked = pieceStates.filter(s => s.wasMal && s.phase === 'filled').length;
+          const accepted = pieceStates.filter(s => s.phase === 'infected').length;
+          const remaining = pieceStates.filter(s => s.phase !== 'filled' && s.phase !== 'infected').length;
+
+          // Swarm geometry — Mallory occupies the top slot so the class sees her first.
+          const SWARM = ['Mallory', 'Bob', 'Carol', 'Dana', 'Alice'];
+          const w = 540, h = 460, cx = w / 2, cy = h / 2;
+          const ringR = Math.min(w, h) * 0.36;
+          const peers = SWARM.map((name, i) => {
+            const ang = -Math.PI / 2 + (i / SWARM.length) * Math.PI * 2;
+            return {
+              name, i,
+              x: cx + Math.cos(ang) * ringR,
+              y: cy + Math.sin(ang) * ringR,
+              color: name === 'Mallory' ? COLORS.danger : PEER_COLORS[name],
+              isMallory: name === 'Mallory',
+            };
+          });
+          const edgeFor = (p) => {
+            const dx = cx - p.x, dy = cy - p.y;
+            const len = Math.hypot(dx, dy) || 1;
+            const ux = dx / len, uy = dy / len;
+            return { x1: p.x + ux * 60, y1: p.y + uy * 60, x2: cx - ux * 50, y2: cy - uy * 50 };
+          };
+          const edgeByName = Object.fromEntries(peers.map(p => [p.name, edgeFor(p)]));
+
+          // In-flight packets to render this frame.
+          const inflight = [];
+          pieceStates.forEach((st, i) => {
+            if (st.phase === 'inflight' || st.phase === 'refetching') {
+              const e = edgeByName[st.owner];
+              if (!e) return;
+              const u = st.flightT;
+              inflight.push({
+                i,
+                x: e.x1 + (e.x2 - e.x1) * u,
+                y: e.y1 + (e.y2 - e.y1) * u,
+                color: st.phase === 'refetching' ? COLORS.ok : (st.isMal ? COLORS.danger : PEER_COLORS[st.owner]),
+                isMal: st.phase === 'inflight' && st.isMal,
+                isRefetch: st.phase === 'refetching',
+              });
+            }
+          });
+
+          // Forensic readout for the inspected piece.
+          let inspectInfo = null;
+          if (inspectIdx !== null && pieceStates[inspectIdx]) {
+            const st = pieceStates[inspectIdx];
+            if (st.phase === 'filled' || st.phase === 'infected' || st.phase === 'rejected') {
+              const expected = simpleHash(pieceLabel(inspectIdx));
+              const wasPoisoned = st.phase === 'infected' || st.phase === 'rejected' || st.wasMal;
+              const observedRaw = wasPoisoned ? pieceLabel(inspectIdx) + '::PWN' : pieceLabel(inspectIdx);
+              const observed = simpleHash(observedRaw);
+              inspectInfo = {
+                idx: inspectIdx,
+                expected,
+                observed,
+                mismatched: wasPoisoned,
+                rescued: st.wasMal && st.phase === 'filled',
+              };
+            }
+          }
+
+          const btn = (active) => ({
+            fontFamily: FONTS.sans,
+            fontSize: 18,
+            letterSpacing: '0.06em',
+            padding: '10px 18px',
+            border: `1px solid ${active ? COLORS.ok : COLORS.danger}`,
+            background: active ? 'rgba(59,110,74,0.10)' : 'rgba(155,42,27,0.08)',
+            color: active ? COLORS.ok : COLORS.danger,
+            cursor: 'pointer',
+          });
+
+          return (
+            <div style={{ border: `1px solid ${COLORS.rule}`, padding: 22, marginTop: 18 }}>
+              {/* Top controls */}
+              <div style={{ display: 'flex', gap: 14, alignItems: 'center', flexWrap: 'wrap' }}>
+                <button type="button" onClick={() => setHashOn(v => !v)} style={btn(hashOn)}>
+                  Hash verification: {hashOn ? 'ON' : 'OFF'}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setResetKey(k => k + 1)}
+                  style={{ fontFamily: FONTS.sans, fontSize: 16, letterSpacing: '0.06em', padding: '10px 16px', border: `1px solid ${COLORS.rule}`, background: COLORS.paper, cursor: 'pointer' }}
+                >Reset download</button>
+                <div style={{ marginLeft: 'auto', display: 'flex', gap: 18, fontFamily: FONTS.sans, fontSize: 15, letterSpacing: '0.16em', textTransform: 'uppercase', color: COLORS.muted }}>
+                  <span>Blocked: <strong style={{ color: COLORS.ok }}>{blocked}</strong></span>
+                  <span>Accepted: <strong style={{ color: accepted > 0 ? COLORS.danger : COLORS.muted }}>{accepted}</strong></span>
+                  <span>Remaining: <strong style={{ color: COLORS.ink }}>{remaining}</strong></span>
+                </div>
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '540px 1fr', gap: 28, marginTop: 18, alignItems: 'start' }}>
+                {/* SWARM */}
+                <div>
+                  <div style={{ fontFamily: FONTS.sans, fontSize: 14, letterSpacing: '0.18em', color: COLORS.muted, marginBottom: 6 }}>SWARM · MALLORY IS MASKED</div>
+                  <svg viewBox={`0 0 ${w} ${h}`} width="100%" height={320} preserveAspectRatio="xMidYMid meet" style={{ display: 'block' }}>
+                    {peers.map(p => {
+                      const e = edgeByName[p.name];
+                      return (
+                        <NetworkLinkLine
+                          key={`e-${p.name}`}
+                          x1={e.x1} y1={e.y1} x2={e.x2} y2={e.y2}
+                          active={!p.isMallory || !hashOn}
+                          dashed={p.isMallory && hashOn}
+                        />
+                      );
+                    })}
+                    {inflight.map(pkt => (
+                      <g key={`pkt-${pkt.i}`}>
+                        <circle cx={pkt.x} cy={pkt.y} r={pkt.isMal ? 11 : 7} fill={pkt.color} stroke={COLORS.ink} strokeWidth={pkt.isMal ? 1.5 : 0} opacity={0.96} />
+                        {pkt.isMal && (
+                          <text x={pkt.x} y={pkt.y + 4} textAnchor="middle" fontFamily={FONTS.sans} fontSize="13" fontWeight="700" fill={COLORS.paper}>!</text>
+                        )}
+                        {pkt.isRefetch && (
+                          <text x={pkt.x} y={pkt.y - 14} textAnchor="middle" fontFamily={FONTS.sans} fontSize="11" letterSpacing="0.12em" fill={COLORS.ok}>REFETCH</text>
+                        )}
+                      </g>
+                    ))}
+                    <g transform={`translate(${cx}, ${cy})`}>
+                      <circle r="44" fill={COLORS.ink} stroke={COLORS.ink} strokeWidth="2" />
+                      <text textAnchor="middle" y="6" fontFamily={FONTS.sans} fontSize="20" letterSpacing="0.12em" fill={COLORS.paper}>YOU</text>
+                    </g>
+                    {peers.map(p => (
+                      <g key={p.name} transform={`translate(${p.x - 36}, ${p.y - 42})`}>
+                        <g transform="scale(0.6)">
+                          <NetworkPersonSvg name={p.name} />
+                          {p.isMallory && (
+                            <g>
+                              {/* bandit mask across the eyes */}
+                              <rect x="26" y="44" width="68" height="14" rx="2" fill={COLORS.danger} stroke={COLORS.ink} strokeWidth="1.5" />
+                              <circle cx="50" cy="51" r="3" fill={COLORS.paper} />
+                              <circle cx="70" cy="51" r="3" fill={COLORS.paper} />
+                            </g>
+                          )}
+                        </g>
+                        <circle cx="64" cy="6" r="9" fill={p.color} stroke={COLORS.ink} strokeWidth="1.5" />
+                        <text x="36" y="106" textAnchor="middle" fontFamily={FONTS.serif} fontStyle="italic" fontSize="20" fill={p.isMallory ? COLORS.danger : COLORS.ink}>{p.name}</text>
+                      </g>
+                    ))}
+                  </svg>
+                </div>
+
+                {/* FILE STRIP + status + forensic readout */}
+                <div style={{ display: 'flex', flexDirection: 'column', minWidth: 0 }}>
+                  <div style={{ fontFamily: FONTS.sans, fontSize: 14, letterSpacing: '0.18em', color: COLORS.muted, marginBottom: 6 }}>YOUR FILE · CLICK A PIECE TO INSPECT ITS HASH</div>
+                  <div style={{ position: 'relative' }}>
+                    <div style={{ display: 'grid', gridTemplateColumns: `repeat(${PIECES}, 1fr)`, gap: 4 }}>
+                      {pieceStates.map((st, i) => {
+                        let bg = 'transparent';
+                        let label = null;
+                        let labelColor = COLORS.danger;
+                        if (st.phase === 'filled') {
+                          bg = st.color;
+                        } else if (st.phase === 'infected') {
+                          bg = COLORS.danger;
+                          label = '!';
+                          labelColor = COLORS.paper;
+                        } else if (st.phase === 'rejected') {
+                          bg = '#F4D6CC';
+                          label = '\u2715';
+                        } else if (st.phase === 'refetching') {
+                          bg = '#F4D6CC';
+                        }
+                        const interactive = st.phase === 'filled' || st.phase === 'infected' || st.phase === 'rejected';
+                        const isInspected = inspectIdx === i;
+                        return (
+                          <div
+                            key={i}
+                            onClick={() => interactive && setInspectIdx(i)}
+                            title={`piece ${i + 1}${st.owner ? ' from ' + st.owner : ''}`}
+                            style={{
+                              aspectRatio: '1',
+                              minWidth: 28,
+                              background: bg,
+                              border: `${isInspected ? 3 : 1}px solid ${isInspected ? COLORS.ink : COLORS.rule}`,
+                              transition: 'background 180ms linear',
+                              cursor: interactive ? 'pointer' : 'default',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              fontFamily: FONTS.sans,
+                              fontSize: 22,
+                              fontWeight: 700,
+                              color: labelColor,
+                            }}
+                          >{label}</div>
+                        );
+                      })}
+                    </div>
+                    {allDone && !hashOn && accepted > 0 && (
+                      <div style={{
+                        position: 'absolute',
+                        inset: 0,
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        pointerEvents: 'none',
+                      }}>
+                        <div style={{
+                          fontFamily: FONTS.serif,
+                          fontStyle: 'italic',
+                          fontSize: 56,
+                          color: COLORS.danger,
+                          border: `5px solid ${COLORS.danger}`,
+                          padding: '4px 28px',
+                          transform: 'rotate(-6deg)',
+                          letterSpacing: '0.14em',
+                          textTransform: 'uppercase',
+                          background: 'rgba(245, 239, 227, 0.88)',
+                        }}>Infected</div>
+                      </div>
+                    )}
+                  </div>
+
+                  <div style={{ marginTop: 16, minHeight: 38 }}>
+                    {allDone && !hashOn && (
+                      <div style={{ fontFamily: FONTS.serif, fontSize: 28, color: COLORS.danger }}>
+                        <strong>{accepted}</strong> malicious piece{accepted === 1 ? '' : 's'} accepted. <em>Your file is compromised. The OS just ran Mallory's bytes.</em>
+                      </div>
+                    )}
+                    {allDone && hashOn && (
+                      <div style={{ fontFamily: FONTS.serif, fontSize: 28, color: COLORS.ok }}>
+                        All {PIECES} pieces verified. <em>Mallory's {blocked} attack{blocked === 1 ? '' : 's'} blocked and refetched from honest peers.</em>
+                      </div>
+                    )}
+                    {!allDone && (
+                      <div style={{ fontFamily: FONTS.serif, fontSize: 24, color: COLORS.inkSoft }}>
+                        Receiving pieces... {remaining} remaining. {hashOn ? 'Verification ON: bad bytes will be quarantined.' : 'Verification OFF: bytes are accepted blindly.'}
+                      </div>
+                    )}
+                  </div>
+
+                  {inspectInfo && (
+                    <div style={{ marginTop: 14, padding: '12px 16px', border: `1px solid ${COLORS.ruleFaint}`, background: COLORS.paper }}>
+                      <div style={{ fontFamily: FONTS.sans, fontSize: 13, letterSpacing: '0.18em', color: COLORS.muted, textTransform: 'uppercase', marginBottom: 6 }}>
+                        Piece {inspectInfo.idx + 1} forensics
+                      </div>
+                      <div style={{ fontFamily: FONTS.mono, fontSize: 20 }}>
+                        Expected: 0x{inspectInfo.expected.toString(16).padStart(8, '0')}
+                      </div>
+                      <div style={{ fontFamily: FONTS.mono, fontSize: 20, color: inspectInfo.mismatched ? COLORS.danger : COLORS.ink }}>
+                        Observed: 0x{inspectInfo.observed.toString(16).padStart(8, '0')}
+                      </div>
+                      <div style={{ fontFamily: FONTS.serif, fontStyle: 'italic', fontSize: 22, marginTop: 4, color: inspectInfo.mismatched ? COLORS.danger : COLORS.ok }}>
+                        {inspectInfo.rescued
+                          ? 'Mismatch caught. Original poisoned bytes rejected, clean piece refetched.'
+                          : inspectInfo.mismatched
+                            ? 'Mismatch. Bytes were poisoned in transit by Mallory.'
+                            : 'Match. Piece bytes verified end-to-end.'}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          );
+        }
+
+        function ResilienceDemo() {
+          const TOTAL_PIECES = 12;
+          const ALL_PIECES = Array.from({ length: TOTAL_PIECES }, (_, i) => i + 1);
+          const PEERS = [
+            { name: 'S', leecherPieces: ALL_PIECES,    startsSeeder: true  },
+            { name: 'A', leecherPieces: [1, 2, 3, 4]                       },
+            { name: 'B', leecherPieces: [4, 5, 6, 7]                       },
+            { name: 'C', leecherPieces: [7, 8, 9]                          },
+            { name: 'D', leecherPieces: [9, 10, 11]                        },
+            { name: 'E', leecherPieces: [1, 11, 12]                        },
+          ];
+          const PEER_COLORS = [COLORS.gold, COLORS.accent, COLORS.ok, COLORS.inkSoft, COLORS.accentSoft, COLORS.muted];
+          const initialSeeders = () => new Set(PEERS.map((p, i) => p.startsSeeder ? i : -1).filter((x) => x >= 0));
+
+          const [offline, setOffline] = useState(() => new Set());
+          const [seeders, setSeeders] = useState(initialSeeders);
+
+          const togglePeer = (i) => setOffline((prev) => {
+            const next = new Set(prev);
+            if (next.has(i)) next.delete(i); else next.add(i);
+            return next;
+          });
+          const promote = (i) => setSeeders((prev) => {
+            const next = new Set(prev);
+            next.add(i);
+            return next;
+          });
+          const resetAll = () => { setOffline(new Set()); setSeeders(initialSeeders()); };
+
+          const effectivePieces = (i) => seeders.has(i) ? ALL_PIECES : PEERS[i].leecherPieces;
+
+          // piece -> [peerIndex, ...] across ALL peers (uses current effective holdings)
+          const allHolders = {};
+          for (let p = 1; p <= TOTAL_PIECES; p++) allHolders[p] = [];
+          PEERS.forEach((_, idx) => effectivePieces(idx).forEach((n) => allHolders[n].push(idx)));
+          // online holders only — drives reachable / missing
+          const onlineHolders = {};
+          for (let p = 1; p <= TOTAL_PIECES; p++) {
+            onlineHolders[p] = allHolders[p].filter((idx) => !offline.has(idx));
+          }
+          const missing = [];
+          for (let p = 1; p <= TOTAL_PIECES; p++) if (onlineHolders[p].length === 0) missing.push(p);
+          const reachableCount = TOTAL_PIECES - missing.length;
+          const intact = missing.length === 0;
+          const dirty = offline.size > 0 || !setsEqual(seeders, initialSeeders());
+
+          // Geometry
+          const w = 1200;
+          const h = 510;
+          const stripCellW = 64;
+          const stripCellH = 76;
+          const stripGap = 6;
+          const stripW = TOTAL_PIECES * stripCellW + (TOTAL_PIECES - 1) * stripGap;
+          const stripX = (w - stripW) / 2;
+          const stripY = 30;
+
+          const peerY = 230;
+          const personScale = 0.55;
+          const personW = 120 * personScale;  // 66
+          const personH = 152 * personScale;  // ~84
+
+          const slotW = w / PEERS.length;     // 200
+          const peerCenters = PEERS.map((_, i) => slotW / 2 + i * slotW);
+
+          // Per-peer y-anchors (relative to peerY for clarity)
+          const roleBadgeY  = peerY + personH + 6;    // ~320
+          const nameY       = peerY + personH + 56;   // ~370
+          const statusChipY = peerY + personH + 70;   // ~384
+          const promoteBtnY = peerY + personH + 110;  // ~424
+          const peerStripY  = peerY + personH + 158;  // ~472
+
+          return (
+            <div style={{ border: `1px solid ${COLORS.rule}`, padding: 24, marginTop: 24 }}>
+              <svg viewBox={`0 0 ${w} ${h}`} width="100%" height={470} preserveAspectRatio="xMidYMid meet" style={{ display: 'block' }}>
+                {/* Reassembled file strip */}
+                <text x={w / 2} y={stripY - 8} textAnchor="middle" fontFamily={FONTS.sans} fontSize="18" letterSpacing="0.22em" fill={COLORS.ink}>REASSEMBLED FILE</text>
+                {Array.from({ length: TOTAL_PIECES }, (_, i) => {
+                  const num = i + 1;
+                  const cx = stripX + i * (stripCellW + stripGap);
+                  const cy = stripY;
+                  const onHolders = onlineHolders[num];
+                  const isMissing = onHolders.length === 0;
+                  if (isMissing) {
+                    return (
+                      <g key={`fs-${num}`}>
+                        <rect x={cx} y={cy} width={stripCellW} height={stripCellH} fill={COLORS.creamDark} stroke={COLORS.danger} strokeWidth="2" strokeDasharray="5 4" />
+                        <line x1={cx + 8} y1={cy + 8} x2={cx + stripCellW - 8} y2={cy + stripCellH - 8} stroke={COLORS.danger} strokeWidth="2.5" />
+                        <line x1={cx + stripCellW - 8} y1={cy + 8} x2={cx + 8} y2={cy + stripCellH - 8} stroke={COLORS.danger} strokeWidth="2.5" />
+                        <text x={cx + stripCellW / 2} y={cy + stripCellH / 2 + 6} textAnchor="middle" fontFamily={FONTS.sans} fontSize="18" fontWeight="700" fill={COLORS.danger}>{num}</text>
+                      </g>
+                    );
+                  }
+                  // Online: stripe by online holders (1..n colors)
+                  const bandW = stripCellW / onHolders.length;
+                  return (
+                    <g key={`fs-${num}`}>
+                      {onHolders.map((hIdx, k) => (
+                        <rect key={k} x={cx + k * bandW} y={cy} width={bandW} height={stripCellH} fill={PEER_COLORS[hIdx]} />
+                      ))}
+                      <rect x={cx} y={cy} width={stripCellW} height={stripCellH} fill="none" stroke={COLORS.ink} strokeWidth="1.5" />
+                      <text x={cx + stripCellW / 2} y={cy + stripCellH / 2 + 7} textAnchor="middle" fontFamily={FONTS.sans} fontSize="20" fontWeight="700" fill={COLORS.paper}>{num}</text>
+                    </g>
+                  );
+                })}
+
+                {/* Divider rule */}
+                <line x1={60} y1={170} x2={w - 60} y2={170} stroke={COLORS.ruleFaint} strokeWidth="1" />
+                <text x={w / 2} y={195} textAnchor="middle" fontFamily={FONTS.serif} fontStyle="italic" fontSize="20" fill={COLORS.inkSoft}>click any peer to take them offline &middot; promote leechers to seeders</text>
+
+                {/* Peers */}
+                {PEERS.map((peer, i) => {
+                  const cx = peerCenters[i];
+                  const isOff = offline.has(i);
+                  const isSeeder = seeders.has(i);
+                  return (
+                    <g key={peer.name}>
+                      {/* Click target: avatar + name + status chip (NOT promote button or strip) */}
+                      <g onClick={() => togglePeer(i)} style={{ cursor: 'pointer' }}>
+                        <rect x={cx - 80} y={peerY - 8} width={160} height={(statusChipY + 30) - (peerY - 8)} fill="transparent" />
+
+                        {/* Seeder halo behind avatar */}
+                        {isSeeder && (
+                          <circle cx={cx} cy={peerY + 38} r={46} fill="none" stroke={COLORS.gold} strokeWidth="2.5" opacity={isOff ? 0.32 : 0.85} />
+                        )}
+
+                        {/* Avatar */}
+                        <g transform={`translate(${cx - personW / 2}, ${peerY}) scale(${personScale})`} opacity={isOff ? 0.32 : 1}>
+                          <NetworkPersonSvg name={peer.name} />
+                        </g>
+
+                        {/* Role badge: SEEDER (filled gold) / LEECHER (outlined) */}
+                        <g transform={`translate(${cx - 56}, ${roleBadgeY})`} opacity={isOff ? 0.4 : 1}>
+                          <rect
+                            width="112" height="26" rx="3"
+                            fill={isSeeder ? COLORS.gold : 'transparent'}
+                            stroke={isSeeder ? COLORS.gold : COLORS.muted}
+                            strokeWidth="1.5"
+                          />
+                          <text x="56" y="18" textAnchor="middle"
+                            fontFamily={FONTS.sans} fontSize="13" letterSpacing="0.18em" fontWeight="700"
+                            fill={isSeeder ? COLORS.paper : COLORS.muted}>
+                            {isSeeder ? 'SEEDER' : 'LEECHER'}
+                          </text>
+                        </g>
+
+                        {/* Name */}
+                        <text x={cx} y={nameY} textAnchor="middle" fontFamily={FONTS.serif} fontStyle="italic" fontSize="24" fill={isOff ? COLORS.muted : COLORS.ink}>Peer {peer.name}</text>
+
+                        {/* Online/Offline status chip */}
+                        <g transform={`translate(${cx - 56}, ${statusChipY})`}>
+                          <rect width="112" height="30" rx="4" fill={isOff ? COLORS.danger : COLORS.ok} />
+                          <text x="56" y="20" textAnchor="middle"
+                            fontFamily={FONTS.sans} fontSize="14" letterSpacing="0.14em" fontWeight="600"
+                            fill={COLORS.paper}>
+                            {isOff ? 'OFFLINE' : 'ONLINE'}
+                          </text>
+                        </g>
+                      </g>
+
+                      {/* Promote button: leechers only */}
+                      {!isSeeder && (
+                        <g
+                          transform={`translate(${cx - 80}, ${promoteBtnY})`}
+                          onClick={(e) => { e.stopPropagation(); promote(i); }}
+                          style={{ cursor: 'pointer' }}
+                        >
+                          <rect width="160" height="26" rx="3" fill="transparent" stroke={COLORS.ink} strokeWidth="1" strokeDasharray="3 3" />
+                          <text x="80" y="18" textAnchor="middle"
+                            fontFamily={FONTS.sans} fontSize="13" letterSpacing="0.10em" fontWeight="500"
+                            fill={COLORS.ink}>
+                            + promote to seeder
+                          </text>
+                        </g>
+                      )}
+
+                      {/* Mini piece strip — sized by role */}
+                      {(() => {
+                        const pieces = effectivePieces(i);
+                        const cellW = isSeeder ? 14 : 30;
+                        const cellH = isSeeder ? 22 : 30;
+                        const gap   = isSeeder ? 2  : 4;
+                        const fs    = isSeeder ? 11 : 14;
+                        const stripWidth = pieces.length * cellW + (pieces.length - 1) * gap;
+                        return pieces.map((piece, j) => {
+                          const mx = cx - stripWidth / 2 + j * (cellW + gap);
+                          const my = peerStripY;
+                          return (
+                            <g key={`mini-${peer.name}-${j}`} opacity={isOff ? 0.32 : 1}>
+                              <rect x={mx} y={my} width={cellW} height={cellH} fill={PEER_COLORS[i]} stroke={COLORS.ink} strokeWidth="1.2" />
+                              <text x={mx + cellW / 2} y={my + cellH / 2 + fs * 0.36} textAnchor="middle" fontFamily={FONTS.sans} fontSize={fs} fontWeight="600" fill={COLORS.paper}>{piece}</text>
+                            </g>
+                          );
+                        });
+                      })()}
+                    </g>
+                  );
+                })}
+              </svg>
+
+              {/* Status bar */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: 28, marginTop: 18, paddingTop: 18, borderTop: `1px solid ${COLORS.ruleFaint}`, flexWrap: 'wrap' }}>
+                <div style={{ fontFamily: FONTS.serif, fontSize: 34 }}>
+                  Pieces reachable: <span style={{ color: intact ? COLORS.ok : COLORS.danger, fontWeight: 700 }}>{reachableCount} / {TOTAL_PIECES}</span>
+                </div>
+                <div style={{ fontFamily: FONTS.serif, fontSize: 26, fontStyle: 'italic', color: intact ? COLORS.inkSoft : COLORS.danger, flex: '1 1 320px' }}>
+                  {intact
+                    ? 'Coverage intact. The file can still be reconstructed.'
+                    : `Coverage broken. Piece${missing.length > 1 ? 's' : ''} ${missing.join(', ')} ${missing.length > 1 ? 'have' : 'has'} no online holder.`}
+                </div>
+                <button
+                  type="button"
+                  onClick={resetAll}
+                  disabled={!dirty}
+                  style={{
+                    fontFamily: FONTS.sans,
+                    fontSize: 18,
+                    letterSpacing: '0.10em',
+                    padding: '12px 22px',
+                    border: `1px solid ${COLORS.ink}`,
+                    background: dirty ? COLORS.ink : 'transparent',
+                    color: dirty ? COLORS.paper : COLORS.ink,
+                    cursor: dirty ? 'pointer' : 'not-allowed',
+                    opacity: dirty ? 1 : 0.4,
+                  }}
+                >
+                  Reset all peers
+                </button>
+              </div>
+
+              {/* Legend */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: 28, marginTop: 14, fontFamily: FONTS.sans, fontSize: 18, letterSpacing: '0.06em', color: COLORS.muted, flexWrap: 'wrap' }}>
+                <span style={{ display: 'inline-flex', alignItems: 'center', gap: 10 }}>
+                  <span style={{ display: 'inline-block', width: 18, height: 18, background: COLORS.gold, border: `1px solid ${COLORS.gold}` }} />
+                  <span><strong style={{ color: COLORS.ink, letterSpacing: '0.14em' }}>SEEDER</strong>, holds all {TOTAL_PIECES} pieces</span>
+                </span>
+                <span style={{ display: 'inline-flex', alignItems: 'center', gap: 10 }}>
+                  <span style={{ display: 'inline-block', width: 18, height: 18, background: 'transparent', border: `1.5px solid ${COLORS.muted}` }} />
+                  <span><strong style={{ color: COLORS.ink, letterSpacing: '0.14em' }}>LEECHER</strong>, holds a subset</span>
+                </span>
+              </div>
+            </div>
+          );
+        }
+
+        function setsEqual(a, b) {
+          if (a.size !== b.size) return false;
+          for (const x of a) if (!b.has(x)) return false;
+          return true;
+        }
+
+        function SlideD2Models() {
+          return (
+            <SlideFrame>
+              <Eyebrow>Mental model shift</Eyebrow>
+              <Title>Centralized systems optimize control. <em>P2P optimizes resilience.</em></Title>
+              <TwoCol
+                style={{ flex: '0 0 auto' }}
+                left={<Card title="Centralized">One authority stores and serves data. Easy policy control, but a single outage can affect everyone.</Card>}
+                right={<Card title="Peer-to-Peer">Nodes exchange data directly. Load and risk are distributed, but governance is harder.</Card>}
+              />
+              <div style={{ flex: '1 1 auto', minHeight: 0, marginTop: 8 }}>
+                <NetworkCompareMini />
+              </div>
+            </SlideFrame>
+          );
+        }
+
+        function SlideD2NetworkCompare() {
+          return (
+            <SlideFrame>
+              <Eyebrow>Side-by-side</Eyebrow>
+              <Title>Same people, <em>different wiring</em> and failure behavior.</Title>
+              <div style={{ flex: 1, minHeight: 0, display: 'flex', marginTop: 8 }}>
+                <CentralizedVsP2PStage />
+              </div>
+            </SlideFrame>
+          );
+        }
+
+        function SlideD2Topology() {
+          return (
+            <SlideFrame>
+              <Eyebrow>Interactive demo</Eyebrow>
+              <Title>Topology and failure behavior.</Title>
+              <Body size="bodyLg" style={{ maxWidth: 1400 }}>Switch between architectures and simulate failures to compare service continuity.</Body>
+              <TopologyDemo />
+            </SlideFrame>
+          );
+        }
+
+        function SlideD2Chunking() {
+          return (
+            <SlideFrame>
+              <Eyebrow>How a download actually scales</Eyebrow>
+              <Title>Split the file. Then ask <em>where</em> the pieces come from.</Title>
+              <Body size="bodyLg" style={{ maxWidth: 1500, marginTop: 16 }}>
+                Step through the same 24-piece download three ways: how the file is broken up, what one server has to endure, and how a swarm trades centralized bandwidth for parallel peers.
+              </Body>
+              <ChunkDistributionDemo />
+            </SlideFrame>
+          );
+        }
+
+        function SlideD2Hashing() {
+          return (
+            <SlideFrame>
+              <Eyebrow>Trust in untrusted peers</Eyebrow>
+              <Title>Every piece is verified by <em>hash.</em></Title>
+              <Body size="bodyLg">Meet Mallory, a malicious peer in the swarm. Toggle hash verification to see what the swarm catches and what slips through.</Body>
+              <MaliciousPeerDemo />
+            </SlideFrame>
+          );
+        }
+
+        function SlideD2Resilience() {
+          return (
+            <SlideFrame>
+              <Eyebrow>Interactive demo</Eyebrow>
+              <Title>What happens when peers disappear?</Title>
+              <Body size="bodyLg">Click peers to take them offline. Watch the file strip. Coverage breaks the moment a piece has no online holder.</Body>
+              <ResilienceDemo />
+            </SlideFrame>
+          );
+        }
+
+        function SlideD2Vocab() {
+          const rows = [
+            ['Node/Peer', 'A participant machine in the swarm.'],
+            ['Seeder', 'Peer with a complete copy, uploading to others.'],
+            ['Leecher', 'Peer still downloading missing pieces.'],
+            ['Tracker', 'Service that helps peers find each other.'],
+            ['Piece', 'Fixed-size file fragment with a known hash.'],
+            ['Swarm', 'All peers currently sharing one torrent.'],
+          ];
+          return (
+            <SlideFrame>
+              <Eyebrow>Vocabulary you should own</Eyebrow>
+              <Title>Core P2P terms.</Title>
+              <div style={{ marginTop: 44 }}>
+                {rows.map(([k, v], i) => (
+                  <div key={k} style={{ display: 'grid', gridTemplateColumns: '360px 1fr', gap: 40, padding: '16px 0', borderTop: `1px solid ${COLORS.ruleFaint}`, borderBottom: i === rows.length - 1 ? `1px solid ${COLORS.ruleFaint}` : 'none' }}>
+                    <div style={{ fontFamily: FONTS.serif, fontStyle: 'italic', fontSize: 34 }}>{k}</div>
+                    <Body size="bodyLg">{v}</Body>
+                  </div>
+                ))}
+              </div>
+            </SlideFrame>
+          );
+        }
+
+        function SlideD2Tradeoffs() {
+          return (
+            <SlideFrame>
+              <Eyebrow>Engineering reality</Eyebrow>
+              <Title>P2P has strengths and costs.</Title>
+              <TwoCol
+                left={<div>
+                  <div style={{ fontFamily: FONTS.serif, fontSize: 44, marginBottom: 12 }}>Advantages</div>
+                  <ul style={{ fontFamily: FONTS.serif, fontSize: 32, lineHeight: 1.35, paddingLeft: 30 }}>
+                    <Bullet>High fault tolerance</Bullet>
+                    <Bullet>Lower server bandwidth burden</Bullet>
+                    <Bullet>Harder to censor globally</Bullet>
+                  </ul>
+                </div>}
+                right={<div>
+                  <div style={{ fontFamily: FONTS.serif, fontSize: 44, marginBottom: 12 }}>Challenges</div>
+                  <ul style={{ fontFamily: FONTS.serif, fontSize: 32, lineHeight: 1.35, paddingLeft: 30 }}>
+                    <Bullet>Abuse and moderation complexity</Bullet>
+                    <Bullet>Unpredictable performance when peers vanish</Bullet>
+                    <Bullet>Legal and compliance risk</Bullet>
+                  </ul>
+                </div>}
+              />
+            </SlideFrame>
+          );
+        }
+
+        function SlideD2Recap() {
+          return (
+            <SlideFrame>
+              <Eyebrow>Takeaways</Eyebrow>
+              <Title>How to explain P2P in one minute.</Title>
+              <Callout kicker="Mental model" style={{ marginTop: 42 }}>
+                Centralized networks route trust through one owner. P2P networks route availability through many peers and trust through hashes.
+              </Callout>
+              <Body size="bodyLg" style={{ marginTop: 36 }}>
+                If you remember one thing: decentralization changes both failure behavior and power distribution.
+              </Body>
+            </SlideFrame>
+          );
+        }
+
+        function SlideD2Next() {
+          return (
+            <SlideFrame variant="ink" footer={false}>
+              <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+                <div style={{ fontFamily: FONTS.sans, fontSize: 24, letterSpacing: '0.26em', textTransform: 'uppercase', color: COLORS.gold }}>Next class</div>
+                <Title color={COLORS.paper} size="titleLg" style={{ marginTop: 24, fontSize: 122 }}>Trust and identity<br />in open networks.</Title>
+                <Subtitle color="rgba(245,239,227,0.75)" style={{ marginTop: 34, fontSize: 36, maxWidth: 1180 }}>
+                  If anyone can share data, how do we know who to trust?
+                </Subtitle>
+              </div>
+            </SlideFrame>
+          );
+        }
+
+        function OwnershipTransferDiagram() {
+          const w = 960;
+          const h = 320;
+
+          const userScale = 0.7;
+          const userX = 40;
+          const userY = 100;
+          const userBodyW = 120 * userScale;
+          const userBodyH = 140 * userScale;
+
+          const photoX = userX + userBodyW + 26;
+          const photoY = h / 2 - 28;
+          const photoW = 70;
+          const photoH = 56;
+
+          const rackScale = 0.85;
+          const rackX = 340;
+          const rackY = 90;
+          const rackBodyEndX = rackX + 112 * rackScale;
+          const rackCenterX = rackX + 60 * rackScale;
+          const rackBottomY = rackY + 130 * rackScale;
+
+          const powerLineStartX = rackBodyEndX + 18;
+          const powerLineEndX = 615;
+          const powerLabelX = 635;
+          const powers = [
+            { y: 90,  label: 'DELETE',   color: COLORS.accent },
+            { y: 138, label: 'LICENSE',  color: COLORS.inkSoft },
+            { y: 186, label: 'MONETIZE', color: COLORS.gold },
+            { y: 234, label: 'THROTTLE', color: COLORS.inkSoft },
+          ];
+
+          const lockCX = rackX + 100 * rackScale;
+          const lockCY = rackY + 6;
+
+          return (
+            <svg viewBox={`0 0 ${w} ${h}`} preserveAspectRatio="xMidYMid meet" style={{ display: 'block', width: '100%', height: '100%', maxHeight: '100%' }}>
+              <defs>
+                <marker id="ownArrowInk"    viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill={COLORS.ink} /></marker>
+                <marker id="ownArrowSoft"   viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill={COLORS.inkSoft} /></marker>
+                <marker id="ownArrowAccent" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill={COLORS.accent} /></marker>
+                <marker id="ownArrowGold"   viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill={COLORS.gold} /></marker>
+              </defs>
+
+              {/* User on the left */}
+              <g transform={`translate(${userX}, ${userY}) scale(${userScale})`}>
+                <NetworkPersonSvg name="User" />
+              </g>
+              <text x={userX + userBodyW / 2} y={userY + userBodyH + 28} textAnchor="middle" fontFamily={FONTS.serif} fontStyle="italic" fontSize="20" fill={COLORS.ink}>You</text>
+
+              {/* Photo icon held by the user */}
+              <g>
+                <rect x={photoX} y={photoY} width={photoW} height={photoH} fill={COLORS.paper} stroke={COLORS.ink} strokeWidth="1.5" />
+                <polygon points={`${photoX + photoW - 14},${photoY} ${photoX + photoW},${photoY + 14} ${photoX + photoW - 14},${photoY + 14}`} fill={COLORS.creamDark} stroke={COLORS.ink} strokeWidth="1.5" />
+                <circle cx={photoX + 18} cy={photoY + 20} r="5" fill={COLORS.gold} />
+                <path d={`M${photoX + 6} ${photoY + photoH - 8} L${photoX + 24} ${photoY + 30} L${photoX + 38} ${photoY + 38} L${photoX + photoW - 6} ${photoY + 22} L${photoX + photoW - 6} ${photoY + photoH - 8} Z`} fill={COLORS.inkSoft} opacity="0.5" />
+              </g>
+
+              {/* UPLOAD arrow into the platform */}
+              <line x1={photoX + photoW + 8} y1={h / 2} x2={rackX - 6} y2={h / 2} stroke={COLORS.ink} strokeWidth="2.2" markerEnd="url(#ownArrowInk)" />
+              <text x={(photoX + photoW + 8 + rackX - 6) / 2} y={h / 2 - 14} textAnchor="middle" fontFamily={FONTS.sans} fontSize="14" letterSpacing="0.22em" fill={COLORS.muted}>UPLOAD</text>
+
+              {/* Server rack — inline copy of ServerRackSvg without the HUB label */}
+              <g transform={`translate(${rackX}, ${rackY}) scale(${rackScale})`}>
+                <rect x="8" y="10" width="104" height="120" rx="4" fill={COLORS.paper} stroke={COLORS.ink} strokeWidth="2" />
+                {[34, 58, 82].map((y, i) => (
+                  <g key={i}>
+                    <rect x="18" y={y} width="84" height="18" fill="#f5f2ea" stroke={COLORS.ink} strokeWidth="1" />
+                    <circle cx="88" cy={y + 9} r="4" fill={COLORS.ok} />
+                  </g>
+                ))}
+              </g>
+              <text x={rackCenterX} y={rackBottomY + 28} textAnchor="middle" fontFamily={FONTS.sans} fontSize="16" letterSpacing="0.24em" fill={COLORS.ink}>PLATFORM</text>
+
+              {/* Padlock badge — "their vault" */}
+              <g>
+                <circle cx={lockCX} cy={lockCY} r={15} fill={COLORS.ink} />
+                <path d={`M ${lockCX - 5} ${lockCY - 1} v -5 a 5 5 0 0 1 10 0 v 5`} fill="none" stroke={COLORS.paper} strokeWidth="2" strokeLinecap="round" />
+                <rect x={lockCX - 7} y={lockCY - 1} width={14} height={11} rx={2} fill={COLORS.paper} />
+                <circle cx={lockCX} cy={lockCY + 4} r={1.6} fill={COLORS.ink} />
+              </g>
+
+              {/* "Their powers" — arrows radiating right from the platform */}
+              {powers.map(({ y, label, color }) => {
+                const marker =
+                  color === COLORS.accent ? 'url(#ownArrowAccent)' :
+                  color === COLORS.gold   ? 'url(#ownArrowGold)' :
+                                            'url(#ownArrowSoft)';
+                return (
+                  <g key={label}>
+                    <line x1={powerLineStartX} y1={y} x2={powerLineEndX} y2={y} stroke={color} strokeWidth="2" markerEnd={marker} />
+                    <text x={powerLabelX} y={y + 7} fontFamily={FONTS.sans} fontSize="22" fontWeight="600" letterSpacing="0.20em" fill={color}>{label}</text>
+                  </g>
+                );
+              })}
+            </svg>
+          );
+        }
+
+        function TosPullQuote({ children, source }) {
+          return (
+            <div style={{ borderTop: `1px solid ${COLORS.rule}`, paddingTop: 16 }}>
+              <div style={{
+                fontFamily: FONTS.serif,
+                fontStyle: 'italic',
+                fontSize: 22,
+                lineHeight: 1.42,
+                color: COLORS.ink,
+                textWrap: 'pretty',
+              }}>
+                {children}
+              </div>
+              <div style={{
+                marginTop: 12,
+                fontFamily: FONTS.sans,
+                fontSize: 14,
+                letterSpacing: '0.20em',
+                textTransform: 'uppercase',
+                color: COLORS.muted,
+              }}>
+                &ndash; {source}
+              </div>
+            </div>
+          );
+        }
+
+        function SlideD2DataOwnership() {
+          return (
+            <SlideFrame>
+              <Eyebrow>Centralized has a hidden cost</Eyebrow>
+              <Title>When the server is theirs, <em>the data is theirs.</em></Title>
+              <div style={{
+                display: 'grid',
+                gridTemplateColumns: '1.05fr 1fr',
+                gap: 48,
+                marginTop: 18,
+                height: 230,
+                alignItems: 'center',
+              }}>
+                <div style={{ height: '100%', minHeight: 0 }}>
+                  <OwnershipTransferDiagram />
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
+                  <TosPullQuote source="Instagram Terms of Use">
+                    &ldquo;&hellip;you grant us a non-exclusive, royalty-free, transferable, sub-licensable, worldwide license to host, use, distribute, modify, run, copy, publicly perform or display, translate, and create derivative works of your content.&rdquo;
+                  </TosPullQuote>
+                  <TosPullQuote source="Representative school Acceptable Use Policy">
+                    &ldquo;All data created, stored, or transmitted on School-owned systems is the property of the School and may be accessed, monitored, archived, or deleted at the School&rsquo;s discretion.&rdquo;
+                  </TosPullQuote>
+                </div>
+              </div>
+              <TwoCol
+                style={{ marginTop: 18 }}
+                left={<Card title="Social platforms">
+                  Upload a photo to Instagram and Facebook owns a license to it. They can use it in ads, surface it in feeds, throttle who sees it, or delete it outright.
+                </Card>}
+                right={<Card title="School &amp; work accounts">
+                  Anything you create on institution-owned tools belongs to the institution. Email, docs, code in their repos. Their policy decides what survives, what is read, and what is purged.
+                </Card>}
+              />
+              <Callout kicker="The pattern" style={{ marginTop: 18 }}>
+                Centralization gives one party the power to <em>delete, censor, or monetize</em>  data you thought of as yours!
+              </Callout>
+            </SlideFrame>
+          );
+        }
+
+        function TrackerDiagram() {
+          const w = 960;
+          const h = 460;
+
+          const PEER_COLORS = {
+            Alice: COLORS.accent,
+            Bob: COLORS.gold,
+            Carol: COLORS.ok,
+            Dana: COLORS.inkSoft,
+          };
+          const peers = [
+            { name: 'Alice', pieces: [1, 2, 3, 4, 5] },
+            { name: 'Bob', pieces: [5, 6, 7, 8, 9] },
+            { name: 'Carol', pieces: [9, 10, 11, 12, 13] },
+            { name: 'Dana', pieces: [13, 14, 15, 1, 7] },
+          ];
+
+          // piece -> [holderName, ...]
+          const holders = {};
+          for (let p = 1; p <= 15; p++) holders[p] = [];
+          peers.forEach(({ name, pieces }) => {
+            pieces.forEach((p) => holders[p].push(name));
+          });
+
+          // Tracker box
+          const trackerX = 80;
+          const trackerY = 10;
+          const trackerW = 800;
+          const trackerH = 170;
+
+          // File strip inside tracker
+          const cellW = 44;
+          const cellH = 56;
+          const cellGap = 4;
+          const stripW = 15 * cellW + 14 * cellGap; // 716
+          const stripX = (w - stripW) / 2; // 122
+          const stripY = trackerY + 80;
+
+          // Peer row
+          const peerY = 220;
+          const personScale = 0.5;
+          const personW = 110 * personScale; // 55
+          const personH = 140 * personScale; // 70
+          const peerStripY = 320;
+          const slotW = 200;
+          const peerCenters = peers.map((_, i) => (w - peers.length * slotW) / 2 + slotW / 2 + i * slotW);
+
+          // Mini-strip for each peer
+          const mCellW = 26;
+          const mCellH = 26;
+          const mGap = 3;
+          const mStripW = 5 * mCellW + 4 * mGap; // 142
+
+          return (
+            <svg viewBox={`0 0 ${w} ${h}`} preserveAspectRatio="xMidYMid meet" style={{ display: 'block', width: '100%', height: '100%', maxHeight: '100%' }}>
+              {/* Tracker box */}
+              <rect x={trackerX} y={trackerY} width={trackerW} height={trackerH} fill={COLORS.paper} stroke={COLORS.ink} strokeWidth="2" />
+              <text x={w / 2} y={trackerY + 32} textAnchor="middle" fontFamily={FONTS.sans} fontSize="20" letterSpacing="0.20em" fill={COLORS.ink}>TRACKER</text>
+              <text x={w / 2} y={trackerY + 58} textAnchor="middle" fontFamily={FONTS.serif} fontStyle="italic" fontSize="18" fill={COLORS.inkSoft}>who has which pieces, not the assembled file</text>
+
+              {/* 15-cell file strip, color-coded by holder(s) */}
+              {Array.from({ length: 15 }, (_, i) => {
+                const num = i + 1;
+                const cx = stripX + i * (cellW + cellGap);
+                const cy = stripY;
+                const cellHolders = holders[num];
+                const single = cellHolders.length === 1;
+                return (
+                  <g key={`cell-${num}`}>
+                    {single ? (
+                      <rect x={cx} y={cy} width={cellW} height={cellH} fill={PEER_COLORS[cellHolders[0]]} />
+                    ) : (
+                      <g>
+                        <polygon points={`${cx},${cy} ${cx + cellW},${cy} ${cx},${cy + cellH}`} fill={PEER_COLORS[cellHolders[0]]} />
+                        <polygon points={`${cx + cellW},${cy} ${cx + cellW},${cy + cellH} ${cx},${cy + cellH}`} fill={PEER_COLORS[cellHolders[1]]} />
+                      </g>
+                    )}
+                    <rect x={cx} y={cy} width={cellW} height={cellH} fill="none" stroke={COLORS.ink} strokeWidth="1.5" />
+                    <text x={cx + cellW / 2} y={cy + cellH / 2 + 6} textAnchor="middle" fontFamily={FONTS.sans} fontSize="18" fontWeight="600" fill={COLORS.paper}>{num}</text>
+                  </g>
+                );
+              })}
+
+              {/* Legend (color → peer name) inside tracker, below strip */}
+              {peers.map((p, i) => {
+                const itemW = 110;
+                const totalW = peers.length * itemW;
+                const startX = (w - totalW) / 2;
+                const x = startX + i * itemW;
+                const y = trackerY + trackerH - 18;
+                return (
+                  <g key={`legend-${p.name}`}>
+                    <rect x={x} y={y - 12} width={14} height={14} fill={PEER_COLORS[p.name]} stroke={COLORS.ink} strokeWidth="1" />
+                    <text x={x + 22} y={y} fontFamily={FONTS.sans} fontSize="14" letterSpacing="0.10em" fill={COLORS.ink}>{p.name}</text>
+                  </g>
+                );
+              })}
+
+              {/* Dashed metadata lines: tracker → each peer */}
+              {peers.map((p, i) => (
+                <line
+                  key={`meta-${i}`}
+                  x1={peerCenters[i]} y1={trackerY + trackerH}
+                  x2={peerCenters[i]} y2={peerY - 2}
+                  stroke={COLORS.muted}
+                  strokeWidth="1.5"
+                  strokeDasharray="6 6"
+                  opacity="0.75"
+                />
+              ))}
+              <text x={peerCenters[0] + 10} y={peerY - 8} fontFamily={FONTS.sans} fontSize="11" letterSpacing="0.18em" fill={COLORS.muted}>METADATA ONLY</text>
+
+              {/* Solid file-byte links between adjacent peers (between mini-strips) */}
+              {[0, 1, 2].map((i) => (
+                <NetworkLinkLine
+                  key={`data-${i}`}
+                  x1={peerCenters[i] + mStripW / 2 + 4} y1={peerStripY + mCellH / 2}
+                  x2={peerCenters[i + 1] - mStripW / 2 - 4} y2={peerStripY + mCellH / 2}
+                  active
+                />
+              ))}
+              <text x={(peerCenters[2] + peerCenters[3]) / 2} y={peerStripY + mCellH + 22} textAnchor="middle" fontFamily={FONTS.sans} fontSize="11" letterSpacing="0.18em" fill={COLORS.muted}>FILE BYTES</text>
+
+              {/* Peers: avatar + name + 5-piece mini-strip */}
+              {peers.map((p, i) => {
+                const cx = peerCenters[i];
+                return (
+                  <g key={p.name}>
+                    <g transform={`translate(${cx - personW / 2}, ${peerY}) scale(${personScale})`}>
+                      <NetworkPersonSvg name={p.name} />
+                    </g>
+                    <text x={cx} y={peerStripY - 8} textAnchor="middle" fontFamily={FONTS.serif} fontStyle="italic" fontSize="20" fill={COLORS.ink}>{p.name}</text>
+                    {p.pieces.map((piece, j) => {
+                      const mx = cx - mStripW / 2 + j * (mCellW + mGap);
+                      const my = peerStripY;
+                      return (
+                        <g key={`mini-${p.name}-${j}`}>
+                          <rect x={mx} y={my} width={mCellW} height={mCellH} fill={PEER_COLORS[p.name]} stroke={COLORS.ink} strokeWidth="1.2" />
+                          <text x={mx + mCellW / 2} y={my + mCellH / 2 + 5} textAnchor="middle" fontFamily={FONTS.sans} fontSize="13" fontWeight="600" fill={COLORS.paper}>{piece}</text>
+                        </g>
+                      );
+                    })}
+                  </g>
+                );
+              })}
+            </svg>
+          );
+        }
+
+        function SlideD2Tracker() {
+          const keyPointStyle = {
+            fontFamily: FONTS.serif,
+            fontSize: 26,
+            lineHeight: 1.35,
+            color: COLORS.ink,
+            borderTop: `1px solid ${COLORS.rule}`,
+            paddingTop: 16,
+          };
+          const keyLabelStyle = {
+            fontFamily: FONTS.sans,
+            fontSize: 14,
+            letterSpacing: '0.22em',
+            textTransform: 'uppercase',
+            color: COLORS.accent,
+            marginBottom: 10,
+          };
+          return (
+            <SlideFrame>
+              <Eyebrow>How peers find each other</Eyebrow>
+              <Title>The tracker is a <em>phone book,</em> not a server.</Title>
+              <Body size="bodyLg" style={{ maxWidth: 1500, marginTop: 18 }}>
+                A torrent app uses a tracker to learn <em>which peers hold which pieces</em>. The pieces themselves can be scattered across the world. The tracker just hands you the addresses.
+              </Body>
+              <div style={{ flex: '1 1 auto', minHeight: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', marginTop: 12 }}>
+                <TrackerDiagram />
+              </div>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 48, marginTop: 18 }}>
+                <div style={keyPointStyle}>
+                  <div style={keyLabelStyle}>The map</div>
+                  Stores a piece-to-peer map, never the file bytes.
+                </div>
+                <div style={keyPointStyle}>
+                  <div style={keyLabelStyle}>The handoff</div>
+                  Once you have peer addresses, data flows directly between you and them.
+                </div>
+                <div style={keyPointStyle}>
+                  <div style={keyLabelStyle}>The fallback</div>
+                  Take down the tracker and DHT / peer-exchange can replace it, and the swarm keeps coordinating.
+                </div>
+              </div>
+            </SlideFrame>
+          );
+        }
+
+        function SlideD2Forever() {
+          return (
+            <SlideFrame>
+              <Eyebrow>Permanence is a feature and a curse</Eyebrow>
+              <Title>Once it&apos;s in a swarm, it&apos;s <em>effectively forever.</em></Title>
+              <Body size="bodyLg" style={{ marginTop: 22, maxWidth: 1500 }}>
+                Imagine an embarrassing video of you leaks. You can email a few hosts, get some copies pulled, even sue. But can you ever be <em>100% certain</em> every copy is gone? In a swarm, as long as one peer keeps a copy, the file lives on.
+              </Body>
+              <Callout kicker="Two sides of the same coin" style={{ marginTop: 42 }}>
+                The same property that lets a P2P network <em>survive outages</em> also lets it <em>survive takedowns.</em> Resilience and permanence are the same mechanism.
+              </Callout>
+              <Body size="bodyLg" style={{ marginTop: 34, fontStyle: 'italic', color: COLORS.inkSoft }}>
+                The internet&apos;s old saying applies twice over: once it&apos;s out there, it&apos;s out there.
+              </Body>
+            </SlideFrame>
+          );
+        }
+
+        function SlideD2Untouchable() {
+          return (
+            <SlideFrame>
+              <Eyebrow>Can the file be removed?</Eyebrow>
+              <Title>You can&apos;t really <em>delete a torrent.</em></Title>
+              <ul style={{ marginTop: 38, fontFamily: FONTS.serif, fontSize: 32, lineHeight: 1.4, paddingLeft: 34, maxWidth: 1600 }}>
+                <Bullet><strong>Sites get shut down only with jurisdiction.</strong> Governments closed The Pirate Bay&apos;s US-hosted infrastructure, but mirrors reappeared offshore within days.</Bullet>
+                <Bullet><strong>The torrent file just moves.</strong> A torrent is tiny metadata; one upload to a foreign host and the swarm reconnects.</Bullet>
+                <Bullet><strong>ISPs send cease-and-desist letters,</strong> but only to subscribers in their legal reach, and only if they can identify them.</Bullet>
+                <Bullet><strong>&ldquo;Unhosting&rdquo; isn&apos;t deletion.</strong> Stopping your client just removes <em>you</em> from the swarm. The bytes still sit on your disk, and on every other seeder&apos;s.</Bullet>
+              </ul>
+              <Callout kicker="The real lever" style={{ marginTop: 36 }}>
+                Jurisdiction, not the network, is what governs P2P content. The protocol has no off switch.
+              </Callout>
+            </SlideFrame>
+          );
+        }
+
+        function SlideD2LiveDemo() {
+          return (
+            <SlideFrame>
+              <Eyebrow>Demo break</Eyebrow>
+              <Title>Watch a real swarm <em>in motion.</em></Title>
+              <div style={{
+                marginTop: 28,
+                border: `2px dashed ${COLORS.rule}`,
+                background: COLORS.paper,
+                padding: '38px 44px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                fontFamily: FONTS.mono,
+                fontSize: 28,
+                color: COLORS.muted,
+                letterSpacing: '0.06em',
+              }}>
+                &lt;&lt; insert live torrent client demo here &gt;&gt;
+              </div>
+              <div style={{ marginTop: 34 }}>
+                <div style={{ fontFamily: FONTS.sans, fontSize: 16, letterSpacing: '0.2em', textTransform: 'uppercase', color: COLORS.muted, marginBottom: 14 }}>Presenter checklist</div>
+                <ul style={{ fontFamily: FONTS.serif, fontSize: 30, lineHeight: 1.35, paddingLeft: 32 }}>
+                  <Bullet>Open the peers panel and show IP addresses from multiple countries.</Bullet>
+                  <Bullet>Switch to the pieces view and watch the grid fill in non-sequentially.</Bullet>
+                  <Bullet>Pause the download, then resume. Same percentage, no restart.</Bullet>
+                  <Bullet>Open Popcorn Time as a bonus: streaming-while-downloading on top of the same protocol.</Bullet>
+                </ul>
+              </div>
+            </SlideFrame>
+          );
+        }
+
+        Object.assign(window, {
+          SlideD2Cover, SlideD2Agenda, SlideD2Models, SlideD2NetworkCompare, SlideD2Topology, SlideD2Chunking,
+          SlideD2Hashing, SlideD2Resilience, SlideD2Vocab, SlideD2Tradeoffs, SlideD2Recap, SlideD2Next,
+          SlideD2DataOwnership, SlideD2Tracker, SlideD2Forever, SlideD2Untouchable, SlideD2LiveDemo,
+          SlideD2Part1Divider, SlideD2Part2Divider, SlideD2Part3Divider, SlideD2Part4Divider,
+        });
+      }
+    </script>
+
+    <script type="text/babel" data-presets="react">
+      {
+
+        // Wait until every component file has defined its slides on window.
+        // Babel-loaded scripts are async, so we poll until SlideCover exists.
+        function whenReady(cb) {
+          if (window.SlideD2Cover && window.SlideD2NetworkCompare && window.SlideD2Next && window.HTCS_TOKENS) return cb();
+          setTimeout(() => whenReady(cb), 60);
+        }
+
+        whenReady(() => {
+          const stage = document.querySelector('deck-stage');
+
+          // Part 01 — Centralized vs P2P. Slides 4–6.
+          // Part 02 — Swarm Mechanics. Slides 8–11. (Vocabulary closes the part as a terminology recap.)
+          // Part 03 — Trust the Bytes. Slide 13.
+          // Part 04 — In the Wild. Slides 15–18.
+          const SLIDES = [
+            ['Cover', SlideD2Cover],
+            ['Agenda', SlideD2Agenda],
+            ['Part 01', SlideD2Part1Divider],
+            ['Centralized vs P2P', SlideD2NetworkCompare],
+            ['Data Ownership', SlideD2DataOwnership],
+            ['Topology Demo', SlideD2Topology],
+            ['Part 02', SlideD2Part2Divider],
+            ['Chunking', SlideD2Chunking],
+            ['Tracker', SlideD2Tracker],
+            ['Resilience Demo', SlideD2Resilience],
+            ['Vocabulary', SlideD2Vocab],
+            ['Part 03', SlideD2Part3Divider],
+            ['Piece Verification', SlideD2Hashing],
+            ['Part 04', SlideD2Part4Divider],
+            ['Forever Online', SlideD2Forever],
+            ['Untouchable', SlideD2Untouchable],
+            ['Trade-offs', SlideD2Tradeoffs],
+            ['Live Demo', SlideD2LiveDemo],
+            ['Recap', SlideD2Recap],
+            ['Next Class', SlideD2Next],
+          ];
+
+          // Create one <section> per slide, with a mount point. Each slide is its
+          // own React root so unmount/remount isn't required on nav — deck-stage
+          // keeps non-active slides hidden, not removed, so state persists.
+          SLIDES.forEach(([label, Comp], i) => {
+            const section = document.createElement('section');
+            section.setAttribute('data-label', String(i + 1).padStart(2, '0') + ' ' + label);
+            stage.appendChild(section);
+            const root = ReactDOM.createRoot(section);
+            root.render(<Comp />);
+          });
+        });
+
+      }
+    </script>
+
+    <!-- Presenter view: press P to pop open this same file with ?presenter=1
+         in a small window (your laptop screen) while the deck stays full-screen
+         on the projector. The two windows stay in sync via postMessage. -->
+    <script>
+      (() => {
+        const PARAM = 'presenter';
+        const STORAGE_KEY = 'deck-stage:slide:' + (location.pathname || '/');
+        const inPresenter = new URLSearchParams(location.search).has(PARAM);
+
+        const readNotes = () => {
+          const tag = document.getElementById('speaker-notes');
+          if (!tag) return [];
+          try {
+            const parsed = JSON.parse(tag.textContent || '[]');
+            return Array.isArray(parsed) ? parsed : [];
+          } catch (_) { return []; }
+        };
+
+        if (inPresenter) mountPresenter();
+        else mountAudience();
+
+        // ───────── Audience side (the deck) ─────────
+        function mountAudience() {
+          let presenterWin = null;
+
+          const stage = () => document.querySelector('deck-stage');
+
+          const currentIndex = () => {
+            const s = stage();
+            if (!s) return { index: 0, total: 1 };
+            const slides = s.querySelectorAll(':scope > [data-deck-slide]');
+            let idx = 0;
+            slides.forEach((el, i) => { if (el.hasAttribute('data-deck-active')) idx = i; });
+            return { index: idx, total: slides.length || 1 };
+          };
+
+          const pushSlide = (target) => {
+            const win = target || presenterWin;
+            if (!win) return;
+            try {
+              const cur = currentIndex();
+              win.postMessage({ type: 'slide', index: cur.index, total: cur.total }, '*');
+            } catch (_) {}
+          };
+
+          const openPresenter = () => {
+            if (presenterWin && !presenterWin.closed) {
+              try { presenterWin.focus(); } catch (_) {}
+              return;
+            }
+            const url = location.pathname + '?' + PARAM + '=1' + location.hash;
+            const w = window.open(
+              url,
+              'htcs-presenter',
+              'popup=yes,width=1100,height=820,menubar=no,toolbar=no,location=no,status=no'
+            );
+            if (!w) { flashHint('Allow popups to use presenter mode (P)'); return; }
+            presenterWin = w;
+          };
+
+          const wireStage = () => {
+            const s = stage();
+            if (!s) { setTimeout(wireStage, 100); return; }
+            s.addEventListener('slidechange', (e) => {
+              if (!presenterWin || presenterWin.closed) return;
+              try {
+                presenterWin.postMessage({
+                  type: 'slide',
+                  index: e.detail.index,
+                  total: e.detail.total,
+                }, '*');
+              } catch (_) {}
+            });
+          };
+          wireStage();
+
+          window.addEventListener('message', (e) => {
+            const m = e && e.data;
+            if (!m || typeof m !== 'object') return;
+            // Recapture the presenter window — handles deck reload while presenter is open.
+            if (m.type === 'ready' || m.type === 'nav') {
+              if (e.source && (!presenterWin || presenterWin.closed)) {
+                presenterWin = e.source;
+              }
+            }
+            if (m.type === 'ready') { pushSlide(e.source || presenterWin); return; }
+            if (m.type === 'nav') {
+              const map = { prev: 'ArrowLeft', next: 'ArrowRight', first: 'Home', last: 'End' };
+              const key = map[m.dir];
+              if (!key) return;
+              window.dispatchEvent(new KeyboardEvent('keydown', { key, bubbles: true }));
+            }
+          });
+
+          window.addEventListener('keydown', (ev) => {
+            if (ev.metaKey || ev.ctrlKey || ev.altKey) return;
+            const t = ev.target;
+            if (t && (t.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName))) return;
+            if (ev.key === 'p' || ev.key === 'P') {
+              ev.preventDefault();
+              openPresenter();
+            }
+          });
+
+          function flashHint(text) {
+            let el = document.getElementById('presenter-hint');
+            if (!el) {
+              el = document.createElement('div');
+              el.id = 'presenter-hint';
+              Object.assign(el.style, {
+                position: 'fixed', top: '16px', left: '50%',
+                transform: 'translateX(-50%)',
+                background: 'rgba(0,0,0,0.85)', color: '#fff',
+                padding: '10px 16px', borderRadius: '999px',
+                fontFamily: '-apple-system, BlinkMacSystemFont, "Helvetica Neue", Helvetica, Arial, sans-serif',
+                fontSize: '13px', zIndex: 2147483647,
+                opacity: '0', transition: 'opacity 200ms ease',
+                pointerEvents: 'none',
+              });
+              document.body.appendChild(el);
+            }
+            el.textContent = text;
+            requestAnimationFrame(() => { el.style.opacity = '1'; });
+            clearTimeout(flashHint._t);
+            flashHint._t = setTimeout(() => { el.style.opacity = '0'; }, 2200);
+          }
+        }
+
+        // ───────── Presenter side (the popup) ─────────
+        function mountPresenter() {
+          // Hide and remove the deck synchronously so it never flashes.
+          const stage = document.querySelector('deck-stage');
+          if (stage) stage.remove();
+          const root = document.getElementById('deck-root');
+          if (root) root.remove();
+
+          const notes = readNotes();
+          const title = (document.title || 'Deck').replace(/\s+/g, ' ').trim();
+          document.title = title + ' — Presenter';
+
+          const style = document.createElement('style');
+          style.textContent = `
+            html, body {
+              background: #0c0c0e !important;
+              color: #f5f3ee !important;
+              overflow: auto !important;
+              height: auto !important;
+              min-height: 100%;
+              margin: 0; padding: 0;
+            }
+            .pv-app {
+              box-sizing: border-box;
+              display: grid;
+              grid-template-rows: auto 1fr auto auto auto;
+              gap: 16px;
+              min-height: 100vh;
+              padding: 24px clamp(20px, 4vw, 56px) 28px;
+              font-family: "Source Serif 4", Georgia, serif;
+            }
+            .pv-head {
+              display: flex; align-items: center; justify-content: space-between;
+              gap: 24px; flex-wrap: wrap;
+              font-family: "Inter Tight", -apple-system, sans-serif;
+            }
+            .pv-title { font-size: 13px; letter-spacing: 0.08em; text-transform: uppercase; opacity: 0.6; }
+            .pv-meta { display: flex; align-items: center; gap: 14px; font-feature-settings: "tnum" 1; }
+            .pv-counter { font-size: 15px; opacity: 0.85; }
+            .pv-counter b { font-weight: 600; }
+            .pv-timer {
+              font-family: "JetBrains Mono", ui-monospace, monospace;
+              font-size: 22px; background: #1a1a1f;
+              padding: 6px 12px; border-radius: 8px;
+              min-width: 92px; text-align: center;
+            }
+            .pv-tbtn {
+              font: inherit; font-family: "Inter Tight", -apple-system, sans-serif;
+              font-size: 12px; letter-spacing: 0.04em;
+              background: #1a1a1f; color: #f5f3ee;
+              border: 1px solid #2a2a31; padding: 6px 12px;
+              border-radius: 8px; cursor: pointer;
+            }
+            .pv-tbtn:hover { background: #25252c; }
+
+            .pv-now {
+              background: #14141a; border-radius: 14px;
+              padding: clamp(20px, 3vw, 36px);
+              display: flex; flex-direction: column; gap: 12px;
+              min-height: 0; overflow: hidden;
+            }
+            .pv-now-label, .pv-next-label {
+              font-family: "Inter Tight", -apple-system, sans-serif;
+              font-size: 11px; letter-spacing: 0.18em;
+              text-transform: uppercase; opacity: 0.55;
+            }
+            .pv-now-text {
+              font-size: clamp(22px, 2.4vw, 34px); line-height: 1.45;
+              overflow-y: auto; padding-right: 8px;
+            }
+            .pv-next {
+              background: #101015; border-radius: 12px;
+              padding: 18px clamp(18px, 3vw, 30px);
+              opacity: 0.62; max-height: 22vh; overflow: hidden;
+            }
+            .pv-next-text {
+              font-size: clamp(14px, 1.2vw, 18px); line-height: 1.45;
+              margin-top: 8px;
+              display: -webkit-box; -webkit-line-clamp: 4;
+              -webkit-box-orient: vertical; overflow: hidden;
+            }
+            .pv-empty { opacity: 0.45; font-style: italic; }
+
+            .pv-nav {
+              display: flex; justify-content: center; gap: 12px; flex-wrap: wrap;
+              font-family: "Inter Tight", -apple-system, sans-serif;
+            }
+            .pv-nav button {
+              font: inherit; font-size: 14px;
+              background: #1a1a1f; color: #f5f3ee;
+              border: 1px solid #2a2a31;
+              padding: 10px 22px; border-radius: 10px;
+              cursor: pointer; min-width: 130px;
+            }
+            .pv-nav button:hover { background: #25252c; }
+            .pv-nav button:active { background: #303038; }
+
+            .pv-status {
+              text-align: center;
+              font-family: "Inter Tight", -apple-system, sans-serif;
+              font-size: 12px; opacity: 0.5; margin-top: -6px; min-height: 1em;
+            }
+          `;
+          document.head.appendChild(style);
+
+          const app = document.createElement('div');
+          app.className = 'pv-app';
+          app.innerHTML = `
+            <header class="pv-head">
+              <div class="pv-title"></div>
+              <div class="pv-meta">
+                <div class="pv-counter">Slide <b class="pv-cur">–</b> / <span class="pv-total">–</span></div>
+                <div class="pv-timer" data-timer>00:00</div>
+                <button class="pv-tbtn" data-timer-toggle>Start</button>
+                <button class="pv-tbtn" data-timer-reset>Reset</button>
+              </div>
+            </header>
+            <section class="pv-now">
+              <div class="pv-now-label">Now speaking</div>
+              <div class="pv-now-text"></div>
+            </section>
+            <section class="pv-next">
+              <div class="pv-next-label">Up next</div>
+              <div class="pv-next-text"></div>
+            </section>
+            <nav class="pv-nav">
+              <button data-nav="first">⏮ First</button>
+              <button data-nav="prev">◀ Prev</button>
+              <button data-nav="next">Next ▶</button>
+              <button data-nav="last">Last ⏭</button>
+            </nav>
+            <div class="pv-status"></div>
+          `;
+          document.body.appendChild(app);
+
+          const $ = (sel) => app.querySelector(sel);
+          $('.pv-title').textContent = title;
+          const statusEl = $('.pv-status');
+          const setStatus = (msg) => { statusEl.textContent = msg || ''; };
+
+          let curIdx = 0;
+          let total = Math.max(notes.length || 1, 1);
+
+          const render = (idx) => {
+            curIdx = Math.max(0, Math.min(total - 1, idx | 0));
+            $('.pv-cur').textContent = String(curIdx + 1);
+            $('.pv-total').textContent = String(total);
+            const cur = notes[curIdx];
+            const next = notes[curIdx + 1];
+            const nowEl = $('.pv-now-text');
+            const nextEl = $('.pv-next-text');
+            if (cur && String(cur).trim()) {
+              nowEl.classList.remove('pv-empty');
+              nowEl.textContent = cur;
+            } else {
+              nowEl.classList.add('pv-empty');
+              nowEl.textContent = '(no notes for this slide)';
+            }
+            if (next && String(next).trim()) {
+              nextEl.classList.remove('pv-empty');
+              nextEl.textContent = next;
+            } else if (curIdx + 1 >= total) {
+              nextEl.classList.add('pv-empty');
+              nextEl.textContent = '(end of deck)';
+            } else {
+              nextEl.classList.add('pv-empty');
+              nextEl.textContent = '(no notes for next slide)';
+            }
+          };
+
+          try {
+            const raw = localStorage.getItem(STORAGE_KEY);
+            const n = raw == null ? 0 : parseInt(raw, 10);
+            render(Number.isFinite(n) ? n : 0);
+          } catch (_) { render(0); }
+
+          // Timer
+          const tEl = $('[data-timer]');
+          const tToggle = $('[data-timer-toggle]');
+          const tReset = $('[data-timer-reset]');
+          let tStart = 0, tAccum = 0, tRunning = false, tTick = null;
+
+          const fmt = (ms) => {
+            const s = Math.floor(ms / 1000);
+            const mm = Math.floor(s / 60), ss = s % 60;
+            if (mm >= 60) {
+              const hh = Math.floor(mm / 60), m2 = mm % 60;
+              return hh + ':' + String(m2).padStart(2, '0') + ':' + String(ss).padStart(2, '0');
+            }
+            return String(mm).padStart(2, '0') + ':' + String(ss).padStart(2, '0');
+          };
+          const paint = () => {
+            const elapsed = tAccum + (tRunning ? (Date.now() - tStart) : 0);
+            tEl.textContent = fmt(elapsed);
+          };
+          const startStop = () => {
+            if (tRunning) {
+              tAccum += Date.now() - tStart;
+              tRunning = false;
+              tToggle.textContent = 'Resume';
+              clearInterval(tTick); tTick = null;
+            } else {
+              tStart = Date.now();
+              tRunning = true;
+              tToggle.textContent = 'Pause';
+              tTick = setInterval(paint, 250);
+            }
+            paint();
+          };
+          const resetTimer = () => {
+            tAccum = 0; tStart = Date.now();
+            if (!tRunning) tToggle.textContent = 'Start';
+            paint();
+          };
+          tToggle.addEventListener('click', startStop);
+          tReset.addEventListener('click', resetTimer);
+          paint();
+
+          // Nav
+          const sendNav = (dir) => {
+            if (window.opener && !window.opener.closed) {
+              try { window.opener.postMessage({ type: 'nav', dir }, '*'); return; }
+              catch (_) {}
+            }
+            setStatus('Deck window not reachable — open the deck and press P, then return here.');
+          };
+          app.querySelectorAll('[data-nav]').forEach((btn) => {
+            btn.addEventListener('click', () => sendNav(btn.getAttribute('data-nav')));
+          });
+
+          window.addEventListener('keydown', (ev) => {
+            if (ev.metaKey || ev.ctrlKey || ev.altKey) return;
+            const k = ev.key;
+            if (k === 'ArrowRight' || k === 'PageDown') { ev.preventDefault(); sendNav('next'); }
+            else if (k === 'ArrowLeft' || k === 'PageUp') { ev.preventDefault(); sendNav('prev'); }
+            else if (k === 'Home') { ev.preventDefault(); sendNav('first'); }
+            else if (k === 'End') { ev.preventDefault(); sendNav('last'); }
+            else if (k === ' ' || k === 'Spacebar') { ev.preventDefault(); startStop(); }
+            else if (k === 'r' || k === 'R') { ev.preventDefault(); resetTimer(); }
+          });
+
+          // Receive slide updates
+          window.addEventListener('message', (e) => {
+            const m = e && e.data;
+            if (!m || typeof m !== 'object') return;
+            if (m.type === 'slide') {
+              if (typeof m.total === 'number' && m.total > 0) total = m.total;
+              render(m.index | 0);
+              setStatus('');
+            }
+          });
+
+          // Storage fallback (deck always writes its index here)
+          window.addEventListener('storage', (e) => {
+            if (e.key !== STORAGE_KEY || e.newValue == null) return;
+            const n = parseInt(e.newValue, 10);
+            if (Number.isFinite(n)) render(n);
+            // If we lost our opener (deck reloaded), try to re-handshake.
+            sayReady();
+          });
+
+          // Handshake — ask deck to push current state.
+          const sayReady = () => {
+            if (window.opener && !window.opener.closed) {
+              try { window.opener.postMessage({ type: 'ready' }, '*'); } catch (_) {}
+            }
+          };
+          if (!window.opener || window.opener.closed) {
+            setStatus('Standalone mode — open the deck in another window and press P to link them.');
+          }
+          sayReady();
+          setTimeout(sayReady, 250);
+        }
+      })();
+    </script>
+  </body>
+
+</html>

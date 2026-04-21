@@ -9,7 +9,8 @@ import StaticEmbed from './pages/StaticEmbed.tsx'
 import WidgetRoute from './pages/WidgetRoute.tsx'
 import BinaryExplorer from './pages/BinaryExplorer.tsx'
 import Sha1FlowExplorer from './pages/Sha1FlowExplorer.tsx'
-import { CODE_WIDGETS, HISTORY_WIDGETS, MATH_WIDGETS, STATS_WIDGETS } from './pages/widgetMaps'
+import { CODE_WIDGETS, HISTORY_WIDGETS, HTCS_LESSON_WIDGETS, MATH_WIDGETS, STATS_WIDGETS } from './pages/widgetMaps'
+import HtcsLessons from './pages/HtcsLessons.tsx'
 import History from './history/History.tsx'
 import WorldGlobe from './history/WorldGlobe.tsx'
 import LectureViewer from './history/LectureViewer.tsx'
@@ -46,6 +47,8 @@ export default function App() {
         <Route path="code/overview" element={<Cryptography />} />
         <Route path="code/binary-explorer" element={<BinaryExplorer />} />
         <Route path="code/sha1-flow-explorer" element={<Sha1FlowExplorer />} />
+        <Route path="code/htcs-lessons" element={<HtcsLessons />} />
+        <Route path="code/htcs-lessons/:widget" element={<WidgetRoute widgets={HTCS_LESSON_WIDGETS} backTo="/code/htcs-lessons" backLabel="HTCS Lessons" />} />
         <Route path="code/:widget" element={<WidgetRoute widgets={CODE_WIDGETS} backTo="/code" backLabel="Computer Science" />} />
         <Route path="stats" element={<Stats />} />
         <Route path="stats/overview" element={<Navigate to="/#subject-stats" replace />} />
