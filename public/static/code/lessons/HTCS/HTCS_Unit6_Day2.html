@@ -964,7 +964,7 @@
           );
         }
 
-        function ServerRackSvg({ down = false, scale = 1 }) {
+        function ServerRackSvg({ down = false, scale = 1, showLabel = true }) {
           const c = down ? COLORS.muted : COLORS.ink;
           return (
             <g transform={`scale(${scale})`}>
@@ -975,7 +975,7 @@
                   <circle cx="88" cy={y + 9} r="4" fill={down ? COLORS.muted : COLORS.ok} />
                 </g>
               ))}
-              <text x="60" y="148" textAnchor="middle" fontFamily={FONTS.sans} fontSize="14" letterSpacing="0.12em" fill={c}>HUB</text>
+              {showLabel && <text x="60" y="148" textAnchor="middle" fontFamily={FONTS.sans} fontSize="14" letterSpacing="0.12em" fill={c}>HUB</text>}
             </g>
           );
         }
@@ -2620,7 +2620,14 @@
             <SlideFrame>
               <Eyebrow>Engineering reality</Eyebrow>
               <Title>P2P has strengths and costs.</Title>
+              <div style={{ marginTop: 22, minHeight: 0 }}>
+                <TradeoffsExampleDiagram />
+              </div>
+              <Body size="body" style={{ marginTop: 16, color: COLORS.inkSoft, maxWidth: 1540 }}>
+                Example: a movie torrent can spread quickly because downloaders also become uploaders, but the same distributed design makes moderation, legal enforcement, and performance control much harder.
+              </Body>
               <TwoCol
+                style={{ marginTop: 22 }}
                 left={<div>
                   <div style={{ fontFamily: FONTS.serif, fontSize: 44, marginBottom: 12 }}>Advantages</div>
                   <ul style={{ fontFamily: FONTS.serif, fontSize: 32, lineHeight: 1.35, paddingLeft: 30 }}>
@@ -2987,6 +2994,373 @@
           );
         }
 
+        function TorrentMetadataDiagram() {
+          const w = 620;
+          const h = 480;
+          const rows = [
+            ['name', 'Planet.Earth.S01E01.mkv'],
+            ['length', '1,478,233,088 bytes'],
+            ['piece length', '524,288 bytes'],
+            ['pieces', 'SHA-1 hashes x 2820'],
+            ['announce', 'udp://tracker.example:6969'],
+            ['info', '{ files, sizes, hashes }'],
+          ];
+          return (
+            <svg viewBox={`0 0 ${w} ${h}`} preserveAspectRatio="xMidYMid meet" style={{ width: '100%', height: '100%', display: 'block' }}>
+              <rect x="104" y="40" width="468" height="380" rx="18" fill={COLORS.paper} stroke={COLORS.ink} strokeWidth="2.5" />
+              <path d="M500 40 L500 112 L572 112" fill={COLORS.creamDark} stroke={COLORS.ink} strokeWidth="2.5" strokeLinejoin="round" />
+              <line x1="500" y1="40" x2="572" y2="112" stroke={COLORS.ink} strokeWidth="2.5" strokeLinecap="round" />
+              <text x="140" y="92" fontFamily={FONTS.mono} fontSize="24" fill={COLORS.ink}>nature_episode.torrent</text>
+              <text x="140" y="124" fontFamily={FONTS.sans} fontSize="14" letterSpacing="0.18em" fill={COLORS.muted}>METADATA ONLY</text>
+              {rows.map(([label, value], i) => {
+                const y = 164 + i * 42;
+                return (
+                  <g key={label}>
+                    <line x1="138" y1={y - 22} x2="536" y2={y - 22} stroke={COLORS.ruleFaint} strokeWidth="1.4" />
+                    <text x="142" y={y} fontFamily={FONTS.mono} fontSize="18" fill={COLORS.accent}>{label}</text>
+                    <text x="280" y={y} fontFamily={FONTS.serif} fontSize="21" fill={COLORS.inkSoft}>{value}</text>
+                  </g>
+                );
+              })}
+              <text x="338" y="438" textAnchor="middle" fontFamily={FONTS.sans} fontSize="15" letterSpacing="0.16em" fill={COLORS.accent}>RECIPE FOR THE DOWNLOAD</text>
+            </svg>
+          );
+        }
+
+        function InfoHashFlowDiagram() {
+          const w = 1320;
+          const h = 230;
+          const steps = [
+            { x: 40, w: 200, label: '.torrent file', sub: 'full metadata' },
+            { x: 285, w: 220, label: 'info dictionary', sub: 'the part that gets hashed' },
+            { x: 550, w: 160, label: 'SHA-1', sub: 'run the hash' },
+            { x: 755, w: 210, label: 'info hash', sub: 'swarm identity' },
+            { x: 1010, w: 250, label: 'tracker / DHT lookup', sub: 'who has peers for this hash?' },
+          ];
+          return (
+            <svg viewBox={`0 0 ${w} ${h}`} preserveAspectRatio="xMidYMid meet" style={{ width: '100%', height: '100%', display: 'block' }}>
+              <defs>
+                <marker id="flowArrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto">
+                  <path d="M0,0 L10,5 L0,10 z" fill={COLORS.ink} />
+                </marker>
+              </defs>
+              {steps.map((step, i) => (
+                <g key={step.label}>
+                  <rect x={step.x} y="52" width={step.w} height="82" rx="14" fill={i === 3 ? '#F3EBDD' : COLORS.paper} stroke={COLORS.ink} strokeWidth="2" />
+                  <text x={step.x + step.w / 2} y="87" textAnchor="middle" fontFamily={FONTS.sans} fontSize="20" letterSpacing="0.08em" fill={COLORS.ink}>{step.label}</text>
+                  <text x={step.x + step.w / 2} y="112" textAnchor="middle" fontFamily={FONTS.serif} fontSize="18" fill={COLORS.inkSoft}>{step.sub}</text>
+                  {i < steps.length - 1 && (
+                    <line x1={step.x + step.w + 8} y1="93" x2={steps[i + 1].x - 10} y2="93" stroke={COLORS.ink} strokeWidth="2.4" markerEnd="url(#flowArrow)" />
+                  )}
+                </g>
+              ))}
+              <rect x="1082" y="152" width="190" height="48" rx="12" fill={COLORS.creamDark} stroke={COLORS.rule} strokeWidth="1.2" />
+              <text x="1177" y="181" textAnchor="middle" fontFamily={FONTS.mono} fontSize="16" fill={COLORS.ink}>[IP:port, IP:port]</text>
+            </svg>
+          );
+        }
+
+        function DHTComparisonDiagram() {
+          const peerScale = 0.55;
+          const peerAnchor = { x: 60 * peerScale, y: 70 * peerScale };
+
+          const trackerHub = { x: 208, y: 186 };
+          const trackerPeers = [
+            { x: 28, y: 154, name: 'Alice' },
+            { x: 332, y: 154, name: 'Bob' },
+            { x: 178, y: 274, name: 'Carol' },
+          ];
+          const trackerPeerAnchors = trackerPeers.map((peer) => ({
+            ...peer,
+            ax: peer.x + peerAnchor.x,
+            ay: peer.y + peerAnchor.y,
+          }));
+
+          const dhtCenter = { x: 776, y: 220 };
+          const dhtRadius = 92;
+          const dhtPeers = PEER_NAMES.map((name, i) => {
+            const ang = -Math.PI / 2 + (i / PEER_NAMES.length) * Math.PI * 2;
+            const ax = dhtCenter.x + Math.cos(ang) * dhtRadius;
+            const ay = dhtCenter.y + Math.sin(ang) * dhtRadius;
+            return {
+              x: ax - peerAnchor.x,
+              y: ay - peerAnchor.y,
+              ax,
+              ay,
+              name,
+            };
+          });
+          const dhtEdges = dhtPeers.flatMap((peer, i) =>
+            dhtPeers.slice(i + 1).map((other) => [peer, other])
+          );
+
+          const bubble = { x: 446, y: 108, w: 184, h: 52 };
+          const bubbleCenter = { x: bubble.x + bubble.w / 2, y: bubble.y + bubble.h / 2 };
+          const speakingPeer = dhtPeers.reduce((closest, peer) => {
+            const dist = Math.hypot(peer.ax - bubbleCenter.x, peer.ay - bubbleCenter.y);
+            if (!closest || dist < closest.dist) return { peer, dist };
+            return closest;
+          }, null).peer;
+          const bubbleRadius = 16;
+          const bubbleTailStart = bubble.x + bubble.w - 54;
+          const bubbleTailNeck = bubble.x + bubble.w - 32;
+          const bubbleTailTip = { x: speakingPeer.x - 22, y: speakingPeer.y + 34 };
+          const bubblePath = [
+            `M ${bubble.x + bubbleRadius} ${bubble.y}`,
+            `H ${bubble.x + bubble.w - bubbleRadius}`,
+            `Q ${bubble.x + bubble.w} ${bubble.y} ${bubble.x + bubble.w} ${bubble.y + bubbleRadius}`,
+            `V ${bubble.y + bubble.h - bubbleRadius}`,
+            `Q ${bubble.x + bubble.w} ${bubble.y + bubble.h} ${bubble.x + bubble.w - bubbleRadius} ${bubble.y + bubble.h}`,
+            `H ${bubbleTailNeck}`,
+            `Q ${bubbleTailNeck - 10} ${bubble.y + bubble.h + 22} ${bubbleTailTip.x} ${bubbleTailTip.y}`,
+            `Q ${bubbleTailNeck - 24} ${bubble.y + bubble.h + 18} ${bubbleTailStart} ${bubble.y + bubble.h}`,
+            `H ${bubble.x + bubbleRadius}`,
+            `Q ${bubble.x} ${bubble.y + bubble.h} ${bubble.x} ${bubble.y + bubble.h - bubbleRadius}`,
+            `V ${bubble.y + bubbleRadius}`,
+            `Q ${bubble.x} ${bubble.y} ${bubble.x + bubbleRadius} ${bubble.y}`,
+            'Z',
+          ].join(' ');
+          return (
+            <svg viewBox="0 0 1040 370" preserveAspectRatio="xMidYMid meet" style={{ width: '100%', height: '100%', display: 'block' }}>
+              <defs>
+                <marker id="dhtArrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto">
+                  <path d="M0,0 L10,5 L0,10 z" fill={COLORS.ink} />
+                </marker>
+              </defs>
+              <text x="208" y="30" textAnchor="middle" fontFamily={FONTS.sans} fontSize="18" letterSpacing="0.18em" fill={COLORS.muted}>TRACKER</text>
+              <text x="776" y="30" textAnchor="middle" fontFamily={FONTS.sans} fontSize="18" letterSpacing="0.18em" fill={COLORS.muted}>DHT</text>
+              <text x="208" y="54" textAnchor="middle" fontFamily={FONTS.serif} fontSize="18" fill={COLORS.inkSoft}>one directory answers the lookup</text>
+              <text x="776" y="54" textAnchor="middle" fontFamily={FONTS.serif} fontSize="18" fill={COLORS.inkSoft}>the peers form the directory</text>
+              {trackerPeerAnchors.map((peer) => (
+                <line key={`tracker-link-${peer.name}`} x1={trackerHub.x} y1={trackerHub.y} x2={peer.ax} y2={peer.ay} stroke={COLORS.ink} strokeWidth="2.2" markerEnd="url(#dhtArrow)" />
+              ))}
+              <text x={trackerHub.x} y="96" textAnchor="middle" fontFamily={FONTS.sans} fontSize="14" letterSpacing="0.12em" fill={COLORS.ink}>HUB</text>
+              <g transform={`translate(${trackerHub.x - 52} ${trackerHub.y - 78})`}>
+                <ServerRackSvg scale={0.9} showLabel={false} />
+              </g>
+              {trackerPeers.map((peer) => (
+                <g key={peer.name}>
+                  <g transform={`translate(${peer.x}, ${peer.y}) scale(${peerScale})`}><NetworkPersonSvg name={peer.name} /></g>
+                </g>
+              ))}
+              {dhtEdges.map(([a, b], i) => (
+                <line key={i} x1={a.ax} y1={a.ay} x2={b.ax} y2={b.ay} stroke={COLORS.ink} strokeWidth="2" opacity="0.82" />
+              ))}
+              {dhtPeers.map((peer) => (
+                <g key={peer.name} transform={`translate(${peer.x}, ${peer.y}) scale(${peerScale})`}><NetworkPersonSvg name={peer.name} /></g>
+              ))}
+              <path d={bubblePath} fill="#F3EBDD" stroke={COLORS.accent} strokeWidth="2" strokeLinejoin="round" />
+              <text x={bubble.x + bubble.w / 2} y={bubble.y + 32} textAnchor="middle" fontFamily={FONTS.mono} fontSize="16" fill={COLORS.accent}>info hash?</text>
+            </svg>
+          );
+        }
+
+        function MagnetComparisonDiagram() {
+          const peerScale = 0.52;
+          const peerY = 224;
+          const peerXs = [730, 838, 946];
+          const peerHeadX = peerXs.map((x) => x + 60 * peerScale);
+          const peerHeadY = peerY + 48 * peerScale;
+          const peerTop = peerY;
+          const peerBottom = peerY + 140 * peerScale;
+          const peerLabelY = 214;
+          const leftPeerArc = {
+            start: { x: peerHeadX[0], y: peerHeadY },
+            c1: { x: peerHeadX[0] + 22, y: peerHeadY - 34 },
+            c2: { x: peerHeadX[1] - 22, y: peerHeadY - 34 },
+            end: { x: peerHeadX[1], y: peerHeadY },
+          };
+          const rightPeerArc = {
+            start: { x: peerHeadX[1], y: peerHeadY },
+            c1: { x: peerHeadX[1] + 22, y: peerHeadY - 34 },
+            c2: { x: peerHeadX[2] - 22, y: peerHeadY - 34 },
+            end: { x: peerHeadX[2], y: peerHeadY },
+          };
+          return (
+            <svg viewBox="0 0 1120 360" preserveAspectRatio="xMidYMid meet" style={{ width: '100%', height: '100%', display: 'block' }}>
+              <defs>
+                <marker id="magArrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto">
+                  <path d="M0,0 L10,5 L0,10 z" fill={COLORS.ink} />
+                </marker>
+              </defs>
+              <rect x="48" y="50" width="468" height="252" rx="20" fill={COLORS.paper} stroke={COLORS.ink} strokeWidth="2" />
+              <rect x="604" y="50" width="468" height="252" rx="20" fill={COLORS.paper} stroke={COLORS.ink} strokeWidth="2" />
+              <text x="282" y="84" textAnchor="middle" fontFamily={FONTS.sans} fontSize="18" letterSpacing="0.18em" fill={COLORS.muted}>.TORRENT FILE</text>
+              <text x="838" y="84" textAnchor="middle" fontFamily={FONTS.sans} fontSize="18" letterSpacing="0.18em" fill={COLORS.muted}>MAGNET LINK</text>
+              <path d="M118 120 H188 L226 158 V236 Q226 250 212 250 H118 Q104 250 104 236 V134 Q104 120 118 120 Z" fill="#F5EEDD" stroke={COLORS.ink} strokeWidth="1.8" strokeLinejoin="round" />
+              <path d="M188 120 V158 H226" fill={COLORS.creamDark} stroke={COLORS.ink} strokeWidth="1.8" strokeLinejoin="round" />
+              {[150, 170, 190, 210].map((y, i) => (
+                <line key={i} x1="126" y1={y} x2={i === 0 ? 176 : (i === 3 ? 182 : 202)} y2={y} stroke={COLORS.rule} strokeWidth="2" strokeLinecap="round" />
+              ))}
+              <text x="165" y="278" textAnchor="middle" fontFamily={FONTS.mono} fontSize="16" fill={COLORS.ink}>full metadata</text>
+              <line x1="244" y1="186" x2="412" y2="186" stroke={COLORS.ink} strokeWidth="2.4" markerEnd="url(#magArrow)" />
+              <rect x="412" y="146" width="76" height="80" rx="12" fill={COLORS.creamDark} stroke={COLORS.rule} strokeWidth="1.5" />
+              <text x="450" y="176" textAnchor="middle" fontFamily={FONTS.sans} fontSize="14" fill={COLORS.ink}>client</text>
+              <text x="450" y="198" textAnchor="middle" fontFamily={FONTS.mono} fontSize="13" fill={COLORS.inkSoft}>ready now</text>
+
+              <rect x="662" y="134" width="350" height="56" rx="14" fill="#F3EBDD" stroke={COLORS.ink} strokeWidth="1.8" />
+              <text x="837" y="167" textAnchor="middle" fontFamily={FONTS.mono} fontSize="16" fill={COLORS.ink}>magnet:?xt=urn:btih:2F4A...</text>
+              <line x1="838" y1="192" x2="838" y2={peerTop + 8} stroke={COLORS.ink} strokeWidth="2.2" markerEnd="url(#magArrow)" />
+              <text x="894" y={peerLabelY} fontFamily={FONTS.sans} fontSize="14" letterSpacing="0.14em" fill={COLORS.muted}>find peers first</text>
+              <path d={`M ${leftPeerArc.start.x} ${leftPeerArc.start.y} C ${leftPeerArc.c1.x} ${leftPeerArc.c1.y} ${leftPeerArc.c2.x} ${leftPeerArc.c2.y} ${leftPeerArc.end.x} ${leftPeerArc.end.y}`} fill="none" stroke={COLORS.accent} strokeWidth="2.2" strokeLinecap="round" />
+              <path d={`M ${rightPeerArc.start.x} ${rightPeerArc.start.y} C ${rightPeerArc.c1.x} ${rightPeerArc.c1.y} ${rightPeerArc.c2.x} ${rightPeerArc.c2.y} ${rightPeerArc.end.x} ${rightPeerArc.end.y}`} fill="none" stroke={COLORS.accent} strokeWidth="2.2" strokeLinecap="round" />
+              {peerXs.map((x, i) => (
+                <g key={i} transform={`translate(${x}, ${peerY}) scale(${peerScale})`}><NetworkPersonSvg name={PEER_NAMES[i]} /></g>
+              ))}
+              <line x1="690" y1={peerBottom + 2} x2="986" y2={peerBottom + 2} stroke={COLORS.ink} strokeWidth="1.8" />
+              <text x="838" y="334" textAnchor="middle" fontFamily={FONTS.serif} fontSize="20" fill={COLORS.inkSoft}>start with the ID, fetch the blueprint from peers</text>
+            </svg>
+          );
+        }
+
+        function ClientJobsDiagram() {
+          const peers = [
+            { x: 150, y: 96, name: 'Alice' },
+            { x: 354, y: 96, name: 'Bob' },
+            { x: 528, y: 224, name: 'Carol' },
+            { x: 150, y: 350, name: 'Dana' },
+            { x: 354, y: 350, name: 'Erin' },
+          ];
+          return (
+            <svg viewBox="0 0 620 450" preserveAspectRatio="xMidYMid meet" style={{ width: '100%', height: '100%', display: 'block' }}>
+              <defs>
+                <marker id="clientArrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto">
+                  <path d="M0,0 L10,5 L0,10 z" fill={COLORS.ink} />
+                </marker>
+              </defs>
+              <rect x="228" y="160" width="166" height="116" rx="18" fill="#F3EBDD" stroke={COLORS.ink} strokeWidth="2.2" />
+              <text x="311" y="196" textAnchor="middle" fontFamily={FONTS.sans} fontSize="20" letterSpacing="0.14em" fill={COLORS.ink}>CLIENT</text>
+              <text x="311" y="222" textAnchor="middle" fontFamily={FONTS.serif} fontSize="19" fill={COLORS.inkSoft}>coordinates peers,</text>
+              <text x="311" y="246" textAnchor="middle" fontFamily={FONTS.serif} fontSize="19" fill={COLORS.inkSoft}>pieces, and hashes</text>
+              <rect x="270" y="280" width="82" height="34" rx="9" fill={COLORS.paper} stroke={COLORS.rule} strokeWidth="1.3" />
+              <text x="311" y="302" textAnchor="middle" fontFamily={FONTS.mono} fontSize="14" fill={COLORS.ink}>file.mkv</text>
+              {peers.map((peer) => (
+                <g key={peer.name}>
+                  <line x1="311" y1="218" x2={peer.x + 28} y2={peer.y + 10} stroke={COLORS.ink} strokeWidth="2" markerEnd="url(#clientArrow)" />
+                  <g transform={`translate(${peer.x}, ${peer.y}) scale(0.52)`}><NetworkPersonSvg name={peer.name} /></g>
+                </g>
+              ))}
+              <g transform="translate(24 178)">
+                <ServerRackSvg scale={0.55} />
+              </g>
+              <text x="77" y="258" textAnchor="middle" fontFamily={FONTS.sans} fontSize="13" letterSpacing="0.14em" fill={COLORS.muted}>TRACKER / DHT</text>
+            </svg>
+          );
+        }
+
+        function WalkthroughFlowDiagram() {
+          const steps = [
+            { y: 28, label: 'open .torrent or magnet' },
+            { y: 108, label: 'get info hash' },
+            { y: 188, label: 'ask tracker / DHT' },
+            { y: 268, label: 'connect to peers' },
+            { y: 348, label: 'download + verify pieces' },
+            { y: 428, label: 'rebuild finished file' },
+          ];
+          return (
+            <svg viewBox="0 0 520 520" preserveAspectRatio="xMidYMid meet" style={{ width: '100%', height: '100%', display: 'block' }}>
+              <defs>
+                <marker id="walkArrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto">
+                  <path d="M0,0 L10,5 L0,10 z" fill={COLORS.ink} />
+                </marker>
+              </defs>
+              {steps.map((step, i) => (
+                <g key={step.label}>
+                  <rect x="74" y={step.y} width="372" height="48" rx="14" fill={i === steps.length - 1 ? '#F3EBDD' : COLORS.paper} stroke={COLORS.ink} strokeWidth="1.8" />
+                  <text x="260" y={step.y + 30} textAnchor="middle" fontFamily={FONTS.sans} fontSize="18" letterSpacing="0.10em" fill={COLORS.ink}>{step.label}</text>
+                  {i < steps.length - 1 && <line x1="260" y1={step.y + 48} x2="260" y2={steps[i + 1].y - 10} stroke={COLORS.ink} strokeWidth="2.2" markerEnd="url(#walkArrow)" />}
+                </g>
+              ))}
+            </svg>
+          );
+        }
+
+        function ForeverSwarmDiagram() {
+          const peers = [
+            { x: 114, y: 144, name: 'Alice', active: false },
+            { x: 302, y: 58, name: 'Bob', active: true },
+            { x: 488, y: 144, name: 'Carol', active: false },
+            { x: 212, y: 268, name: 'Dana', active: false },
+            { x: 398, y: 268, name: 'Erin', active: true },
+          ];
+          return (
+            <svg viewBox="0 0 600 360" preserveAspectRatio="xMidYMid meet" style={{ width: '100%', height: '100%', display: 'block' }}>
+              {[[0, 1], [1, 2], [1, 4], [4, 3]].map(([a, b], i) => (
+                <NetworkLinkLine key={i} x1={peers[a].x + 30} y1={peers[a].y + 10} x2={peers[b].x + 30} y2={peers[b].y + 10} active={peers[a].active && peers[b].active} dashed={!peers[a].active || !peers[b].active} />
+              ))}
+              {peers.map((peer) => (
+                <g key={peer.name}>
+                  <g transform={`translate(${peer.x}, ${peer.y}) scale(0.56)`} opacity={peer.active ? 1 : 0.45}><NetworkPersonSvg name={peer.name} /></g>
+                  {!peer.active && (
+                    <g>
+                      <line x1={peer.x - 8} y1={peer.y - 8} x2={peer.x + 68} y2={peer.y + 76} stroke={COLORS.danger} strokeWidth="4" />
+                      <line x1={peer.x + 68} y1={peer.y - 8} x2={peer.x - 8} y2={peer.y + 76} stroke={COLORS.danger} strokeWidth="4" />
+                    </g>
+                  )}
+                </g>
+              ))}
+              <rect x="194" y="108" width="212" height="78" rx="18" fill="#F3EBDD" stroke={COLORS.ink} strokeWidth="2" />
+              <text x="300" y="140" textAnchor="middle" fontFamily={FONTS.sans} fontSize="16" letterSpacing="0.14em" fill={COLORS.ink}>ONE COMPLETE COPY</text>
+              <text x="300" y="166" textAnchor="middle" fontFamily={FONTS.serif} fontSize="22" fill={COLORS.inkSoft}>is enough to keep the file alive</text>
+            </svg>
+          );
+        }
+
+        function UntouchableDiagram() {
+          return (
+            <svg viewBox="0 0 1080 360" preserveAspectRatio="xMidYMid meet" style={{ width: '100%', height: '100%', display: 'block' }}>
+              <line x1="540" y1="38" x2="540" y2="324" stroke={COLORS.rule} strokeWidth="2" />
+              <text x="270" y="34" textAnchor="middle" fontFamily={FONTS.sans} fontSize="18" letterSpacing="0.18em" fill={COLORS.muted}>LEGAL / PLATFORM PRESSURE</text>
+              <text x="810" y="34" textAnchor="middle" fontFamily={FONTS.sans} fontSize="18" letterSpacing="0.18em" fill={COLORS.muted}>NETWORK REALITY</text>
+              <rect x="70" y="68" width="400" height="210" rx="20" fill={COLORS.paper} stroke={COLORS.ink} strokeWidth="2" />
+              <rect x="610" y="68" width="400" height="210" rx="20" fill={COLORS.paper} stroke={COLORS.ink} strokeWidth="2" />
+              {['site takedown', 'cease-and-desist', 'one user stops seeding'].map((label, i) => (
+                <g key={label}>
+                  <rect x="112" y={104 + i * 52} width="220" height="34" rx="10" fill="#F3EBDD" stroke={COLORS.rule} strokeWidth="1.2" />
+                  <text x="222" y={126 + i * 52} textAnchor="middle" fontFamily={FONTS.sans} fontSize="15" fill={COLORS.ink}>{label}</text>
+                  <line x1="344" y1={121 + i * 52} x2="430" y2={121 + i * 52} stroke={COLORS.danger} strokeWidth="2.4" />
+                  <text x="447" y={126 + i * 52} fontFamily={FONTS.sans} fontSize="14" fill={COLORS.danger}>removes one path</text>
+                </g>
+              ))}
+              {[0, 1, 2].map((i) => (
+                <g key={i} transform={`translate(${660 + i * 108}, ${118 + (i % 2) * 92}) scale(0.5)`}><NetworkPersonSvg name={PEER_NAMES[i]} /></g>
+              ))}
+              <line x1="724" y1="154" x2="832" y2="246" stroke={COLORS.ink} strokeWidth="2.2" />
+              <line x1="832" y1="154" x2="940" y2="246" stroke={COLORS.ink} strokeWidth="2.2" />
+              <line x1="724" y1="246" x2="940" y2="246" stroke={COLORS.ink} strokeWidth="2.2" />
+              <text x="810" y="302" textAnchor="middle" fontFamily={FONTS.serif} fontSize="20" fill={COLORS.inkSoft}>other peers and mirrors keep the swarm reachable</text>
+            </svg>
+          );
+        }
+
+        function TradeoffsExampleDiagram() {
+          return (
+            <svg viewBox="0 0 1100 320" preserveAspectRatio="xMidYMid meet" style={{ width: '100%', height: '100%', display: 'block' }}>
+              <text x="550" y="32" textAnchor="middle" fontFamily={FONTS.sans} fontSize="18" letterSpacing="0.18em" fill={COLORS.muted}>EXAMPLE: A MOVIE TORRENT WITH THOUSANDS OF DOWNLOADERS</text>
+              <rect x="54" y="64" width="472" height="210" rx="20" fill={COLORS.paper} stroke={COLORS.ink} strokeWidth="2" />
+              <rect x="574" y="64" width="472" height="210" rx="20" fill={COLORS.paper} stroke={COLORS.ink} strokeWidth="2" />
+              <text x="290" y="98" textAnchor="middle" fontFamily={FONTS.sans} fontSize="18" letterSpacing="0.16em" fill={COLORS.ok}>WHY IT SCALES</text>
+              <text x="810" y="98" textAnchor="middle" fontFamily={FONTS.sans} fontSize="18" letterSpacing="0.16em" fill={COLORS.accent}>WHY IT GETS MESSY</text>
+              {[0, 1, 2, 3].map((i) => (
+                <g key={i} transform={`translate(${116 + i * 82}, 132) scale(0.46)`}><NetworkPersonSvg name={PEER_NAMES[i]} /></g>
+              ))}
+              <rect x="230" y="212" width="122" height="34" rx="10" fill="#F3EBDD" stroke={COLORS.rule} strokeWidth="1.2" />
+              <text x="291" y="234" textAnchor="middle" fontFamily={FONTS.mono} fontSize="14" fill={COLORS.ink}>movie.mkv</text>
+              {[0, 1, 2, 3].map((i) => (
+                <line key={i} x1={146 + i * 82} y1="180" x2="291" y2="212" stroke={COLORS.ok} strokeWidth="2.2" />
+              ))}
+              <text x="290" y="260" textAnchor="middle" fontFamily={FONTS.serif} fontSize="19" fill={COLORS.inkSoft}>many peers share the upload burden</text>
+              <rect x="638" y="130" width="138" height="36" rx="10" fill="#F3EBDD" stroke={COLORS.rule} strokeWidth="1.2" />
+              <text x="707" y="153" textAnchor="middle" fontFamily={FONTS.sans} fontSize="14" fill={COLORS.ink}>copyright claim</text>
+              <rect x="846" y="130" width="138" height="36" rx="10" fill="#F3EBDD" stroke={COLORS.rule} strokeWidth="1.2" />
+              <text x="915" y="153" textAnchor="middle" fontFamily={FONTS.sans} fontSize="14" fill={COLORS.ink}>bad peers leave</text>
+              <line x1="776" y1="148" x2="846" y2="148" stroke={COLORS.danger} strokeWidth="2.2" />
+              <text x="810" y="214" textAnchor="middle" fontFamily={FONTS.serif} fontSize="19" fill={COLORS.inkSoft}>moderation, legal pressure, and vanishing seeders</text>
+              <text x="810" y="242" textAnchor="middle" fontFamily={FONTS.serif} fontSize="19" fill={COLORS.inkSoft}>all become product and policy problems</text>
+            </svg>
+          );
+        }
+
         function SlideD2Tracker() {
           const keyPointStyle = {
             fontFamily: FONTS.serif,
@@ -3046,19 +3420,19 @@
           ];
           const itemStyle = {
             borderTop: `1px solid ${COLORS.rule}`,
-            paddingTop: 16,
+            paddingTop: 12,
           };
           const termStyle = {
             fontFamily: FONTS.mono,
-            fontSize: 22,
+            fontSize: 20,
             color: COLORS.ink,
             letterSpacing: '0.01em',
-            marginBottom: 8,
+            marginBottom: 6,
           };
           const descStyle = {
             fontFamily: FONTS.serif,
-            fontSize: 28,
-            lineHeight: 1.3,
+            fontSize: 24,
+            lineHeight: 1.22,
             color: COLORS.inkSoft,
           };
 
@@ -3069,19 +3443,24 @@
               <Body size="bodyLg" style={{ marginTop: 20, maxWidth: 1500 }}>
                 It&apos;s a compact blueprint that tells the client what to build, how to verify each piece, and where discovery can start.
               </Body>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 52, marginTop: 36, flex: '1 1 auto' }}>
-                {[fields.slice(0, 3), fields.slice(3)].map((column, i) => (
-                  <div key={i} style={{ display: 'grid', gap: 18, alignContent: 'start' }}>
-                    {column.map(([term, desc]) => (
-                      <div key={term} style={itemStyle}>
-                        <div style={termStyle}>{term}</div>
-                        <div style={descStyle}>{desc}</div>
-                      </div>
-                    ))}
-                  </div>
-                ))}
+              <div style={{ display: 'grid', gridTemplateColumns: '0.9fr 1.1fr', gap: 40, marginTop: 32, flex: '1 1 auto', minHeight: 0, alignItems: 'start' }}>
+                <div style={{ minHeight: 0, width: '76%', margin: '0 auto', transform: 'translateY(-10px)' }}>
+                  <TorrentMetadataDiagram />
+                </div>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 18, alignContent: 'start' }}>
+                  {[fields.slice(0, 3), fields.slice(3)].map((column, i) => (
+                    <div key={i} style={{ display: 'grid', gap: 14, alignContent: 'start' }}>
+                      {column.map(([term, desc]) => (
+                        <div key={term} style={itemStyle}>
+                          <div style={termStyle}>{term}</div>
+                          <div style={descStyle}>{desc}</div>
+                        </div>
+                      ))}
+                    </div>
+                  ))}
+                </div>
               </div>
-              <Callout kicker="What it does" style={{ marginTop: 30 }}>
+              <Callout kicker="What it does" style={{ marginTop: 'auto' }}>
                 The <Mono>.torrent</Mono> file gives the client everything it needs to verify a download. The actual bytes still come from peers.
               </Callout>
             </SlideFrame>
@@ -3115,8 +3494,11 @@
               <Body size="bodyLg" style={{ marginTop: 20, maxWidth: 1520 }}>
                 Inside the <Mono>.torrent</Mono> file, the <Mono>info</Mono> dictionary is hashed with SHA-1. That result is the info hash, and trackers plus DHT nodes use it as the lookup key for the swarm.
               </Body>
+              <div style={{ marginTop: 22, minHeight: 0, flex: '1 1 auto', display: 'flex', alignItems: 'center' }}>
+                <InfoHashFlowDiagram />
+              </div>
               <TwoCol
-                style={{ marginTop: 40, gap: 64 }}
+                style={{ marginTop: 30, gap: 64, flex: '0 0 auto' }}
                 left={(
                   <div style={cardStyle}>
                     <div style={labelStyle}>File hash</div>
@@ -3130,7 +3512,7 @@
                   </div>
                 )}
               />
-              <Callout kicker="Tracker lookup" style={{ marginTop: 34 }}>
+              <Callout kicker="Tracker lookup" style={{ marginTop: 'auto' }}>
                 <Mono style={{ fontSize: '0.98em' }}>info hash -&gt; [IP:port, IP:port, ...]</Mono>
               </Callout>
             </SlideFrame>
@@ -3145,8 +3527,11 @@
               <Body size="bodyLg" style={{ marginTop: 20, maxWidth: 1520 }}>
                 DHT, or Distributed Hash Table, is an alternative to trackers and a complement to them. The lookup network is formed by BitTorrent clients themselves, so your client can ask, &ldquo;Who has peers for this info hash?&rdquo; without relying on one central server.
               </Body>
+              <div style={{ marginTop: 18, minHeight: 0, flex: '1 1 auto', display: 'flex', alignItems: 'center' }}>
+                <DHTComparisonDiagram />
+              </div>
               <TwoCol
-                style={{ marginTop: 42, gap: 56 }}
+                style={{ marginTop: 'auto', gap: 56, flex: '0 0 auto' }}
                 left={(
                   <Card title="Tracker">
                     Centralized directory. One takedown or outage can disrupt discovery.
@@ -3167,8 +3552,11 @@
             <SlideFrame>
               <Eyebrow>Two ways to join the same swarm</Eyebrow>
               <Title>A magnet link is the blueprint&apos;s ID, <em>not the blueprint itself.</em></Title>
+              <div style={{ marginTop: 18, minHeight: 0 }}>
+                <MagnetComparisonDiagram />
+              </div>
               <TwoCol
-                style={{ marginTop: 28, gap: 64 }}
+                style={{ marginTop: 18, gap: 64 }}
                 left={(
                   <div>
                     <div style={{ fontFamily: FONTS.sans, fontSize: 16, letterSpacing: '0.2em', textTransform: 'uppercase', color: COLORS.muted, marginBottom: 14 }}>.torrent file</div>
@@ -3213,15 +3601,20 @@
             <SlideFrame>
               <Eyebrow>What the software actually does</Eyebrow>
               <Title>The client handles <em>every step</em> of the download.</Title>
-              <div style={{ marginTop: 30, display: 'grid', gridTemplateColumns: '1fr 1fr', columnGap: 72, rowGap: 18, flex: '1 1 auto', alignContent: 'start' }}>
-                {jobs.map((job, i) => (
-                  <div key={job} style={{ display: 'grid', gridTemplateColumns: '74px 1fr', gap: 18, alignItems: 'start', borderTop: `1px solid ${COLORS.rule}`, paddingTop: 16 }}>
-                    <Numeral n={i + 1} style={{ fontSize: 42 }} />
-                    <div style={{ fontFamily: FONTS.serif, fontSize: 28, lineHeight: 1.28, color: COLORS.ink }}>{job}</div>
-                  </div>
-                ))}
+              <div style={{ marginTop: 28, display: 'grid', gridTemplateColumns: '0.92fr 1.08fr', columnGap: 56, flex: '1 1 auto', minHeight: 0, alignItems: 'start' }}>
+                <div style={{ minHeight: 0, alignSelf: 'center' }}>
+                  <ClientJobsDiagram />
+                </div>
+                <div style={{ display: 'grid', gap: 14, alignContent: 'start' }}>
+                  {jobs.map((job, i) => (
+                    <div key={job} style={{ display: 'grid', gridTemplateColumns: '74px 1fr', gap: 18, alignItems: 'start', borderTop: `1px solid ${COLORS.rule}`, paddingTop: 14 }}>
+                      <Numeral n={i + 1} style={{ fontSize: 40 }} />
+                      <div style={{ fontFamily: FONTS.serif, fontSize: 26, lineHeight: 1.24, color: COLORS.ink }}>{job}</div>
+                    </div>
+                  ))}
+                </div>
               </div>
-              <Body size="body" style={{ marginTop: 26, color: COLORS.inkSoft }}>
+              <Body size="body" style={{ marginTop: 18, color: COLORS.inkSoft }}>
                 Example clients: <em>qBittorrent</em>, <em>Transmission</em>, and <em>Deluge</em>.
               </Body>
             </SlideFrame>
@@ -3241,13 +3634,18 @@
             <SlideFrame>
               <Eyebrow>End-to-end</Eyebrow>
               <Title>From click to completed file - <em>six steps.</em></Title>
-              <div style={{ marginTop: 34, display: 'grid', gridTemplateColumns: '1fr 1fr', columnGap: 72, rowGap: 18, flex: '1 1 auto', alignContent: 'start' }}>
-                {steps.map((step, i) => (
-                  <div key={step} style={{ display: 'grid', gridTemplateColumns: '70px 1fr', gap: 18, alignItems: 'start', borderTop: `1px solid ${COLORS.rule}`, paddingTop: 16 }}>
-                    <Numeral n={i + 1} style={{ fontSize: 44 }} />
-                    <div style={{ fontFamily: FONTS.serif, fontSize: 28, lineHeight: 1.28, color: COLORS.ink }}>{step}</div>
-                  </div>
-                ))}
+              <div style={{ marginTop: 26, display: 'grid', gridTemplateColumns: '0.84fr 1.16fr', columnGap: 52, flex: '1 1 auto', minHeight: 0 }}>
+                <div style={{ minHeight: 0, alignSelf: 'center' }}>
+                  <WalkthroughFlowDiagram />
+                </div>
+                <div style={{ display: 'grid', gap: 14, alignContent: 'start' }}>
+                  {steps.map((step, i) => (
+                    <div key={step} style={{ display: 'grid', gridTemplateColumns: '70px 1fr', gap: 18, alignItems: 'start', borderTop: `1px solid ${COLORS.rule}`, paddingTop: 14 }}>
+                      <Numeral n={i + 1} style={{ fontSize: 42 }} />
+                      <div style={{ fontFamily: FONTS.serif, fontSize: 26, lineHeight: 1.24, color: COLORS.ink }}>{step}</div>
+                    </div>
+                  ))}
+                </div>
               </div>
             </SlideFrame>
           );
@@ -3281,14 +3679,36 @@
           return (
             <SlideFrame>
               <Eyebrow>Permanence is a feature and a curse</Eyebrow>
-              <Title>Once it&apos;s in a swarm, it&apos;s <em>effectively forever.</em></Title>
-              <Body size="bodyLg" style={{ marginTop: 22, maxWidth: 1500 }}>
-                Imagine an embarrassing video of you leaks. You can email a few hosts, get some copies pulled, even sue. But can you ever be <em>100% certain</em> every copy is gone? In a swarm, as long as one peer keeps a copy, the file lives on.
-              </Body>
-              <Callout kicker="Two sides of the same coin" style={{ marginTop: 42 }}>
+              <div style={{ display: 'grid', gridTemplateColumns: '1.06fr 0.94fr', gap: 56, alignItems: 'end' }}>
+                <Title size="titleSm" style={{ maxWidth: 980 }}>
+                  Once a swarm exists, one surviving copy can keep the file <em>alive.</em>
+                </Title>
+                <div style={{ borderTop: `1px solid ${COLORS.rule}`, borderBottom: `1px solid ${COLORS.rule}`, padding: '16px 0 18px' }}>
+                  <div style={{ fontFamily: FONTS.sans, fontSize: 15, letterSpacing: '0.18em', textTransform: 'uppercase', color: COLORS.muted, marginBottom: 10 }}>
+                    The key idea
+                  </div>
+                  <div style={{ fontFamily: FONTS.serif, fontSize: 30, lineHeight: 1.24, color: COLORS.ink }}>
+                    Deleting a few copies does not erase the file if the swarm still contains one complete copy.
+                  </div>
+                </div>
+              </div>
+              <div style={{ display: 'grid', gridTemplateColumns: '0.9fr 1.1fr', gap: 56, marginTop: 30, alignItems: 'stretch', flex: '1 1 auto', minHeight: 0 }}>
+                <Card title="Why this matters">
+                  Imagine an embarrassing video of you leaks. You can email hosts, get some copies removed, even sue. But can you ever be <em>100% certain</em> every copy is gone? In a swarm, as long as one peer keeps a copy, the file lives on.
+                </Card>
+                <div style={{ display: 'grid', gridTemplateRows: 'auto 1fr', gap: 16, minHeight: 0 }}>
+                  <div style={{ fontFamily: FONTS.sans, fontSize: 16, letterSpacing: '0.18em', textTransform: 'uppercase', color: COLORS.accent }}>
+                    Copies can disappear, but the swarm survives
+                  </div>
+                  <div style={{ minHeight: 0, border: `1px solid ${COLORS.rule}`, background: COLORS.paper, padding: '20px 22px' }}>
+                    <ForeverSwarmDiagram />
+                  </div>
+                </div>
+              </div>
+              <Callout kicker="Two sides of the same coin" style={{ marginTop: 34 }}>
                 The same property that lets a P2P network <em>survive outages</em> also lets it <em>survive takedowns.</em> Resilience and permanence are the same mechanism.
               </Callout>
-              <Body size="bodyLg" style={{ marginTop: 34, fontStyle: 'italic', color: COLORS.inkSoft }}>
+              <Body size="body" style={{ marginTop: 26, fontStyle: 'italic', color: COLORS.inkSoft }}>
                 The internet&apos;s old saying applies twice over: once it&apos;s out there, it&apos;s out there.
               </Body>
             </SlideFrame>
@@ -3300,12 +3720,17 @@
             <SlideFrame>
               <Eyebrow>Can the file be removed?</Eyebrow>
               <Title>You can&apos;t really <em>delete a torrent.</em></Title>
-              <ul style={{ marginTop: 38, fontFamily: FONTS.serif, fontSize: 32, lineHeight: 1.4, paddingLeft: 34, maxWidth: 1600 }}>
-                <Bullet><strong>Sites get shut down only with jurisdiction.</strong> Governments closed The Pirate Bay&apos;s US-hosted infrastructure, but mirrors reappeared offshore within days.</Bullet>
-                <Bullet><strong>The torrent file just moves.</strong> A torrent is tiny metadata; one upload to a foreign host and the swarm reconnects.</Bullet>
-                <Bullet><strong>ISPs send cease-and-desist letters,</strong> but only to subscribers in their legal reach, and only if they can identify them.</Bullet>
-                <Bullet><strong>&ldquo;Unhosting&rdquo; isn&apos;t deletion.</strong> Stopping your client just removes <em>you</em> from the swarm. The bytes still sit on your disk, and on every other seeder&apos;s.</Bullet>
-              </ul>
+              <div style={{ display: 'grid', gridTemplateColumns: '1.04fr 0.96fr', gap: 48, marginTop: 22, alignItems: 'center', flex: '1 1 auto', minHeight: 0 }}>
+                <ul style={{ fontFamily: FONTS.serif, fontSize: 29, lineHeight: 1.32, paddingLeft: 34, margin: 0 }}>
+                  <Bullet><strong>Sites get shut down only with jurisdiction.</strong> Governments closed The Pirate Bay&apos;s US-hosted infrastructure, but mirrors reappeared offshore within days.</Bullet>
+                  <Bullet><strong>Sometimes there is no .torrent file to host.</strong> A magnet link is just a URI with the info hash; clients can fetch the metadata from peers or DHT, so a site may only need to post plain text.</Bullet>
+                  <Bullet><strong>ISPs send cease-and-desist letters,</strong> but only to subscribers in their legal reach, and only if they can identify them.</Bullet>
+                  <Bullet><strong>&ldquo;Unhosting&rdquo; isn&apos;t deletion.</strong> Stopping your client just removes <em>you</em> from the swarm. The bytes still sit on your disk, and on every other seeder&apos;s.</Bullet>
+                </ul>
+                <div style={{ minHeight: 0 }}>
+                  <UntouchableDiagram />
+                </div>
+              </div>
               <Callout kicker="The real lever" style={{ marginTop: 36 }}>
                 Jurisdiction, not the network, is what governs P2P content. The protocol has no off switch.
               </Callout>
