@@ -7,8 +7,24 @@ export default function Code() {
       <div className="container widgets-page">
         <h1 className="h1">Computer Science</h1>
 
-        <h2 className="h5 eyebrow" style={{ marginTop: '2rem' }}>Lessons</h2>
+        <h2 className="h5 eyebrow" style={{ marginTop: '2rem' }}>Classes</h2>
         <div className="widgets-grid">
+          <div className="widget-card" style={{ opacity: 0.5, cursor: 'default', pointerEvents: 'none' }}>
+            <div className="title-row">
+              <h3>Advanced Computer Science</h3>
+            </div>
+            <p>Lesson materials and resources for the Advanced Computer Science course.</p>
+            <span className="button" style={{ background: '#888', color: '#fff' }}>Coming Soon</span>
+          </div>
+
+          <div className="widget-card" style={{ opacity: 0.5, cursor: 'default', pointerEvents: 'none' }}>
+            <div className="title-row">
+              <h3>Design and Data Structures</h3>
+            </div>
+            <p>Lesson materials and resources for the Design and Data Structures course.</p>
+            <span className="button" style={{ background: '#888', color: '#fff' }}>Coming Soon</span>
+          </div>
+
           <Link className="widget-card" to="/code/htcs-lessons">
             <div className="title-row">
               <h3>Honors Topics in Computer Science</h3>

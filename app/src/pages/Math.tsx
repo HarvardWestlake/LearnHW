@@ -7,6 +7,19 @@ export default function Math() {
       <div className="container widgets-page">
         <h1 className="h1">Math</h1>
 
+        <h2 className="h5 eyebrow" style={{ marginTop: '2rem' }}>Classes</h2>
+        <div className="widgets-grid">
+          {['Algebra 2', 'Precalculus', 'Calculus'].map(name => (
+            <div key={name} className="widget-card" style={{ opacity: 0.5, cursor: 'default', pointerEvents: 'none' }}>
+              <div className="title-row">
+                <h3>{name}</h3>
+              </div>
+              <p>Lesson materials and resources for the {name} course.</p>
+              <span className="button" style={{ background: '#888', color: '#fff' }}>Coming Soon</span>
+            </div>
+          ))}
+        </div>
+
         <h2 className="h5 eyebrow" style={{ marginTop: '2rem' }}>Interactive Tools</h2>
         <div className="widgets-grid">
           {Object.entries(MATH_WIDGETS).map(([slug, w]) => (
