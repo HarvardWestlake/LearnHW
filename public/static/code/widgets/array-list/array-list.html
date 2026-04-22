@@ -164,6 +164,59 @@
       color: #333;
       margin-top: -0.3rem;
     }
+
+    /* ---- Expansion swipe-out animation ---- */
+    @keyframes cellSwipeOut {
+      0%   { transform: translateX(0) scale(1);    opacity: 1; }
+      100% { transform: translateX(55px) scale(0.4); opacity: 0; }
+    }
+    .cell.swipe-out {
+      animation: cellSwipeOut 0.38s ease-in forwards;
+      pointer-events: none;
+    }
+
+    /* New grid slides in from the left */
+    @keyframes gridSlideIn {
+      0%   { opacity: 0; transform: translateX(-24px); }
+      100% { opacity: 1; transform: translateX(0); }
+    }
+    .memory-grid.slide-in {
+      animation: gridSlideIn 0.32s ease-out forwards;
+    }
+
+    /* ---- Cohesive metric cards ---- */
+    .metrics {
+      display: flex !important;
+      flex-wrap: nowrap !important;
+      gap: 0.4rem !important;
+      margin-top: 0.5rem !important;
+      grid-template-columns: unset !important;
+      width: 100%;
+      box-sizing: border-box;
+    }
+    .metrics > div {
+      flex: 1 1 0;
+      width: 0;
+      max-width: calc((100% - 0.8rem) / 3);
+      background: #fff;
+      border: 1px solid #e0e0e0;
+      border-radius: 5px;
+      padding: 0.35rem 0.15rem;
+      text-align: center;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+      font-size: clamp(0.65rem, 1.8vw, 0.92rem);
+      word-break: break-word;
+    }
+
+    /* ---- Fix left-side clipping on info/legend boxes ---- */
+    .legend, .info {
+      box-sizing: border-box !important;
+      width: 100% !important;
+    }
   </style>
 </head>
 <body>
@@ -412,34 +465,6 @@
         updateMetrics();
       }
 
-      // Render a grid to a provided element with explicit data (used for copy animation)
-      function renderGridTo(el, capacity, size, values) {
-        el.innerHTML = '';
-        el.style.setProperty('--cols', state.baselineCols);
-        const total = Math.max(state.baselineCols * state.baselineRows, capacity);
-        for (let i = 0; i < total; i++) {
-          const cell = document.createElement('div');
-          cell.className = 'cell';
-          if (i < capacity) cell.classList.add('allocated');
-          if (i < size) cell.classList.add('filled');
-          const content = document.createElement('div');
-          content.className = 'content';
-          content.textContent = (i < size) ? String(values[i]) : '';
-          cell.appendChild(content);
-          el.appendChild(cell);
-        }
-      }
-
-      function updateCellFontSizeFor(el) {
-        const firstCell = el.querySelector('.cell');
-        if (!firstCell) return;
-        const w = firstCell.getBoundingClientRect().width || 28;
-        const px = Math.max(9, Math.min(24, Math.floor(w * parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--cell-font-scale')))));
-        Array.from(el.querySelectorAll('.cell .content')).forEach(content => {
-          content.style.fontSize = px + 'px';
-        });
-      }
-
       function refreshFillOnly() {
         // Faster update when only fills changed (no structure change)
         const cells = getCells();
@@ -461,10 +486,22 @@
       // Flash the grid to emphasize a resize
       function flashGrid() {
         grid.classList.remove('flash');
-        // Force reflow so the class re-add triggers animation each time
         void grid.offsetWidth;
         grid.classList.add('flash');
         setTimeout(() => grid.classList.remove('flash'), 1600);
+      }
+
+      // Stagger cells swiping right + shrinking to signal array replacement
+      async function animateCellsSwipeOut() {
+        const cells = getCells();
+        const cols = state.baselineCols;
+        cells.forEach((cell, i) => {
+          const row = Math.floor(i / cols);
+          cell.style.animationDelay = (row * 55) + 'ms';
+          cell.classList.add('swipe-out');
+        });
+        const rows = Math.ceil(cells.length / cols);
+        await sleep(rows * 55 + 420);
       }
 
       // ---------- OPERATIONS / ANIMATIONS ----------
@@ -501,65 +538,46 @@
       async function ensureCapacityForAdd(targetSize, myOp) {
         if (targetSize <= state.capacity) return;
 
-        // Determine new capacity (at least doubling)
         const oldCap = state.capacity;
         let newCap = (oldCap === 0) ? 1 : oldCap;
         while (newCap < targetSize) newCap = Math.max(newCap * state.growthFactor, newCap + 1);
 
         const oldValues = state.values.slice(0, state.size);
+        const oldSize = state.size;
 
-        setStatus(`Capacity ${oldCap} insufficient → resizing to ${newCap} (copying elements)...`);
-        flashGrid();
+        setStatus(`Capacity ${oldCap} insufficient → allocating new array with capacity ${newCap}...`);
 
-        // Prepare dual-grid view: keep existing grid as OLD; create NEW grid below it
-        renderGrid(); // ensure OLD is accurate
-        const newGrid = document.createElement('div');
-        newGrid.id = 'gridNew';
-        newGrid.className = 'memory-grid';
-        newGrid.setAttribute('aria-label', 'New capacity grid');
-        newGrid.style.setProperty('--cols', state.baselineCols);
-        // Insert the new grid above the output area
-        grid.parentElement.insertBefore(newGrid, output);
-        newGrid.addEventListener('pointerdown', requestCancel);
+        // Phase 1: cells swipe right + shrink to signal the old array is being replaced
+        await animateCellsSwipeOut();
+        if (shouldAbort(myOp)) { renderGrid(); return; }
 
-        renderGridTo(newGrid, newCap, 0, []);
-        updateCellFontSizeFor(newGrid);
-        updateCellFontSize();
+        // Phase 2: render new (larger) array and slide it in
+        state.capacity = newCap;
+        state.size = 0;
+        state.values = [];
+        renderGrid();
+        grid.classList.add('slide-in');
+        await sleep(350);
+        grid.classList.remove('slide-in');
+        if (shouldAbort(myOp)) return;
 
-        const oldCells = Array.from(grid.querySelectorAll('.cell'));
-        const newCells = Array.from(newGrid.querySelectorAll('.cell'));
-
-        // Copy each element with synchronized highlight
-        for (let i = 0; i < state.size; i++) {
-          if (shouldAbort(myOp)) { clearCurrent(); newGrid.remove(); return; }
-          const fromCell = oldCells[i];
-          const toCell = newCells[i];
-          fromCell.classList.add('copy-active');
-          toCell.classList.add('copy-active');
-          // Ensure visibility when scrollable
-          fromCell.scrollIntoView({ block: 'nearest', inline: 'nearest', behavior: 'smooth' });
-          toCell.scrollIntoView({ block: 'nearest', inline: 'nearest', behavior: 'smooth' });
+        // Phase 3: copy old elements into the new array one by one
+        setStatus(`Copying ${oldSize} element${oldSize !== 1 ? 's' : ''} into new array...`);
+        for (let i = 0; i < oldSize; i++) {
+          if (shouldAbort(myOp)) { clearCurrent(); return; }
+          highlightIndex(i);
           await stepPause();
-          if (shouldAbort(myOp)) { fromCell.classList.remove('copy-active'); toCell.classList.remove('copy-active'); newGrid.remove(); return; }
+          if (shouldAbort(myOp)) { clearCurrent(); return; }
 
-          // Perform visual copy to new grid
-          const val = oldValues[i];
-          const toContent = toCell.querySelector('.content');
-          toCell.classList.add('filled');
-          toContent.textContent = String(val);
-          updateCellFontSizeFor(newGrid);
+          state.values[i] = oldValues[i];
+          state.size = i + 1;
+          refreshFillOnly();
+          highlightIndex(i);
           await stepPause();
-          if (shouldAbort(myOp)) { fromCell.classList.remove('copy-active'); toCell.classList.remove('copy-active'); newGrid.remove(); return; }
-
-          fromCell.classList.remove('copy-active');
-          toCell.classList.remove('copy-active');
+          if (shouldAbort(myOp)) { clearCurrent(); return; }
+          clearCurrent();
         }
 
-        // Adoption: switch state to the new capacity and re-render single grid
-        state.capacity = newCap;
-        renderGrid();
-        clearCurrent();
-        if (newGrid && newGrid.parentElement) newGrid.remove();
         if (!shouldAbort(myOp)) setStatus(`Resize complete. New capacity: ${state.capacity}.`);
       }
 

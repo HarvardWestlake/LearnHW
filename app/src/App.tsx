@@ -7,6 +7,7 @@ import Code from './pages/Code.tsx'
 import Stats from './pages/Stats.tsx'
 import StaticEmbed from './pages/StaticEmbed.tsx'
 import WidgetRoute from './pages/WidgetRoute.tsx'
+import ArrayListVisualizer from './pages/ArrayListVisualizer.tsx'
 import BinaryExplorer from './pages/BinaryExplorer.tsx'
 import Sha1FlowExplorer from './pages/Sha1FlowExplorer.tsx'
 import { CODE_WIDGETS, HISTORY_WIDGETS, HTCS_LESSON_WIDGETS, MATH_WIDGETS, STATS_WIDGETS } from './pages/widgetMaps'
@@ -75,6 +76,7 @@ export default function App() {
         <Route path="math/:widget" element={<WidgetRoute widgets={MATH_WIDGETS} backTo="/math" />} />
         <Route path="code" element={<Code />} />
         <Route path="code/overview" element={<Cryptography />} />
+        <Route path="code/array-list" element={<ArrayListVisualizer />} />
         <Route path="code/binary-explorer" element={<BinaryExplorer />} />
         <Route path="code/sha1-flow-explorer" element={<Sha1FlowExplorer />} />
         <Route path="code/htcs-lessons" element={<HtcsLessons />} />

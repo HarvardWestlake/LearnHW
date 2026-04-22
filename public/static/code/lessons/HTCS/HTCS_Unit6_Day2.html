@@ -45,20 +45,27 @@
 "Open with the side-by-side animated comparison so the class sees the contrast in one frame. In a centralized model every participant is a client and one server is the authority. In P2P, each participant can be both a client and a server — every machine is a node, and useful behavior emerges from the swarm rather than a central operator. Step the visualization from nodes only, to links, to moving packets so they see the same five peers laid out as a star versus a mesh.",
 "Centralization is not just a technical choice — it transfers ownership. Use Instagram as the canonical example: every photo you upload is licensed to Meta, surfaced or hidden by their ranking, and deletable on their schedule. Then ground it locally: anything written on the school's tools belongs to the school. Same pattern at any employer. The takeaway is that centralized systems concentrate the power to delete, censor, and monetize.",
 "Run the topology demo. Toggle modes and fail nodes. In centralized mode, one failure can collapse service. In P2P mode, traffic reroutes around failures if enough peers remain connected. This is the visceral version of the architectural argument from the previous two slides.",
-"Part 02. Now that the contrast is clear, here is how a swarm actually moves a file from many peers to many peers. Four slides: chunking, the tracker that introduces peers to each other, what happens when peers come and go, and the vocabulary you need to read any torrent client.",
+"Part 02. Now that the contrast is clear, here is how a swarm actually moves a file from many peers to many peers. We will go from chunking, to the tracker, to torrent metadata, to the info hash, to DHT, to magnet links, to the jobs the client performs, to a full walkthrough, and then back to resilience and vocabulary.",
 "The key scaling trick in P2P file sharing is chunking. A file is split into many pieces, and different peers host different subsets. Downloaders request many pieces in parallel rather than waiting on one source.",
-"Explain the tracker before the hashing slide so they understand how peers even find each other. The tracker only stores the piece-to-peer map — file bytes never flow through it. Emphasize that this is why takedowns are slippery: shut down a tracker and DHT or peer-exchange replaces it. Pieces themselves can sit on machines all over the world.",
+"Explain the tracker before the hashing slide so they understand how peers even find each other. The tracker only stores the peer map — file bytes never flow through it. Make the mapping explicit: info hash to a list of IP addresses and ports. That is why a tracker acts like a directory, not a file host.",
+"Walk through each field. Emphasize that the .torrent file is a receipt — it describes the content precisely enough to verify every byte, but doesn't contain a single byte of the actual movie or software.",
+"The info hash is the torrent's identity. Anything that calls itself the same torrent has the same info hash. That hash is how trackers index swarms and how the client knows it's fetching the right file.",
+"DHT lets the swarm coordinate even if every tracker goes offline. The BitTorrent clients themselves become the directory. This is why 'just shut down the tracker' rarely ends a torrent.",
+"A magnet link is just a URL containing the info hash. The client uses that hash to find peers via DHT or the listed trackers, then fetches the full metadata from those peers. The magnet itself fits in a tweet.",
+"The client is the only active software in this whole system. The tracker just answers one question. DHT just routes a lookup. The client does all seven of these steps, in order, every time.",
 "Use the resilience demo to remove peers one by one. Students can see exactly when the swarm still reconstructs the file and when availability finally fails. This is the mechanical version of resilience — we will revisit it as a cultural property in Part 04.",
 "Lock in the terminology before moving on: node, peer, seeder, leecher, tracker, piece, and swarm. Students should leave fluent in this language so the rest of the deck — and any torrent client they open later — reads cleanly.",
+"Run through this slowly. Each step maps back to a component we defined earlier. Step 3 is where the tracker or DHT earns its keep. Step 6 is where Day 01's hashing pays off.",
 "Part 03. Resilience to losing peers is the easy half. The harder half: any peer can lie about the bytes they send. This is where the hash properties from Day 1 earn their keep. One slide and one demo on how a single property — same input always produces the same digest — turns an untrusted swarm into trustworthy data.",
 "Run the malicious-peer demo. Toggle hash verification OFF first so the class watches Mallory's red-flagged pieces fill the file and the INFECTED stamp lands. Then toggle ON and show how each bad piece is rejected and refetched in green from an honest peer. Click any slot to surface the actual expected vs observed hash for forensic confirmation.",
-"Part 04. Once a healthy swarm exists, the protocol takes on a life of its own. The same property that lets it survive node outages also lets it survive takedowns. Four slides plus a live demo: internet permanence, why torrents are effectively undeletable, the honest trade-offs, and finally a real client running in front of the class.",
+"Part 04. Once a healthy swarm exists, the protocol takes on a life of its own. The same property that lets it survive node outages also lets it survive takedowns. Five slides plus a live demo: internet permanence, why torrents are effectively undeletable, common misconceptions, the honest trade-offs, and finally a real client running in front of the class.",
 "Reframe the resilience demo culturally. The same property that lets a swarm survive outages also lets it survive takedowns. Use the embarrassing-video metaphor — you can ask hosts to remove copies, but you can never prove every copy is gone. Internet permanence is the user-facing consequence of P2P resilience.",
 "Walk through why a torrent is effectively undeletable. Site takedowns require jurisdiction (PirateBay's servers were seized but mirrors reappeared). The torrent file itself is tiny metadata — one upload to an offshore host and the swarm reconnects. ISPs can issue cease-and-desist letters but only to subscribers in their legal reach. And 'unhosting' just removes you from the swarm; the bytes still sit on your disk and on every other seeder's. The point: the protocol has no off switch — jurisdiction does.",
+"Have students vote on each one before revealing the answer. These five mistakes will come up in any discussion about torrenting — knowing the corrections marks you as someone who actually understands the protocol.",
 "Address trade-offs honestly. P2P improves resilience and distribution cost, but creates challenges in moderation, legal compliance, abuse response, and quality control.",
 "Time for the live demo. Open a real torrent client. Show the peers panel — point out IP addresses from multiple countries so they see this is global. Switch to the pieces view and watch the grid fill in non-sequentially. Pause and resume the download to demonstrate that progress is preserved. If time allows, open Popcorn Time as a bonus to show streaming-while-downloading on top of the same protocol.",
 "Recap the mental model: centralized systems optimize control; P2P systems optimize redundancy and participation. Hashes provide trust in data integrity even when peers are untrusted.",
-"Bridge to next class: if anyone can join and publish, how do we establish identity and trust at scale?"
+"Bridge to Day 03: next class we turn a shared ledger into money, then ask how a decentralized network keeps that ledger honest with blocks, miners, and proof of work."
 ]
 </script>
   </head>
@@ -2654,10 +2661,10 @@
           return (
             <SlideFrame variant="ink" footer={false}>
               <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
-                <div style={{ fontFamily: FONTS.sans, fontSize: 24, letterSpacing: '0.26em', textTransform: 'uppercase', color: COLORS.gold }}>Next class</div>
-                <Title color={COLORS.paper} size="titleLg" style={{ marginTop: 24, fontSize: 122 }}>Trust and identity<br />in open networks.</Title>
+                <div style={{ fontFamily: FONTS.sans, fontSize: 24, letterSpacing: '0.26em', textTransform: 'uppercase', color: COLORS.gold }}>Day 03 preview</div>
+                <Title color={COLORS.paper} size="titleLg" style={{ marginTop: 24, fontSize: 122 }}>Proof of Work<br />&amp; <span style={{ fontStyle: 'italic' }}>Bitcoin.</span></Title>
                 <Subtitle color="rgba(245,239,227,0.75)" style={{ marginTop: 34, fontSize: 36, maxWidth: 1180 }}>
-                  If anyone can share data, how do we know who to trust?
+                  How can a network of strangers keep one honest ledger with no bank, no boss, and no one in charge?
                 </Subtitle>
               </div>
             </SlideFrame>
@@ -3011,6 +3018,9 @@
                 <div style={keyPointStyle}>
                   <div style={keyLabelStyle}>The map</div>
                   Stores a piece-to-peer map, never the file bytes.
+                  <div style={{ marginTop: 12 }}>
+                    <Mono style={{ fontSize: '0.92em' }}>info hash -&gt; [IP:port, IP:port, ...]</Mono>
+                  </div>
                 </div>
                 <div style={keyPointStyle}>
                   <div style={keyLabelStyle}>The handoff</div>
@@ -3020,6 +3030,248 @@
                   <div style={keyLabelStyle}>The fallback</div>
                   Take down the tracker and DHT / peer-exchange can replace it, and the swarm keeps coordinating.
                 </div>
+              </div>
+            </SlideFrame>
+          );
+        }
+
+        function SlideD2TorrentFile() {
+          const fields = [
+            ['file / folder names', 'what will be reconstructed'],
+            ['file sizes', 'how to pre-allocate disk space'],
+            ['piece length', 'how big each chunk is'],
+            ['piece hashes', 'one SHA-1 per piece for verification'],
+            ['tracker URLs', 'where to find peers'],
+            ['info dictionary', 'the structured block that gets hashed into the info hash'],
+          ];
+          const itemStyle = {
+            borderTop: `1px solid ${COLORS.rule}`,
+            paddingTop: 16,
+          };
+          const termStyle = {
+            fontFamily: FONTS.mono,
+            fontSize: 22,
+            color: COLORS.ink,
+            letterSpacing: '0.01em',
+            marginBottom: 8,
+          };
+          const descStyle = {
+            fontFamily: FONTS.serif,
+            fontSize: 28,
+            lineHeight: 1.3,
+            color: COLORS.inkSoft,
+          };
+
+          return (
+            <SlideFrame>
+              <Eyebrow>Inside the protocol</Eyebrow>
+              <Title>A <Mono style={{ fontSize: '0.88em' }}>.torrent</Mono> file is metadata, not the content.</Title>
+              <Body size="bodyLg" style={{ marginTop: 20, maxWidth: 1500 }}>
+                It&apos;s a compact blueprint that tells the client what to build, how to verify each piece, and where discovery can start.
+              </Body>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 52, marginTop: 36, flex: '1 1 auto' }}>
+                {[fields.slice(0, 3), fields.slice(3)].map((column, i) => (
+                  <div key={i} style={{ display: 'grid', gap: 18, alignContent: 'start' }}>
+                    {column.map(([term, desc]) => (
+                      <div key={term} style={itemStyle}>
+                        <div style={termStyle}>{term}</div>
+                        <div style={descStyle}>{desc}</div>
+                      </div>
+                    ))}
+                  </div>
+                ))}
+              </div>
+              <Callout kicker="What it does" style={{ marginTop: 30 }}>
+                The <Mono>.torrent</Mono> file gives the client everything it needs to verify a download. The actual bytes still come from peers.
+              </Callout>
+            </SlideFrame>
+          );
+        }
+
+        function SlideD2InfoHash() {
+          const cardStyle = {
+            borderTop: `1px solid ${COLORS.rule}`,
+            paddingTop: 18,
+          };
+          const labelStyle = {
+            fontFamily: FONTS.sans,
+            fontSize: 14,
+            letterSpacing: '0.22em',
+            textTransform: 'uppercase',
+            color: COLORS.accent,
+            marginBottom: 10,
+          };
+          const textStyle = {
+            fontFamily: FONTS.serif,
+            fontSize: 28,
+            lineHeight: 1.32,
+            color: COLORS.ink,
+          };
+
+          return (
+            <SlideFrame>
+              <Eyebrow>The swarm&apos;s fingerprint</Eyebrow>
+              <Title>The info hash identifies <em>which swarm you&apos;re joining.</em></Title>
+              <Body size="bodyLg" style={{ marginTop: 20, maxWidth: 1520 }}>
+                Inside the <Mono>.torrent</Mono> file, the <Mono>info</Mono> dictionary is hashed with SHA-1. That result is the info hash, and trackers plus DHT nodes use it as the lookup key for the swarm.
+              </Body>
+              <TwoCol
+                style={{ marginTop: 40, gap: 64 }}
+                left={(
+                  <div style={cardStyle}>
+                    <div style={labelStyle}>File hash</div>
+                    <div style={textStyle}>Fingerprint of the actual file bytes.</div>
+                  </div>
+                )}
+                right={(
+                  <div style={cardStyle}>
+                    <div style={labelStyle}>Info hash</div>
+                    <div style={textStyle}>Fingerprint of the torrent&apos;s <em>metadata blueprint</em>.</div>
+                  </div>
+                )}
+              />
+              <Callout kicker="Tracker lookup" style={{ marginTop: 34 }}>
+                <Mono style={{ fontSize: '0.98em' }}>info hash -&gt; [IP:port, IP:port, ...]</Mono>
+              </Callout>
+            </SlideFrame>
+          );
+        }
+
+        function SlideD2DHT() {
+          return (
+            <SlideFrame>
+              <Eyebrow>Decentralized peer discovery</Eyebrow>
+              <Title>DHT: no single directory, <em>no single point of failure.</em></Title>
+              <Body size="bodyLg" style={{ marginTop: 20, maxWidth: 1520 }}>
+                DHT, or Distributed Hash Table, is an alternative to trackers and a complement to them. The lookup network is formed by BitTorrent clients themselves, so your client can ask, &ldquo;Who has peers for this info hash?&rdquo; without relying on one central server.
+              </Body>
+              <TwoCol
+                style={{ marginTop: 42, gap: 56 }}
+                left={(
+                  <Card title="Tracker">
+                    Centralized directory. One takedown or outage can disrupt discovery.
+                  </Card>
+                )}
+                right={(
+                  <Card title="DHT">
+                    Distributed directory. Every client is a node, so there&apos;s no single operator to remove.
+                  </Card>
+                )}
+              />
+            </SlideFrame>
+          );
+        }
+
+        function SlideD2MagnetLinks() {
+          return (
+            <SlideFrame>
+              <Eyebrow>Two ways to join the same swarm</Eyebrow>
+              <Title>A magnet link is the blueprint&apos;s ID, <em>not the blueprint itself.</em></Title>
+              <TwoCol
+                style={{ marginTop: 28, gap: 64 }}
+                left={(
+                  <div>
+                    <div style={{ fontFamily: FONTS.sans, fontSize: 16, letterSpacing: '0.2em', textTransform: 'uppercase', color: COLORS.muted, marginBottom: 14 }}>.torrent file</div>
+                    <Body size="bodyLg" color={COLORS.ink}>
+                      Contains full metadata, so the client has everything immediately.
+                    </Body>
+                  </div>
+                )}
+                right={(
+                  <div>
+                    <div style={{ fontFamily: FONTS.sans, fontSize: 16, letterSpacing: '0.2em', textTransform: 'uppercase', color: COLORS.muted, marginBottom: 14 }}>Magnet link</div>
+                    <Body size="bodyLg" color={COLORS.ink}>
+                      Contains the info hash plus optional tracker hints, so the client must fetch metadata from peers first.
+                    </Body>
+                  </div>
+                )}
+              />
+              <div style={{ marginTop: 38 }}>
+                <div style={{ fontFamily: FONTS.sans, fontSize: 16, letterSpacing: '0.2em', textTransform: 'uppercase', color: COLORS.accent, marginBottom: 14 }}>Why magnets won</div>
+                <ul style={{ fontFamily: FONTS.serif, fontSize: 30, lineHeight: 1.38, paddingLeft: 32, maxWidth: 1580 }}>
+                  <Bullet>Easier to share because it&apos;s just a URL string.</Bullet>
+                  <Bullet>Sites don&apos;t need to host <Mono>.torrent</Mono> files.</Bullet>
+                  <Bullet>Works with DHT and peer exchange (PEX).</Bullet>
+                  <Bullet>Less dependent on any single tracker.</Bullet>
+                </ul>
+              </div>
+            </SlideFrame>
+          );
+        }
+
+        function SlideD2ClientJobs() {
+          const jobs = [
+            'Open .torrent file or magnet link',
+            'Contact tracker and/or DHT for peer list',
+            'Connect to peers in the swarm',
+            'Learn which pieces each peer has',
+            'Request needed pieces from multiple peers',
+            'Verify each piece using its hash',
+            'Reconstruct the original file',
+          ];
+          return (
+            <SlideFrame>
+              <Eyebrow>What the software actually does</Eyebrow>
+              <Title>The client handles <em>every step</em> of the download.</Title>
+              <div style={{ marginTop: 30, display: 'grid', gridTemplateColumns: '1fr 1fr', columnGap: 72, rowGap: 18, flex: '1 1 auto', alignContent: 'start' }}>
+                {jobs.map((job, i) => (
+                  <div key={job} style={{ display: 'grid', gridTemplateColumns: '74px 1fr', gap: 18, alignItems: 'start', borderTop: `1px solid ${COLORS.rule}`, paddingTop: 16 }}>
+                    <Numeral n={i + 1} style={{ fontSize: 42 }} />
+                    <div style={{ fontFamily: FONTS.serif, fontSize: 28, lineHeight: 1.28, color: COLORS.ink }}>{job}</div>
+                  </div>
+                ))}
+              </div>
+              <Body size="body" style={{ marginTop: 26, color: COLORS.inkSoft }}>
+                Example clients: <em>qBittorrent</em>, <em>Transmission</em>, and <em>Deluge</em>.
+              </Body>
+            </SlideFrame>
+          );
+        }
+
+        function SlideD2Walkthrough() {
+          const steps = [
+            'User opens .torrent file or magnet link',
+            'Client extracts or fetches the info hash',
+            'Client asks tracker and/or DHT: "Who has pieces for this hash?"',
+            'Client connects to returned peers',
+            'Client learns piece availability, then requests and downloads pieces in parallel',
+            'Client verifies each piece hash and reconstructs the complete file',
+          ];
+          return (
+            <SlideFrame>
+              <Eyebrow>End-to-end</Eyebrow>
+              <Title>From click to completed file - <em>six steps.</em></Title>
+              <div style={{ marginTop: 34, display: 'grid', gridTemplateColumns: '1fr 1fr', columnGap: 72, rowGap: 18, flex: '1 1 auto', alignContent: 'start' }}>
+                {steps.map((step, i) => (
+                  <div key={step} style={{ display: 'grid', gridTemplateColumns: '70px 1fr', gap: 18, alignItems: 'start', borderTop: `1px solid ${COLORS.rule}`, paddingTop: 16 }}>
+                    <Numeral n={i + 1} style={{ fontSize: 44 }} />
+                    <div style={{ fontFamily: FONTS.serif, fontSize: 28, lineHeight: 1.28, color: COLORS.ink }}>{step}</div>
+                  </div>
+                ))}
+              </div>
+            </SlideFrame>
+          );
+        }
+
+        function SlideD2Misconceptions() {
+          const rows = [
+            ['"The tracker stores the file"', <><strong>False.</strong> The tracker stores a peer map; bytes only flow between clients.</>],
+            ['"The .torrent file is the content"', <><strong>False.</strong> It&apos;s metadata: names, sizes, piece hashes, and tracker URLs.</>],
+            ['"The client is the tracker"', <><strong>False.</strong> The client joins the swarm; the tracker or DHT helps it find peers.</>],
+            ['"A magnet link is the same as a .torrent file"', <><strong>Not exactly.</strong> A magnet contains only the info hash, so the client still fetches full metadata from peers.</>],
+            ['"One tracker going down kills the torrent"', <><strong>Not always.</strong> DHT and peer exchange let the swarm coordinate without any central tracker.</>],
+          ];
+          return (
+            <SlideFrame>
+              <Eyebrow>Common mistakes</Eyebrow>
+              <Title>Five things people get wrong about BitTorrent.</Title>
+              <div style={{ marginTop: 34, display: 'grid', gap: 18, flex: '1 1 auto', alignContent: 'start' }}>
+                {rows.map(([term, correction]) => (
+                  <div key={term} style={{ display: 'grid', gridTemplateColumns: '0.9fr 1.6fr', gap: 34, borderTop: `1px solid ${COLORS.rule}`, paddingTop: 16 }}>
+                    <div style={{ fontFamily: FONTS.serif, fontStyle: 'italic', fontSize: 28, lineHeight: 1.25, color: COLORS.ink }}>{term}</div>
+                    <div style={{ fontFamily: FONTS.serif, fontSize: 27, lineHeight: 1.28, color: COLORS.inkSoft }}>{correction}</div>
+                  </div>
+                ))}
               </div>
             </SlideFrame>
           );
@@ -3097,7 +3349,8 @@
         Object.assign(window, {
           SlideD2Cover, SlideD2Agenda, SlideD2Models, SlideD2NetworkCompare, SlideD2Topology, SlideD2Chunking,
           SlideD2Hashing, SlideD2Resilience, SlideD2Vocab, SlideD2Tradeoffs, SlideD2Recap, SlideD2Next,
-          SlideD2DataOwnership, SlideD2Tracker, SlideD2Forever, SlideD2Untouchable, SlideD2LiveDemo,
+          SlideD2DataOwnership, SlideD2Tracker, SlideD2TorrentFile, SlideD2InfoHash, SlideD2DHT, SlideD2MagnetLinks,
+          SlideD2ClientJobs, SlideD2Walkthrough, SlideD2Misconceptions, SlideD2Forever, SlideD2Untouchable, SlideD2LiveDemo,
           SlideD2Part1Divider, SlideD2Part2Divider, SlideD2Part3Divider, SlideD2Part4Divider,
         });
       }
@@ -3117,9 +3370,9 @@
           const stage = document.querySelector('deck-stage');
 
           // Part 01 — Centralized vs P2P. Slides 4–6.
-          // Part 02 — Swarm Mechanics. Slides 8–11. (Vocabulary closes the part as a terminology recap.)
-          // Part 03 — Trust the Bytes. Slide 13.
-          // Part 04 — In the Wild. Slides 15–18.
+          // Part 02 — Swarm Mechanics. Slides 8–17.
+          // Part 03 — Trust the Bytes. Slide 19.
+          // Part 04 — In the Wild. Slides 21–27.
           const SLIDES = [
             ['Cover', SlideD2Cover],
             ['Agenda', SlideD2Agenda],
@@ -3130,13 +3383,20 @@
             ['Part 02', SlideD2Part2Divider],
             ['Chunking', SlideD2Chunking],
             ['Tracker', SlideD2Tracker],
+            ['Torrent File', SlideD2TorrentFile],
+            ['Info Hash', SlideD2InfoHash],
+            ['DHT', SlideD2DHT],
+            ['Magnet Links', SlideD2MagnetLinks],
+            ['Client Jobs', SlideD2ClientJobs],
             ['Resilience Demo', SlideD2Resilience],
             ['Vocabulary', SlideD2Vocab],
+            ['Walkthrough', SlideD2Walkthrough],
             ['Part 03', SlideD2Part3Divider],
             ['Piece Verification', SlideD2Hashing],
             ['Part 04', SlideD2Part4Divider],
             ['Forever Online', SlideD2Forever],
             ['Untouchable', SlideD2Untouchable],
+            ['Misconceptions', SlideD2Misconceptions],
             ['Trade-offs', SlideD2Tradeoffs],
             ['Live Demo', SlideD2LiveDemo],
             ['Recap', SlideD2Recap],
