@@ -270,9 +270,10 @@ canvas {
   transition: all 0.2s ease;
 }
 .btn:hover {
-  background: #cc0000;
+  background: #f0b323;
+  color: #000;
   transform: translateY(-1px);
-  box-shadow: 0 2px 4px rgba(230,0,0,0.2);
+  box-shadow: 0 2px 4px rgba(0,0,0,0.15);
 }
 .btn:disabled {
   background: #ccc;
@@ -287,8 +288,9 @@ canvas {
   border-color: #E60000;
 }
 .btn-outline:hover {
-  background: #E60000;
-  color: #fff;
+  background: #f0b323;
+  color: #000;
+  border-color: #f0b323;
 }
 .btn-link {
   background: transparent;
@@ -486,12 +488,12 @@ body {
 p { font-size: var(--step-0); margin: 0 0 0.75rem 0; }
 .lead { font-size: var(--step-1); font-weight: var(--hw-font-weight-light); }
 
-.h1 { font-size: var(--step-5); line-height: 1.15; font-weight: var(--hw-font-weight-black); margin: 0 0 .5rem; }
-.h2 { font-size: var(--step-4); line-height: 1.2;  font-weight: var(--hw-font-weight-black); margin: 0 0 .5rem; }
-.h3 { font-size: var(--step-3); line-height: 1.25; font-weight: var(--hw-font-weight-black); margin: 0 0 .5rem; }
-.h4 { font-size: var(--step-2); line-height: 1.3;  font-weight: var(--hw-font-weight-semib); margin: 0 0 .4rem; }
-.h5 { font-size: var(--step-1); line-height: 1.35; font-weight: var(--hw-font-weight-semib); margin: 0 0 .3rem; }
-.h6 { font-size: var(--step-0); line-height: 1.4;  font-weight: var(--hw-font-weight-bold); margin: 0 0 .3rem; }
+.h1 { font-size: var(--step-5); line-height: 1.15; font-weight: var(--hw-font-weight-black); margin: 0 0 .5rem; color: var(--hw-black); }
+.h2 { font-size: var(--step-4); line-height: 1.2;  font-weight: var(--hw-font-weight-black); margin: 0 0 .5rem; color: var(--hw-black); }
+.h3 { font-size: var(--step-3); line-height: 1.25; font-weight: var(--hw-font-weight-black); margin: 0 0 .5rem; color: var(--hw-black); }
+.h4 { font-size: var(--step-2); line-height: 1.3;  font-weight: var(--hw-font-weight-semib); margin: 0 0 .4rem; color: var(--hw-black); }
+.h5 { font-size: var(--step-1); line-height: 1.35; font-weight: var(--hw-font-weight-semib); margin: 0 0 .3rem; color: var(--hw-black); }
+.h6 { font-size: var(--step-0); line-height: 1.4;  font-weight: var(--hw-font-weight-bold); margin: 0 0 .3rem; color: var(--hw-black); }
 
 .eyebrow { 
   font-size: var(--step--1); text-transform: uppercase; letter-spacing: .08em;
@@ -573,12 +575,12 @@ a.link:hover { text-decoration: underline; }
   background: var(--hw-red); color: #fff; border: 1px solid transparent;
   font-weight: 600; text-decoration: none; cursor: pointer; transition: .2s ease;
 }
-.btn:hover { filter: brightness(0.95); transform: translateY(-1px); box-shadow: 0 2px 4px rgba(0,0,0,.1); }
+.btn:hover { background: var(--hw-gold); color: #000; filter: none; transform: translateY(-1px); box-shadow: 0 2px 4px rgba(0,0,0,.1); }
 .btn:disabled { background: var(--hw-gray-400); cursor: not-allowed; transform: none; box-shadow: none; }
 .btn--outline { background: transparent; color: var(--hw-red); border-color: var(--hw-red); }
-.btn--outline:hover { background: var(--hw-red); color: #fff; }
+.btn--outline:hover { background: var(--hw-gold); color: #000; border-color: var(--hw-gold); }
 .btn--ghost   { background: transparent; color: var(--hw-red); border-color: transparent; }
-.btn--ghost:hover { background: var(--hw-gray-100); }
+.btn--ghost:hover { background: var(--hw-gold); color: #000; }
 .btn--sm { min-height: 36px; padding: .35rem .7rem; font-size: var(--step--1); }
 .btn--lg { min-height: 48px; padding: .75rem 1.25rem; font-size: var(--step-0); }
 .btn--block { width: 100%; }
@@ -932,10 +934,13 @@ body { background: #f2f0ec; }
     #f2f0ec;
 }
 
-/* Buttons – no borders or rounded corners */
-.btn, .btn--outline, .btn--ghost { border: none; border-radius: 0; }
-.input-group .btn { border-radius: 0; }
-.widget-action-button { border-radius: 0; }
+/* Buttons – curved corners */
+.btn, .btn--outline, .btn--ghost { border: none; border-radius: 5px; }
+.input-group .btn { border-radius: 0 5px 5px 0; }
+.widget-action-button { border-radius: 5px; }
+
+/* Heading color – applies to both native elements and utility classes */
+h1, h2, h3, h4, h5, h6 { color: var(--hw-black); }
 
 /* Red uppercase header utility */
 .red { color: #bf2b34 !important; text-transform: uppercase; }
@@ -1021,15 +1026,16 @@ body { background: #f2f0ec; }
   color: #ffffff;
   padding: 0.6rem 1.25rem;
   text-decoration: none;
-  border-radius: 0;
+  border-radius: 5px;
   transition: all 0.2s ease;
   font-weight: 500;
   letter-spacing: 0.5px;
 }
 .widget-card:hover .button {
-  background-color: #cc0000;
+  background-color: var(--hw-gold);
+  color: #000;
   transform: translateY(-2px);
-  box-shadow: 0 4px 8px rgba(230, 0, 0, 0.2);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
 }
 
 /* ================================================================
