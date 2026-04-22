@@ -1,19 +1,16 @@
 import { useEffect } from 'react'
-import { Link } from 'react-router-dom'
 
 type StaticEmbedProps = {
   title: string
   src: string
-  backTo: string
-  backLabel: string
 }
 
-export default function StaticEmbed({ title, src, backTo, backLabel }: StaticEmbedProps) {
+export default function StaticEmbed({ title, src }: StaticEmbedProps) {
   useEffect(() => {
     const prev = document.title
     document.title = `${title} · Class Resources`
     // #region agent log
-    fetch('/ingest/d9d3d22d-7daf-4f71-800f-c73eb656f3aa',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'2bd63b'},body:JSON.stringify({sessionId:'2bd63b',location:'StaticEmbed.tsx:mount',message:'StaticEmbed mounted',data:{title,src,backTo},timestamp:Date.now(),hypothesisId:'H1-H3'})}).catch(()=>{});
+    fetch('/ingest/d9d3d22d-7daf-4f71-800f-c73eb656f3aa',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'2bd63b'},body:JSON.stringify({sessionId:'2bd63b',location:'StaticEmbed.tsx:mount',message:'StaticEmbed mounted',data:{title,src},timestamp:Date.now(),hypothesisId:'H1-H3'})}).catch(()=>{});
     // #endregion
     return () => {
       document.title = prev
@@ -39,7 +36,6 @@ export default function StaticEmbed({ title, src, backTo, backLabel }: StaticEmb
     <main className="page">
       <div className="container widgets-page">
         <div style={{ display: 'flex', gap: '.75rem', alignItems: 'center', flexWrap: 'wrap' }}>
-          <Link className="btn btn--outline" to={backTo}>← {backLabel}</Link>
           <h1 className="h1" style={{ margin: 0 }}>{title}</h1>
           <a className="btn" href={src} target="_blank" rel="noreferrer">Open in new tab</a>
         </div>

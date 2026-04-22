@@ -411,8 +411,6 @@ export default function Cryptography() {
       eyebrow="Computer Science"
       title="Cryptography"
       blurb="A tour of the ideas that keep digital secrets safe — from the bits underneath everything, to the hashes, shared keys, and public-key systems that actually get used in the wild."
-      backTo="/code"
-      backLabel="Computer Science"
     >
       {/* ========== Foundations ========== */}
       <OverviewGroup label="Foundations" accent="gray">

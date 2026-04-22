@@ -1,5 +1,4 @@
 import { useEffect, useRef, type CSSProperties, type ReactNode } from 'react'
-import { Link } from 'react-router-dom'
 
 /**
  * SHA-1 Flow Explorer
@@ -1307,7 +1306,6 @@ export default function Sha1FlowExplorer() {
     <main ref={rootRef} className="page sha1-explorer">
       <div className="container container--wide">
         <div className="sha1-backnav">
-          <Link className="btn btn--outline" to="/code">← Computer Science</Link>
           <div className="sha1-toolbar">
             <div className="sha1-selector" role="tablist" aria-label="Hash selector">
               <button className="sha1-selector-btn active" role="tab" aria-selected="true">SHA-1</button>

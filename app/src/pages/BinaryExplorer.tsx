@@ -1,5 +1,4 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Link } from 'react-router-dom';
 
 type InputType = 'int' | 'char' | 'hex' | 'eth';
 
@@ -219,7 +218,6 @@ export default function BinaryExplorer() {
     <main className="page binary-explorer">
       <div className="container widgets-page">
         <div style={{ display: 'flex', gap: '.75rem', alignItems: 'center', flexWrap: 'wrap', marginBottom: '1rem' }}>
-          <Link className="btn btn--outline" to="/code">← Computer Science</Link>
           <h1 className="h1" style={{ margin: 0 }}>Binary Interpretation Explorer</h1>
         </div>
 

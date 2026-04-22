@@ -25,20 +25,13 @@ export interface OverviewPageProps {
   eyebrow?: string;        // "Computer Science"
   title: string;           // "Cryptography"
   blurb?: string;          // single-paragraph topic intro
-  backTo?: string;         // e.g. "/code"
-  backLabel?: string;      // e.g. "Computer Science"
   children: ReactNode;
 }
 
-export function OverviewPage({ eyebrow, title, blurb, backTo, backLabel, children }: OverviewPageProps) {
+export function OverviewPage({ eyebrow, title, blurb, children }: OverviewPageProps) {
   return (
     <main className="page overview-page">
       <div className="container overview-page__hero">
-        {backTo && (
-          <Link className="btn btn--outline btn--sm overview-page__back" to={backTo}>
-            ← {backLabel ?? 'Back'}
-          </Link>
-        )}
         {eyebrow && <div className="eyebrow overview-page__eyebrow">{eyebrow}</div>}
         <h1 className="h1 overview-page__title">{title}</h1>
         {blurb && <p className="lead overview-page__blurb">{blurb}</p>}
