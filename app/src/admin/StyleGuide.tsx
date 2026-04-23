@@ -7,9 +7,36 @@ export default function StyleGuide() {
   const [openAccordion, setOpenAccordion] = useState<number | null>(0)
   const [activeSeg, setActiveSeg] = useState(0)
   const [activeCard, setActiveCard] = useState(0)
+  const primaryTokens = [
+    { name: '--hw-brand-black', value: '#000000', cmyk: 'CMYK 0 0 0 100', bg: 'var(--hw-brand-black)', light: true },
+    { name: '--hw-brand-red', value: '#DA0016', cmyk: 'Pantone 186 C · CMYK 12 100 91 3', bg: 'var(--hw-brand-red)', light: true },
+    { name: '--hw-brand-gold', value: '#EDA300', cmyk: 'Pantone 124 C · CMYK 7 36 100 0', bg: 'var(--hw-brand-gold)', light: false },
+  ]
+  const secondaryTokens = [
+    { name: '--hw-secondary-blue', value: '#539ADC', cmyk: 'Pantone 646 C · 100%', bg: 'var(--hw-secondary-blue)', light: false },
+    { name: '--hw-secondary-blue-50', value: 'rgb(83 154 220 / 50%)', cmyk: 'Pantone 646 C · 50%', bg: 'var(--hw-secondary-blue-50)', light: false },
+    { name: '--hw-secondary-blue-20', value: 'rgb(83 154 220 / 20%)', cmyk: 'Pantone 646 C · 20%', bg: 'var(--hw-secondary-blue-20)', light: false },
+    { name: '--hw-secondary-black', value: '#4D4D4D', cmyk: '70% Black · 100%', bg: 'var(--hw-secondary-black)', light: true },
+    { name: '--hw-secondary-black-50', value: 'rgb(77 77 77 / 50%)', cmyk: '70% Black · 50%', bg: 'var(--hw-secondary-black-50)', light: false },
+    { name: '--hw-secondary-black-20', value: 'rgb(77 77 77 / 20%)', cmyk: '70% Black · 20%', bg: 'var(--hw-secondary-black-20)', light: false },
+    { name: '--hw-secondary-khaki', value: '#BFC299', cmyk: 'Pantone 452 C · 100%', bg: 'var(--hw-secondary-khaki)', light: false },
+    { name: '--hw-secondary-khaki-50', value: 'rgb(191 194 153 / 50%)', cmyk: 'Pantone 452 C · 50%', bg: 'var(--hw-secondary-khaki-50)', light: false },
+    { name: '--hw-secondary-khaki-20', value: 'rgb(191 194 153 / 20%)', cmyk: 'Pantone 452 C · 20%', bg: 'var(--hw-secondary-khaki-20)', light: false },
+    { name: '--hw-secondary-orange', value: '#FA7300', cmyk: 'Pantone 144 C · 100%', bg: 'var(--hw-secondary-orange)', light: false },
+    { name: '--hw-secondary-orange-50', value: 'rgb(250 115 0 / 50%)', cmyk: 'Pantone 144 C · 50%', bg: 'var(--hw-secondary-orange-50)', light: false },
+    { name: '--hw-secondary-orange-20', value: 'rgb(250 115 0 / 20%)', cmyk: 'Pantone 144 C · 20%', bg: 'var(--hw-secondary-orange-20)', light: false },
+    { name: '--hw-secondary-green', value: '#9CCA00', cmyk: 'Pantone 383 C · 100%', bg: 'var(--hw-secondary-green)', light: false },
+    { name: '--hw-secondary-green-50', value: 'rgb(156 202 0 / 50%)', cmyk: 'Pantone 383 C · 50%', bg: 'var(--hw-secondary-green-50)', light: false },
+    { name: '--hw-secondary-green-20', value: 'rgb(156 202 0 / 20%)', cmyk: 'Pantone 383 C · 20%', bg: 'var(--hw-secondary-green-20)', light: false },
+  ]
+  const heapMemoryBg = {
+    token: 'color-mix(12% khaki, 88% white)',
+    bg: 'color-mix(in srgb, var(--hw-secondary-khaki) 12%, white)',
+    border: 'var(--hw-secondary-khaki-50)',
+  }
 
   return (
-    <main className="page">
+    <main className="page styleguide-page">
       <div className="container styleguide">
         <h1 className="h2">Style Guide</h1>
 
@@ -51,7 +78,7 @@ export default function StyleGuide() {
                 <div className="legend-key">
                   <div className="legend-key__item"><span className="legend-key__dot" style={{ background: 'var(--hw-red)' }} />Active</div>
                   <div className="legend-key__item"><span className="legend-key__dot" style={{ background: 'var(--hw-gold)' }} />Modified</div>
-                  <div className="legend-key__item"><span className="legend-key__dot" style={{ background: 'var(--hw-gray-300)' }} />Free</div>
+                  <div className="legend-key__item"><span className="legend-key__dot" style={{ background: 'var(--hw-secondary-khaki-50)' }} />Free</div>
                 </div>
               </div>
             </aside>
@@ -329,26 +356,44 @@ export default function StyleGuide() {
         {/* Color Tokens */}
         <section className="panel">
           <h2 className="h5 eyebrow">Color Tokens</h2>
-          <p className="muted">Brand palette and neutral scale. All components use these CSS custom properties.</p>
-          <div className="token-grid" style={{ marginTop: '1rem' }}>
-            {[
-              { name: '--hw-black', hex: '#231f20', bg: '#231f20', light: true },
-              { name: '--hw-red',   hex: '#c8102e', bg: '#c8102e', light: true },
-              { name: '--hw-gold',  hex: '#f0b323', bg: '#f0b323', light: false },
-              { name: '--hw-gray-900', hex: '#1f2937', bg: '#1f2937', light: true },
-              { name: '--hw-gray-700', hex: '#4b5563', bg: '#4b5563', light: true },
-              { name: '--hw-gray-500', hex: '#9ca3af', bg: '#9ca3af', light: false },
-              { name: '--hw-gray-300', hex: '#e5e7eb', bg: '#e5e7eb', light: false },
-              { name: '--hw-gray-200', hex: '#edf0f3', bg: '#edf0f3', light: false },
-              { name: '--hw-gray-100', hex: '#f4f6f8', bg: '#f4f6f8', light: false },
-            ].map(t => (
-              <div className="token-swatch" key={t.name}>
-                <div className="token-swatch__color" style={{ background: t.bg, display: 'flex', alignItems: 'flex-end', padding: '4px 6px' }}>
-                  <span style={{ fontSize: '.6rem', fontWeight: 700, color: t.light ? 'rgba(255,255,255,.6)' : 'rgba(0,0,0,.35)', fontFamily: 'monospace' }}>{t.hex}</span>
-                </div>
-                <div className="token-swatch__label">{t.name.replace('--', '')}</div>
+          <p className="muted">
+            Approved brand palette only. Primary colors stay solid; every secondary color ships in 100%, 50%, and 20% opacity tokens.
+          </p>
+          <div className="stack-md" style={{ marginTop: '1rem' }}>
+            <div>
+              <h3 className="h6">Primary</h3>
+              <div className="token-grid" style={{ marginTop: '.75rem' }}>
+                {primaryTokens.map(t => (
+                  <div className="token-swatch" key={t.name}>
+                    <div className="token-swatch__color" style={{ background: t.bg, display: 'flex', alignItems: 'flex-end', padding: '4px 6px' }}>
+                      <span style={{ fontSize: '.6rem', fontWeight: 700, color: t.light ? 'white' : 'var(--hw-brand-black)', fontFamily: 'monospace' }}>{t.value}</span>
+                    </div>
+                    <div className="token-swatch__label">
+                      {t.name.replace('--', '')}
+                      <span className="token-swatch__hex">{t.value}</span>
+                      <span className="token-swatch__meta">{t.cmyk}</span>
+                    </div>
+                  </div>
+                ))}
               </div>
-            ))}
+            </div>
+            <div>
+              <h3 className="h6">Secondary</h3>
+              <div className="token-grid" style={{ marginTop: '.75rem' }}>
+                {secondaryTokens.map(t => (
+                  <div className="token-swatch" key={t.name}>
+                    <div className="token-swatch__color" style={{ background: t.bg, display: 'flex', alignItems: 'flex-end', padding: '4px 6px' }}>
+                      <span style={{ fontSize: '.6rem', fontWeight: 700, color: t.light ? 'white' : 'var(--hw-brand-black)', fontFamily: 'monospace' }}>{t.value}</span>
+                    </div>
+                    <div className="token-swatch__label">
+                      {t.name.replace('--', '')}
+                      <span className="token-swatch__hex">{t.value}</span>
+                      <span className="token-swatch__meta">{t.cmyk}</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
           </div>
         </section>
 
@@ -704,8 +749,8 @@ export default function StyleGuide() {
           <div className="legend-key" style={{ marginTop: '1rem' }}>
             <div className="legend-key__item"><span className="legend-key__dot" style={{ background: 'var(--hw-red)' }} />Active node</div>
             <div className="legend-key__item"><span className="legend-key__dot" style={{ background: 'var(--hw-gold)' }} />Modified</div>
-            <div className="legend-key__item"><span className="legend-key__dot" style={{ background: 'var(--hw-gray-400)' }} />Free / null</div>
-            <div className="legend-key__item"><span className="legend-key__dot" style={{ background: '#198754' }} />Visited</div>
+            <div className="legend-key__item"><span className="legend-key__dot" style={{ background: 'var(--hw-secondary-khaki)' }} />Free / null</div>
+            <div className="legend-key__item"><span className="legend-key__dot" style={{ background: 'var(--hw-success)' }} />Visited</div>
           </div>
         </section>
 
@@ -722,10 +767,10 @@ export default function StyleGuide() {
 
           <h3 className="h6" style={{ marginTop: '1rem' }}>Minimal live example</h3>
           <div style={{
-            border: '1px dashed var(--hw-gray-400)',
+            border: '1px dashed var(--hw-secondary-khaki)',
             borderRadius: 'var(--hw-radius-sm)',
             padding: '.5rem',
-            background: 'var(--hw-gray-100)',
+            background: 'var(--hw-secondary-khaki-20)',
           }}>
             <OverviewPage eyebrow="Example subject" title="Topic title" blurb="One-paragraph intro to the topic; frames why it matters and what the sections cover.">
               <OverviewGroup label="Group A · shared concept" accent="gray">
@@ -737,8 +782,8 @@ export default function StyleGuide() {
                   links={[{ to: '#', label: 'Example lesson' }]}
                   hero={
                     <svg viewBox="0 0 200 120" role="img" aria-label="placeholder hero">
-                      <rect x="10" y="10" width="180" height="100" rx="8" fill="var(--hw-gray-100)" stroke="var(--hw-border)" />
-                      <text x="100" y="66" textAnchor="middle" fontSize="14" fontWeight="700" fill="var(--hw-gray-700)">hero goes here</text>
+                      <rect x="10" y="10" width="180" height="100" rx="0" fill="var(--hw-secondary-khaki-20)" stroke="var(--hw-border)" />
+                      <text x="100" y="66" textAnchor="middle" fontSize="14" fontWeight="700" fill="var(--hw-secondary-black)">hero goes here</text>
                     </svg>
                   }
                   watermark={
@@ -751,7 +796,7 @@ export default function StyleGuide() {
                   eyebrow="02"
                   title="Second idea"
                   blurb="Follows from the first; this is where a connector often helps."
-                  hero={<svg viewBox="0 0 200 120" role="img"><circle cx="100" cy="60" r="36" fill="var(--hw-red)" opacity=".25" /><text x="100" y="66" textAnchor="middle" fontSize="13" fontWeight="700" fill="var(--hw-red)">hero slot</text></svg>}
+                  hero={<svg viewBox="0 0 200 120" role="img"><circle cx="100" cy="60" r="36" fill="var(--hw-brand-red-20)" /><text x="100" y="66" textAnchor="middle" fontSize="13" fontWeight="700" fill="var(--hw-red)">hero slot</text></svg>}
                   accent="gray"
                 />
               </OverviewGroup>
@@ -762,7 +807,7 @@ export default function StyleGuide() {
                   title="Related idea"
                   blurb="Sits alongside the previous group as a parallel concept; no connector needed."
                   accent="gold"
-                  hero={<svg viewBox="0 0 200 120" role="img"><rect x="40" y="30" width="120" height="60" rx="8" fill="var(--hw-gold)" opacity=".3" /><text x="100" y="66" textAnchor="middle" fontSize="13" fontWeight="700" fill="#7a4c00">hero slot</text></svg>}
+                  hero={<svg viewBox="0 0 200 120" role="img"><rect x="40" y="30" width="120" height="60" rx="0" fill="var(--hw-brand-gold-20)" /><text x="100" y="66" textAnchor="middle" fontSize="13" fontWeight="700" fill="var(--hw-warning)">hero slot</text></svg>}
                 />
               </OverviewGroup>
             </OverviewPage>
@@ -841,11 +886,11 @@ export default function StyleGuide() {
 
           <div className="legend-key" style={{ marginTop: '1rem' }}>
             <div className="legend-key__item">
-              <span className="legend-key__dot" style={{ background: '#e2e8f0', border: '1px solid #cbd5e1' }} />
+              <span className="legend-key__dot" style={{ background: 'var(--hw-secondary-khaki-20)', border: '1px solid var(--hw-secondary-khaki-50)' }} />
               Unused memory
             </div>
             <div className="legend-key__item">
-              <span className="legend-key__dot" style={{ background: '#fff1f2', border: '2px solid var(--hw-red)' }} />
+              <span className="legend-key__dot" style={{ background: 'var(--hw-brand-red-20)', border: '2px solid var(--hw-red)' }} />
               Allocated (backing array capacity)
             </div>
             <div className="legend-key__item">
@@ -853,11 +898,11 @@ export default function StyleGuide() {
               Filled slot (holds a value)
             </div>
             <div className="legend-key__item">
-              <span className="legend-key__dot" style={{ border: '2px solid var(--hw-gold)', boxShadow: '0 0 0 2px rgba(240,179,35,.4)' }} />
+              <span className="legend-key__dot" style={{ border: '2px solid var(--hw-gold)', boxShadow: '0 0 0 2px var(--hw-brand-gold-50)' }} />
               Current cell (being read/written)
             </div>
             <div className="legend-key__item">
-              <span className="legend-key__dot" style={{ background: '#dcfce7', border: '2px solid #16a34a' }} />
+              <span className="legend-key__dot" style={{ background: 'var(--hw-success-20)', border: '2px solid var(--hw-success)' }} />
               Copy-in-progress (resize sweep)
             </div>
           </div>
@@ -866,6 +911,44 @@ export default function StyleGuide() {
             <p><code>.mem-viz-frame[data-label="..."]</code> — outer red-bordered panel; badge text comes from the attribute.</p>
             <p><code>.mem-grid</code> + <code>--mem-cols</code> — grid container; default 10 columns.</p>
             <p><code>.mem-cell</code> → <code>--allocated</code> → <code>--filled</code> → <code>--current</code> → <code>--copy</code> — cell states.</p>
+          </div>
+
+          <div style={{ marginTop: '1.5rem' }}>
+            <h3 className="h6">Preferred Heap Background</h3>
+            <p className="muted" style={{ marginTop: '.35rem' }}>
+              Heap memory preview using the softer container background while the bit-tile pattern stays on the current default background.
+            </p>
+            <div className="panel" style={{ padding: '1rem', marginTop: '1rem' }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '.75rem' }}>
+                <div>
+                  <div className="h6" style={{ marginBottom: '.15rem' }}>Heap Container</div>
+                  <div className="muted"><code>{heapMemoryBg.token}</code></div>
+                </div>
+                <div
+                  aria-hidden
+                  style={{
+                    width: 32,
+                    height: 32,
+                    borderRadius: 8,
+                    background: heapMemoryBg.bg,
+                    border: `1px solid ${heapMemoryBg.border}`,
+                    flexShrink: 0,
+                  }}
+                />
+              </div>
+
+              <div style={{ marginTop: '.75rem', ['--hw-memory-grid-bg' as string]: heapMemoryBg.bg } as React.CSSProperties}>
+                <div className="mem-viz-frame" data-label="Heap Sample">
+                  <div className="mem-grid" style={{ '--mem-cols': '5', padding: '.75rem' } as React.CSSProperties}>
+                    <div className="mem-cell" />
+                    <div className="mem-cell mem-cell--allocated" />
+                    <div className="mem-cell mem-cell--filled">42</div>
+                    <div className="mem-cell mem-cell--allocated mem-cell--current">7</div>
+                    <div className="mem-cell mem-cell--copy">A</div>
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
         </section>
 
@@ -897,7 +980,7 @@ export default function StyleGuide() {
 
           <div className="legend-key" style={{ marginTop: '1rem' }}>
             <div className="legend-key__item">
-              <span className="legend-key__dot" style={{ background: '#e2e8f0', border: '1px solid #cbd5e1' }} />
+              <span className="legend-key__dot" style={{ background: 'var(--hw-secondary-khaki-20)', border: '1px solid var(--hw-secondary-khaki-50)' }} />
               0 — zero bit
             </div>
             <div className="legend-key__item">
@@ -905,7 +988,7 @@ export default function StyleGuide() {
               1 — one bit
             </div>
             <div className="legend-key__item">
-              <span className="legend-key__dot" style={{ border: '2px solid var(--hw-gold)', boxShadow: '0 0 0 2px rgba(240,179,35,.4)' }} />
+              <span className="legend-key__dot" style={{ border: '2px solid var(--hw-gold)', boxShadow: '0 0 0 2px var(--hw-brand-gold-50)' }} />
               Highlighted (hover / selection)
             </div>
           </div>
@@ -922,6 +1005,3 @@ export default function StyleGuide() {
     </main>
   )
 }
-
-
-

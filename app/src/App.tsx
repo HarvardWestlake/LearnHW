@@ -9,6 +9,7 @@ import StaticEmbed from './pages/StaticEmbed.tsx'
 import WidgetRoute from './pages/WidgetRoute.tsx'
 import ArrayListVisualizer from './pages/ArrayListVisualizer.tsx'
 import BinaryExplorer from './pages/BinaryExplorer.tsx'
+import QuadraticExplorer from './pages/QuadraticExplorer.tsx'
 import Sha1FlowExplorer from './pages/Sha1FlowExplorer.tsx'
 import HtcsUnit6Day4React from './pages/HtcsUnit6Day4React.tsx'
 import HtcsUnit6Day5React from './pages/HtcsUnit6Day5React.tsx'
@@ -78,6 +79,7 @@ export default function App() {
         <Route path="/" element={<Home />} />
         <Route path="math" element={<Math />} />
         <Route path="math/overview" element={<Navigate to="/#subject-math" replace />} />
+        <Route path="math/quadratic-explorer" element={<QuadraticExplorer />} />
         <Route path="math/:widget" element={<WidgetRoute widgets={MATH_WIDGETS} backTo="/math" />} />
         <Route path="code" element={<Code />} />
         <Route path="code/overview" element={<Cryptography />} />

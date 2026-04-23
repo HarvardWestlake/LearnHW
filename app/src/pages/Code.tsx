@@ -14,7 +14,7 @@ export default function Code() {
               <h3>Advanced Computer Science</h3>
             </div>
             <p>Lesson materials and resources for the Advanced Computer Science course.</p>
-            <span className="button" style={{ background: '#888', color: '#fff' }}>Coming Soon</span>
+            <span className="button" style={{ background: 'var(--hw-secondary-khaki)', color: 'var(--hw-brand-black)' }}>Coming Soon</span>
           </div>
 
           <div className="widget-card" style={{ opacity: 0.5, cursor: 'default', pointerEvents: 'none' }}>
@@ -22,7 +22,7 @@ export default function Code() {
               <h3>Design and Data Structures</h3>
             </div>
             <p>Lesson materials and resources for the Design and Data Structures course.</p>
-            <span className="button" style={{ background: '#888', color: '#fff' }}>Coming Soon</span>
+            <span className="button" style={{ background: 'var(--hw-secondary-khaki)', color: 'var(--hw-brand-black)' }}>Coming Soon</span>
           </div>
 
           <Link className="widget-card" to="/code/htcs-lessons">
@@ -112,4 +112,3 @@ export default function Code() {
     </main>
   )
 }
-

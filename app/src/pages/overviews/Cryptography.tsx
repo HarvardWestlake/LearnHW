@@ -21,25 +21,25 @@ function NumberHero() {
         {bits.map((b, i) => (
           <g key={i} transform={`translate(${20 + i * 34}, 40)`}>
             <rect width="28" height="36" rx="4"
-                  fill={b === '1' ? 'var(--hw-red)' : '#e2e8f0'}
-                  stroke={b === '1' ? '#9f0e24' : '#cbd5e1'} />
+                  fill={b === '1' ? 'var(--hw-red)' : 'var(--hw-secondary-khaki-20)'}
+                  stroke={b === '1' ? 'var(--hw-red)' : 'var(--hw-secondary-khaki-50)'} />
             <text x="14" y="24" textAnchor="middle" fontSize="18" fontWeight="700"
-                  fill={b === '1' ? '#fff' : '#475569'}>{b}</text>
+                  fill={b === '1' ? 'white' : 'var(--hw-secondary-black)'}>{b}</text>
           </g>
         ))}
-        <text x="160" y="100" textAnchor="middle" fontSize="13" fontWeight="700" fill="var(--hw-gray-700)">
+        <text x="160" y="100" textAnchor="middle" fontSize="13" fontWeight="700" fill="var(--hw-secondary-black)">
           the same 8 bits mean
         </text>
         <g transform="translate(40, 120)">
-          <rect width="80" height="40" rx="6" fill="#fff" stroke="var(--hw-border)" />
+          <rect width="80" height="40" rx="6" fill="white" stroke="var(--hw-border)" />
           <text x="40" y="26" textAnchor="middle" fontSize="18" fontWeight="800">65</text>
         </g>
         <g transform="translate(130, 120)">
-          <rect width="60" height="40" rx="6" fill="#fff" stroke="var(--hw-border)" />
+          <rect width="60" height="40" rx="6" fill="white" stroke="var(--hw-border)" />
           <text x="30" y="26" textAnchor="middle" fontSize="18" fontWeight="800" fontFamily="var(--hw-mono, monospace)">A</text>
         </g>
         <g transform="translate(200, 120)">
-          <rect width="80" height="40" rx="6" fill="#fff" stroke="var(--hw-border)" />
+          <rect width="80" height="40" rx="6" fill="white" stroke="var(--hw-border)" />
           <text x="40" y="26" textAnchor="middle" fontSize="16" fontWeight="800" fontFamily="var(--hw-mono, monospace)">0x41</text>
         </g>
       </g>
@@ -66,25 +66,25 @@ function HashingHero() {
   return (
     <svg viewBox="0 0 320 180" role="img">
       <g>
-        <rect x="10" y="58" width="90" height="64" rx="6" fill="#fff" stroke="var(--hw-border)" />
-        <text x="55" y="82" textAnchor="middle" fontSize="12" fontWeight="700" fill="var(--hw-gray-700)">message</text>
-        <text x="55" y="104" textAnchor="middle" fontSize="12" fontFamily="monospace" fill="var(--hw-gray-800)">"hello"</text>
+        <rect x="10" y="58" width="90" height="64" rx="6" fill="white" stroke="var(--hw-border)" />
+        <text x="55" y="82" textAnchor="middle" fontSize="12" fontWeight="700" fill="var(--hw-secondary-black)">message</text>
+        <text x="55" y="104" textAnchor="middle" fontSize="12" fontFamily="monospace" fill="var(--hw-secondary-black)">"hello"</text>
 
-        <path d="M 105 90 L 135 90" stroke="var(--hw-gray-700)" strokeWidth="2" />
-        <polygon points="135,86 143,90 135,94" fill="var(--hw-gray-700)" />
+        <path d="M 105 90 L 135 90" stroke="var(--hw-secondary-black)" strokeWidth="2" />
+        <polygon points="135,86 143,90 135,94" fill="var(--hw-secondary-black)" />
 
-        <rect x="148" y="58" width="80" height="64" rx="6" fill="var(--hw-gray-900)" />
-        <text x="188" y="94" textAnchor="middle" fontSize="14" fontWeight="800" fill="#fff">SHA</text>
+        <rect x="148" y="58" width="80" height="64" rx="6" fill="var(--hw-brand-black)" />
+        <text x="188" y="94" textAnchor="middle" fontSize="14" fontWeight="800" fill="white">SHA</text>
 
-        <path d="M 232 90 L 262 90" stroke="var(--hw-gray-700)" strokeWidth="2" />
-        <polygon points="262,86 270,90 262,94" fill="var(--hw-gray-700)" />
+        <path d="M 232 90 L 262 90" stroke="var(--hw-secondary-black)" strokeWidth="2" />
+        <polygon points="262,86 270,90 262,94" fill="var(--hw-secondary-black)" />
 
         <rect x="270" y="58" width="42" height="64" rx="6" fill="var(--hw-gold)" />
-        <text x="291" y="82" textAnchor="middle" fontSize="9" fontWeight="700" fill="#000" fontFamily="monospace">2cf2…</text>
-        <text x="291" y="96" textAnchor="middle" fontSize="9" fontWeight="700" fill="#000" fontFamily="monospace">b824</text>
-        <text x="291" y="110" textAnchor="middle" fontSize="9" fontWeight="700" fill="#000" fontFamily="monospace">fixed</text>
+        <text x="291" y="82" textAnchor="middle" fontSize="9" fontWeight="700" fill="var(--hw-brand-black)" fontFamily="monospace">2cf2…</text>
+        <text x="291" y="96" textAnchor="middle" fontSize="9" fontWeight="700" fill="var(--hw-brand-black)" fontFamily="monospace">b824</text>
+        <text x="291" y="110" textAnchor="middle" fontSize="9" fontWeight="700" fill="var(--hw-brand-black)" fontFamily="monospace">fixed</text>
 
-        <text x="160" y="160" textAnchor="middle" fontSize="11" fontWeight="600" fill="var(--hw-gray-700)">
+        <text x="160" y="160" textAnchor="middle" fontSize="11" fontWeight="600" fill="var(--hw-secondary-black)">
           any input size · fixed output size · one-way
         </text>
       </g>
@@ -114,21 +114,21 @@ function SymmetricHero() {
       <text x="160" y="44" textAnchor="middle" fontSize="12" fontWeight="800" fill="var(--hw-red)">one shared key</text>
 
       <g>
-        <circle cx="40" cy="100" r="22" fill="#fff" stroke="var(--hw-border)" />
+        <circle cx="40" cy="100" r="22" fill="white" stroke="var(--hw-border)" />
         <text x="40" y="104" textAnchor="middle" fontSize="12" fontWeight="700">Alice</text>
-        <path d="M 62 95 Q 100 70 138 95" stroke="var(--hw-gray-700)" strokeWidth="2" fill="none" />
-        <polygon points="138,91 146,95 138,99" fill="var(--hw-gray-700)" />
-        <text x="100" y="68" textAnchor="middle" fontSize="10" fontWeight="700" fill="var(--hw-gray-700)">encrypts</text>
+        <path d="M 62 95 Q 100 70 138 95" stroke="var(--hw-secondary-black)" strokeWidth="2" fill="none" />
+        <polygon points="138,91 146,95 138,99" fill="var(--hw-secondary-black)" />
+        <text x="100" y="68" textAnchor="middle" fontSize="10" fontWeight="700" fill="var(--hw-secondary-black)">encrypts</text>
       </g>
       <g>
-        <circle cx="280" cy="100" r="22" fill="#fff" stroke="var(--hw-border)" />
+        <circle cx="280" cy="100" r="22" fill="white" stroke="var(--hw-border)" />
         <text x="280" y="104" textAnchor="middle" fontSize="12" fontWeight="700">Bob</text>
-        <path d="M 182 95 Q 220 70 258 95" stroke="var(--hw-gray-700)" strokeWidth="2" fill="none" />
-        <polygon points="258,91 266,95 258,99" fill="var(--hw-gray-700)" />
-        <text x="220" y="68" textAnchor="middle" fontSize="10" fontWeight="700" fill="var(--hw-gray-700)">decrypts</text>
+        <path d="M 182 95 Q 220 70 258 95" stroke="var(--hw-secondary-black)" strokeWidth="2" fill="none" />
+        <polygon points="258,91 266,95 258,99" fill="var(--hw-secondary-black)" />
+        <text x="220" y="68" textAnchor="middle" fontSize="10" fontWeight="700" fill="var(--hw-secondary-black)">decrypts</text>
       </g>
 
-      <text x="160" y="160" textAnchor="middle" fontSize="11" fontWeight="600" fill="var(--hw-gray-700)">
+      <text x="160" y="160" textAnchor="middle" fontSize="11" fontWeight="600" fill="var(--hw-secondary-black)">
         fast · but the key must reach Bob safely first
       </text>
     </svg>
@@ -152,7 +152,7 @@ function OtherCiphersHero() {
   return (
     <svg viewBox="0 0 320 180" role="img">
       {/* AES: block cipher */}
-      <text x="70" y="32" textAnchor="middle" fontSize="12" fontWeight="800" fill="var(--hw-gray-800)">AES · block</text>
+      <text x="70" y="32" textAnchor="middle" fontSize="12" fontWeight="800" fill="var(--hw-secondary-black)">AES · block</text>
       <g transform="translate(20, 44)">
         {[0, 1, 2, 3].map(r =>
           [0, 1, 2, 3].map(c => (
@@ -161,7 +161,7 @@ function OtherCiphersHero() {
           ))
         )}
       </g>
-      <text x="70" y="160" textAnchor="middle" fontSize="10" fontWeight="600" fill="var(--hw-gray-700)">
+      <text x="70" y="160" textAnchor="middle" fontSize="10" fontWeight="600" fill="var(--hw-secondary-black)">
         128-bit blocks
       </text>
 
@@ -169,7 +169,7 @@ function OtherCiphersHero() {
       <line x1="160" y1="40" x2="160" y2="150" stroke="var(--hw-border)" strokeWidth="1" />
 
       {/* ChaCha20: stream cipher */}
-      <text x="240" y="32" textAnchor="middle" fontSize="12" fontWeight="800" fill="var(--hw-gray-800)">ChaCha20 · stream</text>
+      <text x="240" y="32" textAnchor="middle" fontSize="12" fontWeight="800" fill="var(--hw-secondary-black)">ChaCha20 · stream</text>
       <g transform="translate(180, 56)">
         <path d="M 0 36 Q 15 6 30 36 T 60 36 T 90 36 T 120 36"
               stroke="var(--hw-gold)" strokeWidth="3" fill="none" />
@@ -177,7 +177,7 @@ function OtherCiphersHero() {
           <circle key={i} cx={i * 17} cy={36} r="3" fill="var(--hw-gold)" />
         ))}
       </g>
-      <text x="240" y="160" textAnchor="middle" fontSize="10" fontWeight="600" fill="var(--hw-gray-700)">
+      <text x="240" y="160" textAnchor="middle" fontSize="10" fontWeight="600" fill="var(--hw-secondary-black)">
         continuous keystream
       </text>
     </svg>
@@ -204,16 +204,16 @@ function AsymmetricHero() {
       {/* Public key */}
       <g transform="translate(30, 40)">
         <KeyIcon x={20} y={20} color="var(--hw-gold)" scale={1.2} />
-        <text x="50" y="100" textAnchor="middle" fontSize="12" fontWeight="800" fill="var(--hw-gray-800)">public</text>
-        <text x="50" y="115" textAnchor="middle" fontSize="10" fill="var(--hw-gray-700)">anyone can see</text>
+        <text x="50" y="100" textAnchor="middle" fontSize="12" fontWeight="800" fill="var(--hw-secondary-black)">public</text>
+        <text x="50" y="115" textAnchor="middle" fontSize="10" fill="var(--hw-secondary-black)">anyone can see</text>
       </g>
       {/* Private key */}
       <g transform="translate(200, 40)">
         <KeyIcon x={20} y={20} color="var(--hw-red)" scale={1.2} />
-        <text x="50" y="100" textAnchor="middle" fontSize="12" fontWeight="800" fill="var(--hw-gray-800)">private</text>
-        <text x="50" y="115" textAnchor="middle" fontSize="10" fill="var(--hw-gray-700)">only you</text>
+        <text x="50" y="100" textAnchor="middle" fontSize="12" fontWeight="800" fill="var(--hw-secondary-black)">private</text>
+        <text x="50" y="115" textAnchor="middle" fontSize="10" fill="var(--hw-secondary-black)">only you</text>
       </g>
-      <text x="160" y="160" textAnchor="middle" fontSize="11" fontWeight="600" fill="var(--hw-gray-700)">
+      <text x="160" y="160" textAnchor="middle" fontSize="11" fontWeight="600" fill="var(--hw-secondary-black)">
         mathematically linked · one locks, only the other unlocks
       </text>
     </svg>
@@ -242,18 +242,18 @@ function RsaHero() {
         {[0, 1, 2].map(r =>
           [0, 1, 2, 3, 4].map(c => (
             <rect key={`${r}-${c}`} x={c * 22} y={r * 22} width="20" height="20" rx="3"
-                  fill="rgba(200,16,46,.14)" stroke="var(--hw-red)" strokeWidth="1" />
+                  fill="var(--hw-brand-red-20)" stroke="var(--hw-red)" strokeWidth="1" />
           ))
         )}
         <text x="-6" y="36" textAnchor="end" fontSize="12" fontWeight="800">p</text>
         <text x="55" y="-6" textAnchor="middle" fontSize="12" fontWeight="800">q</text>
       </g>
       <text x="175" y="70" fontSize="16" fontWeight="900" fill="var(--hw-red)" fontFamily="monospace">n = p · q</text>
-      <text x="175" y="94" fontSize="11" fontWeight="600" fill="var(--hw-gray-700)">easy →</text>
-      <text x="175" y="112" fontSize="11" fontWeight="600" fill="var(--hw-gray-700)">← hard to reverse</text>
+      <text x="175" y="94" fontSize="11" fontWeight="600" fill="var(--hw-secondary-black)">easy →</text>
+      <text x="175" y="112" fontSize="11" fontWeight="600" fill="var(--hw-secondary-black)">← hard to reverse</text>
 
       {/* Trapdoor label */}
-      <text x="160" y="160" textAnchor="middle" fontSize="11" fontWeight="600" fill="var(--hw-gray-700)">
+      <text x="160" y="160" textAnchor="middle" fontSize="11" fontWeight="600" fill="var(--hw-secondary-black)">
         a one-way gap only the key-holder can cross
       </text>
     </svg>
@@ -284,8 +284,8 @@ function EccHero() {
   return (
     <svg viewBox="0 0 320 180" role="img">
       {/* axes */}
-      <line x1="30" y1="100" x2="290" y2="100" stroke="var(--hw-gray-400)" strokeWidth="1" />
-      <line x1="160" y1="20" x2="160" y2="170" stroke="var(--hw-gray-400)" strokeWidth="1" />
+      <line x1="30" y1="100" x2="290" y2="100" stroke="var(--hw-secondary-khaki)" strokeWidth="1" />
+      <line x1="160" y1="20" x2="160" y2="170" stroke="var(--hw-secondary-khaki)" strokeWidth="1" />
 
       {/* curve — hand-drawn approximation of y²=x³-x+1 */}
       <path
@@ -298,11 +298,11 @@ function EccHero() {
       <circle cx="158" cy="70" r="4.5" fill="var(--hw-red)" />
       <text x="158" y="62" textAnchor="middle" fontSize="10" fontWeight="700" fill="var(--hw-red)">P</text>
       <circle cx="200" cy="112" r="4.5" fill="var(--hw-gold)" />
-      <text x="210" y="108" fontSize="10" fontWeight="700" fill="#7a4c00">Q</text>
-      <circle cx="120" cy="148" r="4.5" fill="var(--hw-gray-800)" />
-      <text x="110" y="162" fontSize="10" fontWeight="700" fill="var(--hw-gray-800)">P+Q</text>
+      <text x="210" y="108" fontSize="10" fontWeight="700" fill="var(--hw-warning)">Q</text>
+      <circle cx="120" cy="148" r="4.5" fill="var(--hw-secondary-black)" />
+      <text x="110" y="162" fontSize="10" fontWeight="700" fill="var(--hw-secondary-black)">P+Q</text>
 
-      <text x="160" y="14" textAnchor="middle" fontSize="10" fontWeight="700" fill="var(--hw-gray-700)" fontFamily="monospace">
+      <text x="160" y="14" textAnchor="middle" fontSize="10" fontWeight="700" fill="var(--hw-secondary-black)" fontFamily="monospace">
         y² = x³ − x + 1
       </text>
     </svg>
@@ -326,8 +326,8 @@ function ShamirHero() {
   return (
     <svg viewBox="0 0 320 180" role="img">
       {/* axes */}
-      <line x1="30" y1="140" x2="290" y2="140" stroke="var(--hw-gray-400)" strokeWidth="1" />
-      <line x1="60" y1="20" x2="60" y2="160" stroke="var(--hw-gray-400)" strokeWidth="1" />
+      <line x1="30" y1="140" x2="290" y2="140" stroke="var(--hw-secondary-khaki)" strokeWidth="1" />
+      <line x1="60" y1="20" x2="60" y2="160" stroke="var(--hw-secondary-khaki)" strokeWidth="1" />
 
       {/* y-axis highlight band for f(0) */}
       <rect x="52" y="20" width="16" height="140" fill="var(--hw-gold)" opacity=".25" />
@@ -338,18 +338,18 @@ function ShamirHero() {
       {/* share points at x=1..4 (after the y-axis) */}
       {[{ x: 90, y: 70 }, { x: 130, y: 115 }, { x: 180, y: 125 }, { x: 235, y: 90 }].map((p, i) => (
         <g key={i}>
-          <circle cx={p.x} cy={p.y} r="5" fill="#fff" stroke="var(--hw-red)" strokeWidth="2" />
-          <text x={p.x} y={p.y - 10} textAnchor="middle" fontSize="10" fontWeight="700" fill="var(--hw-gray-700)">
+          <circle cx={p.x} cy={p.y} r="5" fill="white" stroke="var(--hw-red)" strokeWidth="2" />
+          <text x={p.x} y={p.y - 10} textAnchor="middle" fontSize="10" fontWeight="700" fill="var(--hw-secondary-black)">
             #{i + 1}
           </text>
         </g>
       ))}
 
       {/* f(0) marker */}
-      <circle cx="60" cy="62" r="6" fill="var(--hw-gold)" stroke="#7a4c00" strokeWidth="1.5" />
-      <text x="66" y="50" fontSize="11" fontWeight="800" fill="#7a4c00">f(0) = secret</text>
+      <circle cx="60" cy="62" r="6" fill="var(--hw-gold)" stroke="var(--hw-warning)" strokeWidth="1.5" />
+      <text x="66" y="50" fontSize="11" fontWeight="800" fill="var(--hw-warning)">f(0) = secret</text>
 
-      <text x="160" y="170" textAnchor="middle" fontSize="11" fontWeight="600" fill="var(--hw-gray-700)">
+      <text x="160" y="170" textAnchor="middle" fontSize="11" fontWeight="600" fill="var(--hw-secondary-black)">
         t points pin down the curve · fewer leaves f(0) free
       </text>
     </svg>
@@ -374,8 +374,8 @@ function ShamirWatermark() {
 function KeyIcon({ x, y, color, scale = 1 }: { x: number; y: number; color: string; scale?: number }) {
   return (
     <g transform={`translate(${x}, ${y}) scale(${scale})`}>
-      <circle cx="12" cy="12" r="10" fill={color} stroke="#fff" strokeWidth="1.5" />
-      <circle cx="12" cy="12" r="4" fill="#fff" />
+      <circle cx="12" cy="12" r="10" fill={color} stroke="white" strokeWidth="1.5" />
+      <circle cx="12" cy="12" r="4" fill="white" />
       <rect x="22" y="10" width="40" height="6" rx="1" fill={color} />
       <rect x="54" y="16" width="6" height="8" fill={color} />
       <rect x="44" y="16" width="4" height="6" fill={color} />
@@ -389,7 +389,7 @@ function KeyShape({ x, y, scale = 1 }: { x: number; y: number; scale?: number })
       <rect x="36" y="14" width="56" height="12" />
       <rect x="82" y="26" width="10" height="12" />
       <rect x="68" y="26" width="6" height="9" />
-      <circle cx="20" cy="20" r="8" fill="#fff" />
+      <circle cx="20" cy="20" r="8" fill="white" />
     </g>
   );
 }

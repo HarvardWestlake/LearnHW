@@ -15,7 +15,11 @@ export const MATH_WIDGETS: Record<string, WidgetInfo> = {
   'logarithmic-explorer': { title: 'Logarithmic Explorer', src: '/static/math/widgets/logarithmic-explorer/logarithmic-transformations.html' },
   'nonogram': { title: 'Nonogram', src: '/static/math/widgets/nonogram/nonogram.html' },
   'polar-graph-visualizer': { title: 'Polar Graph Visualizer', src: '/static/math/widgets/polar-graph-visualizer/graph.html' },
-  'quadratic-explorer': { title: 'Quadratic Explorer', src: '/static/math/widgets/quadratic-explorer/quadratic-transformations.html' },
+  'quadratic-explorer': {
+    title: 'Quadratic Explorer',
+    src: '/static/math/widgets/quadratic-explorer/quadratic-transformations.html',
+    blurb: 'React-powered parabola and transformation explorer.',
+  },
   'quadratic-sequences': { title: 'Quadratic Sequences', src: '/static/math/widgets/quadratic-sequences/quadratic-differences.html' },
   'rectangle-rotator': { title: 'Rectangle Rotator', src: '/static/math/widgets/rectangle-rotator/rectangle-rotator.html' },
   'square-completer': { title: 'Square Completer', src: '/static/math/widgets/square-completer/square-completer.html' },
@@ -49,4 +53,3 @@ export const HISTORY_WIDGETS: Record<string, WidgetInfo> = {
   'timeline-map': { title: 'Chocolate: Timeline Map', src: '/static/history/widgets/chocolate-history/timeline-map.html' },
   'history-map': { title: 'World Timeline — 2D/3D Map', src: '/static/history/widgets/history-map/history-map.html' }
 }
-

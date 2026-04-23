@@ -47,9 +47,9 @@ export default function StaticEmbed({ title, src }: StaticEmbedProps) {
             style={{
               width: '100%',
               height: '75vh',
-              border: '1px solid rgba(0,0,0,.15)',
+              border: '1px solid var(--hw-border)',
               borderRadius: 12,
-              background: '#fff'
+              background: 'white'
             }}
           />
         </section>
@@ -57,4 +57,3 @@ export default function StaticEmbed({ title, src }: StaticEmbedProps) {
     </main>
   )
 }
-

@@ -294,7 +294,7 @@ export default function BinaryExplorer() {
                     top: '50%',
                     transform: 'translateY(-50%)',
                     fontSize: '0.75rem',
-                    color: '#94a3b8',
+                    color: 'var(--hw-secondary-black-50)',
                     pointerEvents: 'none'
                   }}>
                     {inputValue.slice(1)}
@@ -323,7 +323,7 @@ export default function BinaryExplorer() {
             gap: '2rem',
             justifyContent: 'center',
             fontSize: '0.9rem',
-            color: 'var(--hw-gray-600)'
+            color: 'var(--hw-secondary-black-50)'
           }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
               <div className="bit bit-0" style={{ width: '20px', height: '20px', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontSize: '11px', borderRadius: '4px' }}>0</div>
@@ -344,12 +344,12 @@ export default function BinaryExplorer() {
             style={{
               marginBottom: '1.5rem',
               borderColor: 'var(--hw-gold)',
-              background: 'linear-gradient(180deg, #fffaea 0%, #fff 100%)'
+              background: 'linear-gradient(180deg, var(--hw-brand-gold-20) 0%, white 100%)'
             }}
           >
             <div
               className="binary-title"
-              style={{ color: '#7a4c00' }}
+              style={{ color: 'var(--hw-warning)' }}
             >
               🔐 ETHEREUM ADDRESS MEMORY — 160 BITS · 20 BYTES
             </div>
@@ -360,7 +360,7 @@ export default function BinaryExplorer() {
               marginTop: '1.25rem',
               textAlign: 'center',
               fontSize: '0.95rem',
-              color: '#7a4c00'
+              color: 'var(--hw-warning)'
             }}>
               A full Ethereum address needs <strong>{ETH_ADDRESS_BITS} bits</strong> — {ETH_ADDRESS_BITS / currentBits}× the size of your current <strong>{currentBits}-bit word</strong>. Real wallets store addresses in this longer memory region.
             </div>
@@ -375,7 +375,7 @@ export default function BinaryExplorer() {
             onMouseLeave={() => highlightBits(null)}
           >
             <div className="interp-label">AS SIGNED INTEGER</div>
-            <div className="interp-value" style={{ color: interpretations.int.startsWith('-') ? '#c8102e' : 'inherit' }}>
+            <div className="interp-value" style={{ color: interpretations.int.startsWith('-') ? 'var(--hw-red)' : 'inherit' }}>
               {interpretations.int}
             </div>
             <span className="interp-subtext">Two's Complement • {currentBits} bits</span>
@@ -414,7 +414,7 @@ export default function BinaryExplorer() {
             <div
               className="interp-value"
               style={{
-                color: interpretations.bool === 'True' ? '#15803d' : '#b91c1c',
+                color: interpretations.bool === 'True' ? 'var(--hw-success)' : 'var(--hw-red)',
                 fontWeight: 700
               }}
             >
@@ -429,10 +429,10 @@ export default function BinaryExplorer() {
               style={{
                 gridColumn: '1 / -1',
                 borderColor: 'var(--hw-gold)',
-                background: 'linear-gradient(180deg, #fffaea 0%, #fff 100%)'
+                background: 'linear-gradient(180deg, var(--hw-brand-gold-20) 0%, white 100%)'
               }}
             >
-              <div className="interp-label" style={{ color: '#7a4c00' }}>AS ETHEREUM ADDRESS</div>
+              <div className="interp-label" style={{ color: 'var(--hw-warning)' }}>AS ETHEREUM ADDRESS</div>
               <div
                 className="interp-value"
                 style={{
@@ -492,7 +492,7 @@ export default function BinaryExplorer() {
           top: '50%',
           left: '50%',
           transform: 'translate(-50%, -50%)',
-          background: 'rgba(0, 0, 0, 0.85)',
+          background: 'var(--hw-brand-black)',
           color: 'white',
           padding: '1.25rem 2rem',
           borderRadius: '12px',
@@ -518,7 +518,7 @@ export default function BinaryExplorer() {
             height: 0,
             borderLeft: '8px solid transparent',
             borderRight: '8px solid transparent',
-            borderTop: '8px solid rgba(0, 0, 0, 0.85)'
+            borderTop: '8px solid var(--hw-brand-black)'
           }} />
         </div>
       )}

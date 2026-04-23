@@ -15,7 +15,7 @@ export default function Math() {
                 <h3>{name}</h3>
               </div>
               <p>Lesson materials and resources for the {name} course.</p>
-              <span className="button" style={{ background: '#888', color: '#fff' }}>Coming Soon</span>
+              <span className="button" style={{ background: 'var(--hw-secondary-khaki)', color: 'var(--hw-brand-black)' }}>Coming Soon</span>
             </div>
           ))}
         </div>
@@ -27,7 +27,7 @@ export default function Math() {
               <div className="title-row">
                 <h3>{w.title}</h3>
               </div>
-              <p>Static HTML embedded.</p>
+              <p>{w.blurb ?? 'Static HTML embedded.'}</p>
               <span className="button">Open</span>
             </Link>
           ))}
@@ -44,4 +44,3 @@ export default function Math() {
     </main>
   )
 }
-
