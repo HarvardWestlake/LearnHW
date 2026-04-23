@@ -1,4 +1,5 @@
 import { useState, useRef, useCallback, useEffect } from 'react'
+import { WidgetShell, OperationField, MetricsDisplay } from '../components/widget'
 
 interface CellState {
   allocated: boolean
@@ -20,6 +21,13 @@ const GROWTH_FACTOR = 2
 
 const ENTER_ANIM_MS = 560
 const EXIT_ANIM_MS = 450
+
+const SPEED_OPTIONS = [
+  { label: '0.5x', value: 1 },
+  { label: '1x', value: 2 },
+  { label: '1.5x', value: 3 },
+  { label: '2x', value: 4 },
+] as const
 
 function makeCells(
   capacity: number,
@@ -158,7 +166,6 @@ export default function ArrayListVisualizer() {
     setStatus(`Capacity ${oldCap} insufficient → resizing to ${newCap}...`)
     renderCells()
 
-    // Phase 1: new array slides in from top (cells stagger by row), old array pushed down
     setNewCells(makeCells(newCap, 0, []))
     setExpandPhase('entering')
     await sleep(ENTER_ANIM_MS)
@@ -166,7 +173,6 @@ export default function ArrayListVisualizer() {
 
     setExpandPhase('copying')
 
-    // Phase 2: copy elements with existing highlight + bounce on arrival
     setStatus(`Copying ${oldSize} element${oldSize !== 1 ? 's' : ''} into new array...`)
     for (let i = 0; i < oldSize; i++) {
       if (shouldAbort(myOp)) { setNewCells(null); setExpandPhase(null); return false }
@@ -185,7 +191,6 @@ export default function ArrayListVisualizer() {
       if (shouldAbort(myOp)) { setNewCells(null); setExpandPhase(null); return false }
     }
 
-    // Phase 3: old array exits downward, new array stays
     setExpandPhase('exiting')
     await sleep(EXIT_ANIM_MS)
     if (shouldAbort(myOp)) { setNewCells(null); setExpandPhase(null); return false }
@@ -374,80 +379,206 @@ export default function ArrayListVisualizer() {
   return (
     <main className="page al-page">
       <div className="container container--wide">
-        <section className="panel al-hero">
+
+        <section className="al-hero">
           <div className="eyebrow">Computer Science Explorer</div>
-          <div className="al-hero__row">
-            <div className="al-hero__copy">
-              <h1 className="h2 al-hero__title">Java <code>ArrayList</code> Memory Visualizer</h1>
-              <p className="lead al-hero__lead">
-                Watch the backing array grow, copy elements into fresh memory, and shift values during each operation.
-              </p>
-            </div>
-            <div className="al-hero__actions">
-              <button className="btn btn--outline btn--sm" onClick={() => setShowHowItWorks(true)}>
-                How It Works
-              </button>
-            </div>
-          </div>
+          <h1 className="h2 al-hero__title">Java <code>ArrayList</code> Memory Visualizer</h1>
+          <p className="lead al-hero__lead">
+            Watch the backing array grow, copy elements into fresh memory, and shift values during each operation.
+          </p>
         </section>
 
-        <div className="al-layout">
+        <WidgetShell
+          controls={
+            /* ── Left: operations ── */
+            <section className="panel al-side-panel al-operations-panel">
+              <div className="widget-panel__head al-side-panel__head">
+                <div className="eyebrow">Operations</div>
+              </div>
+              <div className="al-operation-stack">
+                <section className="al-operation-card">
+                  <div className="al-operation-card__title">new ArrayList&lt;&gt;()</div>
+                  <OperationField
+                    htmlFor="al-init-cap"
+                    label="Initial capacity"
+                    buttonLabel="Create"
+                    onAction={opCreate}
+                    disabled={busy}
+                  >
+                    <input
+                      id="al-init-cap"
+                      type="number"
+                      className="input"
+                      style={{ flex: 1, minWidth: 0 }}
+                      min={1}
+                      step={1}
+                      value={initialCapacity}
+                      onChange={e => setInitialCapacity(Math.max(1, parseInt(e.target.value) || 10))}
+                      disabled={busy}
+                    />
+                  </OperationField>
+                </section>
 
-          {/* ── Left column: snapshot + legend ── */}
-          <aside className="al-left-col">
-            <section className="panel al-side-panel">
-              <div className="al-side-panel__head">
-                <div className="eyebrow">ArrayList Snapshot</div>
+                <section className="al-operation-card">
+                  <div className="al-operation-card__title">add(value)</div>
+                  <OperationField
+                    htmlFor="al-add-val"
+                    label={null}
+                    buttonLabel="add()"
+                    onAction={opAdd}
+                    disabled={busy}
+                  >
+                    <input
+                      id="al-add-val"
+                      type="text"
+                      className="input"
+                      style={{ flex: 1, minWidth: 0 }}
+                      placeholder="42 or 'cat'"
+                      value={addValue}
+                      onChange={e => setAddValue(e.target.value)}
+                      disabled={busy}
+                      onKeyDown={e => { if (e.key === 'Enter') opAdd() }}
+                    />
+                  </OperationField>
+                </section>
+
+                <section className="al-operation-card">
+                  <div className="al-operation-card__title">remove(index)</div>
+                  <OperationField
+                    htmlFor="al-remove-idx"
+                    label={null}
+                    buttonLabel="remove()"
+                    onAction={opRemove}
+                    disabled={busy}
+                    hint="Shifts elements left – O(n)"
+                  >
+                    <input
+                      id="al-remove-idx"
+                      type="number"
+                      className="input"
+                      style={{ flex: 1, minWidth: 0 }}
+                      min={0}
+                      step={1}
+                      placeholder="index"
+                      value={removeIndex}
+                      onChange={e => setRemoveIndex(e.target.value)}
+                      disabled={busy}
+                      onKeyDown={e => { if (e.key === 'Enter') opRemove() }}
+                    />
+                  </OperationField>
+                </section>
+
+                <section className="al-operation-card">
+                  <div className="al-operation-card__title">contains(value)</div>
+                  <OperationField
+                    htmlFor="al-contains-val"
+                    label={null}
+                    buttonLabel="contains()"
+                    onAction={opContains}
+                    disabled={busy}
+                  >
+                    <input
+                      id="al-contains-val"
+                      type="text"
+                      className="input"
+                      style={{ flex: 1, minWidth: 0 }}
+                      placeholder="value"
+                      value={containsValue}
+                      onChange={e => setContainsValue(e.target.value)}
+                      disabled={busy}
+                      onKeyDown={e => { if (e.key === 'Enter') opContains() }}
+                    />
+                  </OperationField>
+                </section>
+
+                <section className="al-operation-card">
+                  <div className="al-operation-card__title">toString()</div>
+                  <button className="btn op-field__btn al-operation-card__method-btn" onClick={opToString} disabled={busy}>
+                    toString()
+                  </button>
+                </section>
+
+                <section className="al-operation-card">
+                  <div className="al-operation-card__title">Animation</div>
+                  <div className="segment-group al-speed-segments" role="group" aria-label="Animation speed">
+                    {SPEED_OPTIONS.map(option => (
+                      <button
+                        key={option.label}
+                        type="button"
+                        className={`segment${speed === option.value ? ' active' : ''}`}
+                        onClick={() => setSpeed(option.value)}
+                        aria-pressed={speed === option.value}
+                      >
+                        {option.label}
+                      </button>
+                    ))}
+                  </div>
+                </section>
+
+                <button
+                  className="btn btn--ghost btn--sm btn--block"
+                  onClick={() => setShowHowItWorks(true)}
+                >
+                  How It Works
+                </button>
               </div>
-              <span className={`badge ${activityTone} al-state-badge`}>
-                {activityLabel}
-              </span>
-              <div className="metrics-grid al-metrics-grid">
-                <div className="metric">
-                  <span className="metric__label">Size</span>
-                  <span className="metric__value">{displaySize}</span>
-                </div>
-                <div className="metric">
-                  <span className="metric__label">Capacity</span>
-                  <span className="metric__value">{displayCapacity}</span>
-                </div>
-                <div className="metric">
-                  <span className="metric__label">Growth</span>
-                  <span className="metric__value">×{GROWTH_FACTOR}</span>
-                </div>
-              </div>
-              <p className="helper-text al-side-note">
-                The <code>ArrayList</code> keeps a backing array in memory, so capacity can stay ahead of size.
-              </p>
             </section>
+          }
 
-            <section className="panel al-side-panel">
-              <div className="al-side-panel__head">
-                <div className="eyebrow">Memory Key</div>
-              </div>
-              <div className="legend-key al-legend-list">
-                <div className="legend-key__item">
-                  <span className="legend-key__dot al-legend-dot al-legend-dot--unused" />
-                  Unused memory
+          info={
+            /* ── Right: snapshot + legend ── */
+            <>
+              <section className="panel al-side-panel">
+                <div className="widget-panel__head al-side-panel__head">
+                  <div className="eyebrow">ArrayList Snapshot</div>
                 </div>
-                <div className="legend-key__item">
-                  <span className="legend-key__dot al-legend-dot al-legend-dot--allocated" />
-                  Allocated capacity
-                </div>
-                <div className="legend-key__item">
-                  <span className="legend-key__dot al-legend-dot al-legend-dot--filled" />
-                  Filled slot
-                </div>
-                <div className="legend-key__item">
-                  <span className="legend-key__dot al-legend-dot al-legend-dot--current" />
-                  Current cell
-                </div>
-              </div>
-            </section>
-          </aside>
+                <span className={`badge ${activityTone} al-state-badge`}>
+                  {activityLabel}
+                </span>
+                <MetricsDisplay
+                  className="al-metrics-grid"
+                  metrics={[
+                    { label: 'Size', value: displaySize },
+                    { label: 'Capacity', value: displayCapacity },
+                    { label: 'Growth', value: `×${GROWTH_FACTOR}` },
+                  ]}
+                />
+                <p className="helper-text al-side-note">
+                  The <code>ArrayList</code> keeps a backing array in memory, so capacity can stay ahead of size.
+                </p>
+              </section>
 
-          {/* ── Center column: backing array + memory grid ── */}
-          <section className="al-center-col" onClick={requestCancel} style={{ cursor: busy ? 'pointer' : 'default' }}>
+              <section className="panel al-side-panel">
+                <div className="widget-panel__head al-side-panel__head">
+                  <div className="eyebrow">Memory Key</div>
+                </div>
+                <div className="legend-key al-legend-list">
+                  <div className="legend-key__item">
+                    <span className="legend-key__dot al-legend-dot al-legend-dot--unused" />
+                    Unused memory
+                  </div>
+                  <div className="legend-key__item">
+                    <span className="legend-key__dot al-legend-dot al-legend-dot--allocated" />
+                    Allocated capacity
+                  </div>
+                  <div className="legend-key__item">
+                    <span className="legend-key__dot al-legend-dot al-legend-dot--filled" />
+                    Filled slot
+                  </div>
+                  <div className="legend-key__item">
+                    <span className="legend-key__dot al-legend-dot al-legend-dot--current" />
+                    Current cell
+                  </div>
+                </div>
+              </section>
+            </>
+          }
+        >
+          {/* ── Center: memory visualization ── */}
+          <div
+            onClick={requestCancel}
+            style={{ cursor: busy ? 'pointer' : 'default', display: 'flex', flexDirection: 'column', gap: '.75rem' }}
+          >
             <div
               className={status.includes('→ false') ? 'alert alert--warning' : 'alert alert--info'}
               aria-live="polite"
@@ -474,127 +605,21 @@ export default function ArrayListVisualizer() {
               </div>
             </div>
 
+            {output && (
+              <section className="panel al-side-panel al-console-panel" aria-live="polite">
+                <div className="widget-panel__head al-side-panel__head">
+                  <div className="eyebrow">Console</div>
+                </div>
+                <pre className="code-block al-console-output">{output}</pre>
+              </section>
+            )}
+
             <p className={`muted al-cancel-note${busy ? ' al-cancel-note--visible' : ''}`}>
               Click anywhere in the memory view to cancel the animation.
             </p>
+          </div>
+        </WidgetShell>
 
-            {output && (
-              <pre className="code-block al-output">
-                <span className="code-block__lang">toString()</span>
-                {output}
-              </pre>
-            )}
-          </section>
-
-          {/* ── Right column: operations ── */}
-          <aside className="al-right-col">
-            <section className="panel al-side-panel al-operations-panel">
-              <div className="al-side-panel__head">
-                <div className="eyebrow">Operations</div>
-              </div>
-              <div className="stack-sm">
-
-                <div>
-                  <label className="label" htmlFor="al-init-cap">Initial capacity</label>
-                  <div className="al-field-row">
-                    <input
-                      id="al-init-cap"
-                      type="number"
-                      className="input"
-                      style={{ flex: 1, minWidth: 0 }}
-                      min={1}
-                      step={1}
-                      value={initialCapacity}
-                      onChange={e => setInitialCapacity(Math.max(1, parseInt(e.target.value) || 10))}
-                      disabled={busy}
-                    />
-                    <button className="btn al-op-btn" onClick={opCreate} disabled={busy}>
-                      Create
-                    </button>
-                  </div>
-                </div>
-
-                <div>
-                  <label className="label" htmlFor="al-add-val">add(value)</label>
-                  <div className="al-field-row">
-                    <input
-                      id="al-add-val"
-                      type="text"
-                      className="input"
-                      style={{ flex: 1, minWidth: 0 }}
-                      placeholder="42 or 'cat'"
-                      value={addValue}
-                      onChange={e => setAddValue(e.target.value)}
-                      disabled={busy}
-                      onKeyDown={e => { if (e.key === 'Enter') opAdd() }}
-                    />
-                    <button className="btn al-op-btn" onClick={opAdd} disabled={busy}>add()</button>
-                  </div>
-                </div>
-
-                <div>
-                  <label className="label" htmlFor="al-remove-idx">remove(index)</label>
-                  <div className="al-field-row">
-                    <input
-                      id="al-remove-idx"
-                      type="number"
-                      className="input"
-                      style={{ flex: 1, minWidth: 0 }}
-                      min={0}
-                      step={1}
-                      placeholder="index"
-                      value={removeIndex}
-                      onChange={e => setRemoveIndex(e.target.value)}
-                      disabled={busy}
-                      onKeyDown={e => { if (e.key === 'Enter') opRemove() }}
-                    />
-                    <button className="btn al-op-btn" onClick={opRemove} disabled={busy}>remove()</button>
-                  </div>
-                  <div className="helper-text al-action-hint">Shifts elements left - O(n)</div>
-                </div>
-
-                <div>
-                  <label className="label" htmlFor="al-contains-val">contains(value)</label>
-                  <div className="al-field-row">
-                    <input
-                      id="al-contains-val"
-                      type="text"
-                      className="input"
-                      style={{ flex: 1, minWidth: 0 }}
-                      placeholder="value"
-                      value={containsValue}
-                      onChange={e => setContainsValue(e.target.value)}
-                      disabled={busy}
-                      onKeyDown={e => { if (e.key === 'Enter') opContains() }}
-                    />
-                    <button className="btn al-op-btn" onClick={opContains} disabled={busy}>contains()</button>
-                  </div>
-                </div>
-
-                <button className="btn btn--outline btn--block" onClick={opToString} disabled={busy}>
-                  toString()
-                </button>
-
-                <div>
-                  <label className="label" htmlFor="al-speed">
-                    Speed: <strong>{speed}x</strong>
-                  </label>
-                  <input
-                    id="al-speed"
-                    type="range"
-                    className="range"
-                    min={0.25}
-                    max={5}
-                    step={0.25}
-                    value={speed}
-                    onChange={e => setSpeed(parseFloat(e.target.value))}
-                  />
-                </div>
-
-              </div>
-            </section>
-          </aside>
-        </div>
       </div>
 
       {showHowItWorks && (

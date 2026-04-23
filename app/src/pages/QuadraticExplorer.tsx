@@ -363,7 +363,7 @@ export default function QuadraticExplorer() {
         <div className="qe-layout">
           <aside className="qe-sidebar">
             <section className="panel qe-controls-panel">
-              <div className="qe-side-panel__head">
+              <div className="widget-panel__head qe-side-panel__head">
                 <div className="eyebrow">Controls</div>
               </div>
               <span className={`badge ${activePreset ? 'badge--accent' : 'badge--neutral'} qe-preset-badge`}>
@@ -580,7 +580,7 @@ export default function QuadraticExplorer() {
 
           <aside className="qe-insights">
             <section className="panel">
-              <div className="qe-side-panel__head">
+              <div className="widget-panel__head qe-side-panel__head">
                 <div className="eyebrow">Key Features</div>
               </div>
               <div className="metrics-grid qe-snapshot-grid">
@@ -616,7 +616,7 @@ export default function QuadraticExplorer() {
             </section>
 
             <section className="panel">
-              <div className="qe-side-panel__head">
+              <div className="widget-panel__head qe-side-panel__head">
                 <div className="eyebrow">Transformations</div>
               </div>
               <div className="metrics-grid">

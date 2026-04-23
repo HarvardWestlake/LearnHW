@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { OverviewPage, OverviewGroup, OverviewSection, OverviewConnector } from '../components/overview'
+import { WidgetShell, OperationField, MetricsDisplay } from '../components/widget'
 import { IconCpu, IconMemory, IconBinary, IconInbox, IconSearch } from '../components/icons'
 
 export default function StyleGuide() {
@@ -90,6 +91,101 @@ export default function StyleGuide() {
             <p><code>.controls-container</code> — flex row, wraps on mobile.</p>
             <p><code>.sidebar</code> — fixed 320 px, stacks its children with gap.</p>
             <p><code>.chartarea</code> — grows to fill remaining width; white card with shadow.</p>
+          </div>
+        </section>
+
+        {/* Widget Components */}
+        <section className="panel">
+          <h2 className="h5 eyebrow">Widget Components</h2>
+          <p className="muted">
+            React components for building interactive widget pages. Use{' '}
+            <code>WidgetShell</code> as the outer layout, <code>OperationField</code> for every
+            labeled input + button row, and <code>MetricsDisplay</code> for at-a-glance stat grids.
+            These match the visual structure of the quadratic-transformations-explorer widget
+            (controls left · visualization center · info right).
+          </p>
+
+          <h3 className="h6" style={{ marginTop: '1rem' }}>Live example</h3>
+          <div style={{ pointerEvents: 'none', opacity: 0.9 }}>
+            <WidgetShell
+              controls={
+                <div className="panel" style={{ display: 'flex', flexDirection: 'column', gap: '.75rem' }}>
+                  <h3 className="h5 eyebrow" style={{ margin: 0 }}>Controls</h3>
+                  <OperationField htmlFor="sg-wc-cap" label="Initial capacity" buttonLabel="Create" onAction={() => {}}>
+                    <input id="sg-wc-cap" type="number" className="input" style={{ flex: 1, minWidth: 0 }} defaultValue={10} readOnly />
+                  </OperationField>
+                  <OperationField htmlFor="sg-wc-add" label="add(value)" buttonLabel="add()" onAction={() => {}}>
+                    <input id="sg-wc-add" type="text" className="input" style={{ flex: 1, minWidth: 0 }} placeholder="42 or 'cat'" readOnly />
+                  </OperationField>
+                  <OperationField htmlFor="sg-wc-rem" label="remove(index)" buttonLabel="remove()" onAction={() => {}} hint="Shifts elements left – O(n)">
+                    <input id="sg-wc-rem" type="number" className="input" style={{ flex: 1, minWidth: 0 }} placeholder="index" readOnly />
+                  </OperationField>
+                  <button className="btn btn--outline btn--block">toString()</button>
+                  <div>
+                    <label className="label" htmlFor="sg-wc-speed">Speed: <strong>2x</strong></label>
+                    <input id="sg-wc-speed" type="range" className="range" defaultValue={50} readOnly />
+                  </div>
+                </div>
+              }
+              info={
+                <>
+                  <div className="panel" style={{ display: 'flex', flexDirection: 'column', gap: '.75rem' }}>
+                    <h3 className="h5 eyebrow" style={{ margin: 0 }}>Snapshot</h3>
+                    <span className="badge badge--accent" style={{ alignSelf: 'flex-start' }}>Ready for operations</span>
+                    <MetricsDisplay
+                      metrics={[
+                        { label: 'Size', value: 3 },
+                        { label: 'Capacity', value: 10 },
+                        { label: 'Growth', value: '×2' },
+                      ]}
+                    />
+                  </div>
+                  <div className="panel">
+                    <h3 className="h5 eyebrow" style={{ marginBottom: '.5rem' }}>Legend</h3>
+                    <div className="legend-key" style={{ flexDirection: 'column', gap: '.5rem' }}>
+                      <div className="legend-key__item"><span className="legend-key__dot" style={{ background: 'var(--hw-red)' }} />Filled slot</div>
+                      <div className="legend-key__item"><span className="legend-key__dot" style={{ background: 'var(--hw-brand-red-20)', border: '2px solid var(--hw-red)' }} />Allocated</div>
+                      <div className="legend-key__item"><span className="legend-key__dot" style={{ border: '2px solid var(--hw-gold)' }} />Current cell</div>
+                    </div>
+                  </div>
+                </>
+              }
+            >
+              <div className="panel" style={{ minHeight: 140, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <p className="muted" style={{ textAlign: 'center' }}>Visualization goes here<br />(memory grid, canvas, chart…)</p>
+              </div>
+            </WidgetShell>
+          </div>
+
+          <h3 className="h6" style={{ marginTop: '1.25rem' }}>Component API</h3>
+          <table className="table table--sm">
+            <thead>
+              <tr><th>Component</th><th>Role</th><th>Key props</th></tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><code>WidgetShell</code></td>
+                <td>Two- or three-column grid layout. Renders <code>.widget-shell--two-col</code> (no <code>info</code>) or <code>.widget-shell--three-col</code>.</td>
+                <td className="muted"><code>controls</code> (left), <code>children</code> (center), <code>info?</code> (right), <code>className?</code></td>
+              </tr>
+              <tr>
+                <td><code>OperationField</code></td>
+                <td>Labeled row: label above, input(s) + action button in a flex row. Accepts any input(s) as children.</td>
+                <td className="muted"><code>htmlFor</code>, <code>label</code>, <code>buttonLabel</code>, <code>onAction</code>, <code>disabled?</code>, <code>hint?</code></td>
+              </tr>
+              <tr>
+                <td><code>MetricsDisplay</code></td>
+                <td>Compact stat grid. Uses <code>.metrics-grid</code>; pass <code>className</code> to override column count.</td>
+                <td className="muted"><code>metrics: &#123; label, value, note? &#125;[]</code>, <code>className?</code></td>
+              </tr>
+            </tbody>
+          </table>
+
+          <h3 className="h6" style={{ marginTop: '1.25rem' }}>Layout classes</h3>
+          <div className="stack-sm" style={{ fontSize: '.9rem' }}>
+            <p><code>.widget-shell--two-col</code> — 300 px sidebar + fluid main. Collapses to 1-col at 720 px.</p>
+            <p><code>.widget-shell--three-col</code> — 300 px controls + fluid main + 280 px info. At 1100 px info drops below main (info spans left, main spans both rows). At 720 px all three stack.</p>
+            <p><code>.op-field__row</code> / <code>.op-field__btn</code> — flex row inside each <code>OperationField</code>; button has <code>min-width: 100px</code> for visual consistency.</p>
           </div>
         </section>
 
