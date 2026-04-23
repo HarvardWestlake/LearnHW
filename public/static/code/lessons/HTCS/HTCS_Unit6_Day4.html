@@ -618,153 +618,17 @@
       crossorigin="anonymous"></script>
 
     <script>
-      (() => {
-        const COLORS = {
-          cream: '#F5EFE3', creamDark: '#ECE4D2', paper: '#FBF7EE',
-          ink: '#0F1F3A', inkSoft: '#2B3A5B',
-          rule: '#C9BFA7', ruleFaint: '#E2D9C3',
-          accent: '#A8341E', accentSoft: '#C96A52', gold: '#B8893B',
-          muted: '#7E7560', danger: '#9B2A1B', ok: '#3B6E4A',
-        };
-        const TYPE_SCALE = { eyebrow: 26, small: 26, body: 32, bodyLg: 36, subtitle: 44, titleSm: 56, title: 72, titleLg: 96, display: 140 };
-        const SPACING = { paddingTop: 100, paddingBottom: 90, paddingX: 120, titleGap: 52, itemGap: 28, sectionGap: 64 };
-        const FONTS = {
-          serif: '"Source Serif 4", "Source Serif Pro", "Iowan Old Style", Georgia, "Times New Roman", serif',
-          sans: '"Inter Tight", "Söhne", "Helvetica Neue", Helvetica, Arial, sans-serif',
-          mono: '"JetBrains Mono", "IBM Plex Mono", "SF Mono", Menlo, Consolas, monospace',
-        };
-        window.HTCS_TOKENS = { COLORS, TYPE_SCALE, SPACING, FONTS };
-      })();
+      window.HTCS_DECK_META = {
+        courseLabel: 'HTCS · Unit 6 · Day 04',
+        deckTitle: 'Bitcoin Wallets & Multi-Signatures',
+        deckLabel: 'Bitcoin Wallets & Multi-Signatures',
+        dayLabel: 'Day 04',
+      };
     </script>
-
-    <script type="text/babel" data-presets="react">
-      {
-        /* global React */
-        const { COLORS, TYPE_SCALE, SPACING, FONTS } = window.HTCS_TOKENS;
-
-        function SlideFrame({ variant = 'page', pad = true, footer = true, slideNo, children, style = {} }) {
-          const bg = variant === 'ink' ? COLORS.ink
-            : variant === 'paper' ? COLORS.paper
-              : variant === 'bleed' ? COLORS.cream
-                : COLORS.cream;
-          const fg = variant === 'ink' ? COLORS.paper : COLORS.ink;
-
-          return (
-            <div style={{
-              width: '100%', height: '100%', background: bg, color: fg,
-              fontFamily: FONTS.serif, position: 'relative', overflow: 'hidden', ...style,
-            }}>
-              <div style={{
-                position: 'absolute', inset: 0,
-                padding: pad ? `${SPACING.paddingTop}px ${SPACING.paddingX}px ${SPACING.paddingBottom}px` : 0,
-                display: 'flex', flexDirection: 'column',
-              }}>
-                {children}
-              </div>
-              {footer && <SlideFooter variant={variant} slideNo={slideNo} />}
-            </div>
-          );
-        }
-
-        function SlideFooter({ variant }) {
-          const dim = variant === 'ink' ? 'rgba(245,239,227,0.45)' : COLORS.muted;
-          const rule = variant === 'ink' ? 'rgba(245,239,227,0.18)' : COLORS.ruleFaint;
-          return (
-            <div style={{
-              position: 'absolute', left: SPACING.paddingX, right: SPACING.paddingX, bottom: 36,
-              display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-              fontFamily: FONTS.sans, fontSize: 24, letterSpacing: '0.16em',
-              textTransform: 'uppercase', color: dim,
-              borderTop: `1px solid ${rule}`, paddingTop: 18,
-            }}>
-              <span>HTCS &middot; Unit 6 &middot; Day 04</span>
-              <span>Bitcoin Wallets &amp; Multi-Signatures</span>
-            </div>
-          );
-        }
-
-        function Eyebrow({ children, color, style = {} }) {
-          return (
-            <div style={{
-              fontFamily: FONTS.sans, fontSize: TYPE_SCALE.eyebrow, letterSpacing: '0.24em',
-              textTransform: 'uppercase', fontWeight: 500,
-              color: color || COLORS.accent, marginBottom: 24, ...style,
-            }}>{children}</div>
-          );
-        }
-
-        function Title({ children, size = 'title', color, style = {} }) {
-          const fs = TYPE_SCALE[size] || TYPE_SCALE.title;
-          return (
-            <h1 style={{
-              fontFamily: FONTS.serif, fontWeight: 500, fontSize: fs,
-              lineHeight: 1.05, letterSpacing: '-0.015em',
-              color: color || COLORS.ink, margin: 0, textWrap: 'balance', ...style,
-            }}>{children}</h1>
-          );
-        }
-
-        function Subtitle({ children, color, style = {} }) {
-          return (
-            <div style={{
-              fontFamily: FONTS.serif, fontStyle: 'italic',
-              fontSize: TYPE_SCALE.subtitle, lineHeight: 1.2,
-              color: color || COLORS.inkSoft, margin: 0, marginTop: 20,
-              textWrap: 'balance', ...style,
-            }}>{children}</div>
-          );
-        }
-
-        function Body({ children, size = 'body', color, style = {} }) {
-          return (
-            <div style={{
-              fontFamily: FONTS.serif,
-              fontSize: TYPE_SCALE[size] || TYPE_SCALE.body,
-              lineHeight: 1.38, color: color || COLORS.inkSoft, textWrap: 'pretty', ...style,
-            }}>{children}</div>
-          );
-        }
-
-        function Rule({ color, style = {} }) {
-          return <div style={{ height: 1, background: color || COLORS.rule, width: '100%', ...style }} />;
-        }
-
-        function Mono({ children, style = {} }) {
-          return (
-            <span style={{
-              fontFamily: FONTS.mono, fontSize: '0.88em',
-              letterSpacing: '-0.01em', color: COLORS.ink, ...style,
-            }}>{children}</span>
-          );
-        }
-
-        function Numeral({ n, color, style = {} }) {
-          return (
-            <div style={{
-              fontFamily: FONTS.serif, fontStyle: 'italic', fontWeight: 400,
-              fontSize: 56, color: color || COLORS.accent, lineHeight: 1, ...style,
-            }}>{String(n).padStart(2, '0')}</div>
-          );
-        }
-
-        function Callout({ kicker, children, tone = 'default', style = {} }) {
-          const c = tone === 'danger' ? COLORS.danger : tone === 'ok' ? COLORS.ok : COLORS.accent;
-          return (
-            <div style={{
-              borderTop: `1px solid ${COLORS.rule}`, borderBottom: `1px solid ${COLORS.rule}`,
-              padding: '28px 0', ...style,
-            }}>
-              {kicker && <Eyebrow color={c} style={{ marginBottom: 14 }}>{kicker}</Eyebrow>}
-              <div style={{ fontFamily: FONTS.serif, fontSize: TYPE_SCALE.bodyLg, color: COLORS.ink, lineHeight: 1.3 }}>
-                {children}
-              </div>
-            </div>
-          );
-        }
-
-        Object.assign(window, { SlideFrame, SlideFooter, Eyebrow, Title, Subtitle, Body, Rule, Mono, Numeral, Callout });
-      }
-    </script>
+    <script src="_shared/htcs-deck-tokens.js"></script>
+    <script src="_shared/htcs-deck-primitives.js"></script>
+    <script src="_shared/htcs-deck-patterns.js"></script>
+    <script src="_shared/htcs-deck-assets.js"></script>
 
     <script type="text/babel" data-presets="react">
       {

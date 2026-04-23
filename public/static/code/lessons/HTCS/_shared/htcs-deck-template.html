@@ -1,0 +1,1000 @@
+<!DOCTYPE html>
+<!--
+  HTCS shared deck template and style guide.
+
+  Use this file as a live catalog of the shared authoring system.
+  When you start a new deck, duplicate it, trim the reference slides you do
+  not need, then replace the guide copy with lesson-specific content.
+-->
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>HTCS · Shared Template · Style Guide</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Source+Serif+4:ital,opsz,wght@0,8..60,300..700;1,8..60,300..700&family=Inter+Tight:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap"
+      rel="stylesheet">
+    <style>
+      html, body {
+        margin: 0;
+        padding: 0;
+        background: #000;
+        overflow: hidden;
+        height: 100%;
+      }
+
+      body { font-family: "Source Serif 4", Georgia, serif; }
+      button { font-family: "Inter Tight", sans-serif; }
+      textarea { font-family: "JetBrains Mono", monospace; }
+      * { -webkit-font-smoothing: antialiased; }
+    </style>
+
+    <script type="application/json" id="speaker-notes">
+[
+  "Cover slide for the HTCS shared style guide.",
+  "Foundations: token system, type hierarchy, and slide variants.",
+  "Primitives: layout shells, text hierarchy, and controls.",
+  "Content patterns: callouts and cards.",
+  "Quotes, process steps, timeline steps, and recap usage.",
+  "Diagram helpers: labels, legends, badges, and arrows.",
+  "People and network asset family.",
+  "Document and crypto symbol asset family.",
+  "Hash and grid assets.",
+  "Ledger and blockchain assets.",
+  "Checklist for extending the shared system."
+]
+    </script>
+  </head>
+
+  <body>
+    <deck-stage width="1920" height="1080"></deck-stage>
+    <div id="deck-root"></div>
+
+    <script>
+      (() => {
+        const DESIGN_W_DEFAULT = 1920;
+        const DESIGN_H_DEFAULT = 1080;
+        const STORAGE_PREFIX = 'deck-stage:slide:';
+        const OVERLAY_HIDE_MS = 1800;
+        const VALIDATE_ATTR = 'no_overflowing_text,no_overlapping_text,slide_sized_text';
+
+        const pad2 = (n) => String(n).padStart(2, '0');
+
+        const stylesheet = `
+          :host { position: fixed; inset: 0; display: block; background: #000; color: #fff; overflow: hidden; }
+          .stage { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; }
+          .canvas { position: relative; transform-origin: center center; flex-shrink: 0; background: #fff; will-change: transform; }
+          ::slotted(*) { position: absolute !important; inset: 0 !important; width: 100% !important; height: 100% !important; box-sizing: border-box !important; overflow: hidden; opacity: 0; pointer-events: none; visibility: hidden; }
+          ::slotted([data-deck-active]) { opacity: 1; pointer-events: auto; visibility: visible; }
+          .overlay { position: fixed; left: 50%; bottom: 22px; transform: translate(-50%, 6px) scale(0.92); filter: blur(6px); display: flex; align-items: center; gap: 4px; padding: 4px; background: #000; color: #fff; border-radius: 999px; font-size: 12px; font-feature-settings: "tnum" 1; letter-spacing: 0.01em; opacity: 0; pointer-events: none; transition: opacity 260ms ease, transform 260ms cubic-bezier(.2,.8,.2,1), filter 260ms ease; transform-origin: center bottom; z-index: 2147483000; user-select: none; }
+          .overlay[data-visible] { opacity: 1; pointer-events: auto; transform: translate(-50%, 0) scale(1); filter: blur(0); }
+        `;
+
+        class DeckStage extends HTMLElement {
+          constructor() {
+            super();
+            this.attachShadow({ mode: 'open' });
+            this._slides = [];
+            this._index = 0;
+            this._showOverlayTimer = 0;
+            this._onSlotChange = this._onSlotChange.bind(this);
+          }
+
+          connectedCallback() {
+            const width = Number(this.getAttribute('width') || DESIGN_W_DEFAULT);
+            const height = Number(this.getAttribute('height') || DESIGN_H_DEFAULT);
+            this.shadowRoot.innerHTML = `
+              <style>${stylesheet}</style>
+              <div class="stage">
+                <div class="canvas" part="canvas" style="width:${width}px;height:${height}px">
+                  <slot></slot>
+                </div>
+              </div>
+              <div class="overlay" data-overlay>
+                <span data-count>01 / 01</span>
+              </div>
+            `;
+            this._canvas = this.shadowRoot.querySelector('.canvas');
+            this._overlay = this.shadowRoot.querySelector('[data-overlay]');
+            this._count = this.shadowRoot.querySelector('[data-count]');
+            this._slot = this.shadowRoot.querySelector('slot');
+            this._slot.addEventListener('slotchange', this._onSlotChange);
+            this._collectSlides();
+            this._restoreIndex();
+            this._applyIndex('init');
+            this._resize();
+            window.addEventListener('resize', () => this._resize());
+            document.addEventListener('keydown', (event) => this._onKeydown(event));
+          }
+
+          disconnectedCallback() {
+            if (this._slot) this._slot.removeEventListener('slotchange', this._onSlotChange);
+          }
+
+          _onSlotChange() {
+            const hadSlides = this._slides.length > 0;
+            const previousIndex = this._index;
+            this._collectSlides();
+            if (!hadSlides) this._restoreIndex();
+            else if (this._slides.length) this._index = Math.min(previousIndex, this._slides.length - 1);
+            this._applyIndex('slotchange');
+          }
+
+          _collectSlides() {
+            this._slides = Array.from(this.children).filter((node) => node.nodeType === Node.ELEMENT_NODE);
+            this._slides.forEach((slide, index) => {
+              slide.dataset.deckSlide = String(index);
+              slide.setAttribute('data-screen-label', `${pad2(index + 1)} ${slide.getAttribute('data-label') || ''}`.trim());
+              slide.setAttribute('data-om-validate', VALIDATE_ATTR);
+            });
+          }
+
+          _restoreIndex() {
+            try {
+              const saved = Number(localStorage.getItem(STORAGE_PREFIX + (location.pathname || '/')));
+              if (!Number.isNaN(saved)) this._index = Math.max(0, Math.min(saved, this._slides.length - 1));
+            } catch (_) {}
+          }
+
+          _saveIndex() {
+            try { localStorage.setItem(STORAGE_PREFIX + (location.pathname || '/'), String(this._index)); } catch (_) {}
+          }
+
+          _applyIndex(reason) {
+            this._slides.forEach((slide, index) => {
+              if (index === this._index) slide.setAttribute('data-deck-active', '');
+              else slide.removeAttribute('data-deck-active');
+            });
+            this._count.textContent = `${pad2(this._index + 1)} / ${pad2(this._slides.length || 1)}`;
+            this._overlay.setAttribute('data-visible', '');
+            clearTimeout(this._showOverlayTimer);
+            this._showOverlayTimer = setTimeout(() => this._overlay.removeAttribute('data-visible'), OVERLAY_HIDE_MS);
+            this._saveIndex();
+            this.dispatchEvent(new CustomEvent('slidechange', {
+              bubbles: true,
+              composed: true,
+              detail: { index: this._index, total: this._slides.length, reason },
+            }));
+          }
+
+          _resize() {
+            const viewportW = window.innerWidth;
+            const viewportH = window.innerHeight;
+            const width = Number(this.getAttribute('width') || DESIGN_W_DEFAULT);
+            const height = Number(this.getAttribute('height') || DESIGN_H_DEFAULT);
+            const scale = Math.min(viewportW / width, viewportH / height);
+            this._canvas.style.transform = `scale(${scale})`;
+          }
+
+          _onKeydown(event) {
+            if (event.key === 'ArrowRight' || event.key === 'PageDown' || event.key === ' ') {
+              this.next();
+              event.preventDefault();
+            } else if (event.key === 'ArrowLeft' || event.key === 'PageUp') {
+              this.prev();
+              event.preventDefault();
+            } else if (event.key === 'Home') {
+              this.goTo(0);
+              event.preventDefault();
+            } else if (event.key === 'End') {
+              this.goTo(this._slides.length - 1);
+              event.preventDefault();
+            } else if (event.key.toLowerCase() === 'r') {
+              this.goTo(0);
+              event.preventDefault();
+            }
+          }
+
+          goTo(index) {
+            this._index = Math.max(0, Math.min(index, this._slides.length - 1));
+            this._applyIndex('api');
+          }
+
+          next() { this.goTo(this._index + 1); }
+          prev() { this.goTo(this._index - 1); }
+        }
+
+        if (!customElements.get('deck-stage')) customElements.define('deck-stage', DeckStage);
+      })();
+    </script>
+    <script src="https://unpkg.com/react@18.3.1/umd/react.development.js" crossorigin="anonymous"></script>
+    <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" crossorigin="anonymous"></script>
+    <script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" crossorigin="anonymous"></script>
+    <script>
+      window.HTCS_DECK_META = {
+        courseLabel: 'HTCS · Shared Authoring System',
+        deckTitle: 'Universal Slide Style Guide',
+        deckLabel: 'Template Reference',
+        dayLabel: 'Template',
+      };
+    </script>
+    <script src="./htcs-deck-tokens.js"></script>
+    <script src="./htcs-deck-primitives.js"></script>
+    <script src="./htcs-deck-patterns.js"></script>
+    <script src="./htcs-deck-assets.js"></script>
+
+    <script type="text/babel" data-presets="react">
+      {
+        const { COLORS, FONTS } = window.HTCS_TOKENS;
+        const {
+          SlideFrame,
+          Eyebrow,
+          Title,
+          Subtitle,
+          Body,
+          Rule,
+          Mono,
+          Numeral,
+          BulletList,
+          TwoCol,
+          SectionStack,
+          ContentBand,
+          ActionRow,
+          DeckButton,
+          ToggleButton,
+        } = window.HTCS_PRIMITIVES;
+        const {
+          Callout,
+          InfoCard,
+          ComparisonCard,
+          StatCard,
+          QuoteBlock,
+          ProcessStep,
+          TimelineStep,
+          RecapBlock,
+          DiagramFrame,
+          DiagramLabel,
+          Legend,
+          Badge,
+        } = window.HTCS_PATTERNS;
+        const {
+          DocumentSvg,
+          FileIconSvg,
+          DocCard,
+          HashBox,
+          HashPipeline,
+          FriendBust,
+          PeerSvg,
+          ServerRackSvg,
+          NetworkPersonSvg,
+          NetworkLinkLine,
+          PacketOnEdge,
+          KeyIcon,
+          Padlock,
+          Envelope,
+          StageArrow,
+          PaymentArrow,
+          BitGrid,
+          CellGridSvg,
+          BlockCard,
+          BlockSvg,
+          MinerSvg,
+        } = window.HTCS_ASSETS;
+
+        const sampleHashA = '6b86b273ff34fce19d6b804eff5a3f57';
+        const sampleHashB = '6b86b273ff34fce19d6b804eff5a3f5a';
+        const activeCells = [[0, 0], [0, 1], [1, 1], [2, 3], [2, 4], [3, 4], [4, 6]];
+
+        const noteStyle = {
+          fontFamily: FONTS.sans,
+          fontSize: 14,
+          letterSpacing: '0.08em',
+          lineHeight: 1.5,
+          color: COLORS.muted,
+        };
+
+        const captionStyle = {
+          fontFamily: FONTS.sans,
+          fontSize: 14,
+          letterSpacing: '0.16em',
+          textTransform: 'uppercase',
+          color: COLORS.muted,
+        };
+
+        function CatalogTile({ label, note, children, style = {}, tone = 'paper', minHeight = 0 }) {
+          const background = tone === 'ink' ? COLORS.ink : COLORS.paper;
+          const border = tone === 'ink' ? 'rgba(245,239,227,0.18)' : COLORS.rule;
+          const copyColor = tone === 'ink' ? 'rgba(245,239,227,0.58)' : COLORS.muted;
+          return (
+            <div
+              style={{
+                border: `1px solid ${border}`,
+                background,
+                padding: 22,
+                minHeight,
+                display: 'flex',
+                flexDirection: 'column',
+                gap: 16,
+                ...style,
+              }}
+            >
+              {label && <DiagramLabel tone="accent">{label}</DiagramLabel>}
+              <div style={{ flex: 1 }}>{children}</div>
+              {note && <div style={{ ...noteStyle, color: copyColor }}>{note}</div>}
+            </div>
+          );
+        }
+
+        function Swatch({ name, value }) {
+          return (
+            <div style={{ display: 'grid', gridTemplateColumns: '92px 1fr', gap: 12, alignItems: 'center' }}>
+              <div style={{ height: 44, background: value, border: `1px solid ${COLORS.rule}` }} />
+              <div>
+                <div style={{ ...captionStyle, color: COLORS.ink }}>{name}</div>
+                <div style={{ fontFamily: FONTS.mono, fontSize: 15, color: COLORS.muted, marginTop: 4 }}>{value}</div>
+              </div>
+            </div>
+          );
+        }
+
+        function MiniSurface({ label, background, color, border }) {
+          return (
+            <div
+              style={{
+                height: 132,
+                background,
+                color,
+                border: `1px solid ${border}`,
+                padding: 16,
+                display: 'flex',
+                flexDirection: 'column',
+                justifyContent: 'space-between',
+              }}
+            >
+              <div style={{ ...captionStyle, color }}>{label}</div>
+              <div style={{ fontFamily: FONTS.serif, fontSize: 26, lineHeight: 1.15 }}>
+                SlideFrame variant
+              </div>
+            </div>
+          );
+        }
+
+        function AssetCaption({ children, style = {} }) {
+          return <div style={{ ...captionStyle, textAlign: 'center', ...style }}>{children}</div>;
+        }
+
+        function SlideCover() {
+          return (
+            <SlideFrame variant="bleed" footer={false}>
+              <Eyebrow>HTCS Shared Authoring System</Eyebrow>
+              <Title size="titleLg">Universal Slide Style Guide</Title>
+              <Subtitle>
+                A live template deck that catalogs the shared primitives, patterns, and SVG assets for future HTCS slides.
+              </Subtitle>
+              <Body style={{ marginTop: 28, fontSize: 28, maxWidth: 1120, color: COLORS.inkSoft }}>
+                Duplicate this file, remove the guide slides you do not need, and build new material by composing from the shared layer instead of copying one-off markup.
+              </Body>
+              <ActionRow style={{ marginTop: 34 }}>
+                <Badge filled>Primitives</Badge>
+                <Badge tone="gold" filled>Patterns</Badge>
+                <Badge tone="ok" filled>Assets</Badge>
+                <Badge tone="danger">Reusable by default</Badge>
+              </ActionRow>
+              <div style={{ marginTop: 54 }}>
+                <ContentBand gap={24} align="stretch">
+                  <CatalogTile label="Peer">
+                    <div style={{ display: 'flex', justifyContent: 'center' }}>
+                      <PeerSvg name="Alice" size={140} />
+                    </div>
+                  </CatalogTile>
+                  <CatalogTile label="Server">
+                    <div style={{ display: 'flex', justifyContent: 'center', paddingTop: 6 }}>
+                      <svg viewBox="0 0 120 150" width="132" height="165">
+                        <ServerRackSvg />
+                      </svg>
+                    </div>
+                  </CatalogTile>
+                  <CatalogTile label="File">
+                    <div style={{ display: 'flex', justifyContent: 'center', paddingTop: 8 }}>
+                      <FileIconSvg size={120} label="metadata" />
+                    </div>
+                  </CatalogTile>
+                </ContentBand>
+              </div>
+            </SlideFrame>
+          );
+        }
+
+        function SlideFoundations() {
+          return (
+            <SlideFrame>
+              <Eyebrow>Foundations</Eyebrow>
+              <Title>Tokens control color, type, spacing, and density.</Title>
+              <TwoCol
+                left={(
+                  <SectionStack>
+                    <CatalogTile
+                      label="Palette"
+                      note="Keep the cream, ink, accent, gold, muted, and rule system stable so decks still feel related."
+                    >
+                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
+                        {[
+                          ['cream', COLORS.cream],
+                          ['paper', COLORS.paper],
+                          ['ink', COLORS.ink],
+                          ['inkSoft', COLORS.inkSoft],
+                          ['accent', COLORS.accent],
+                          ['gold', COLORS.gold],
+                          ['muted', COLORS.muted],
+                          ['rule', COLORS.rule],
+                        ].map(([name, value]) => (
+                          <Swatch key={name} name={name} value={value} />
+                        ))}
+                      </div>
+                    </CatalogTile>
+                    <CatalogTile label="SlideFrame variants" note="Use full-slide variants deliberately, not casually.">
+                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12 }}>
+                        <MiniSurface label="page" background={COLORS.cream} color={COLORS.ink} border={COLORS.rule} />
+                        <MiniSurface label="bleed" background={COLORS.creamDark} color={COLORS.ink} border={COLORS.rule} />
+                        <MiniSurface label="ink" background={COLORS.ink} color={COLORS.paper} border="rgba(245,239,227,0.18)" />
+                      </div>
+                    </CatalogTile>
+                  </SectionStack>
+                )}
+                right={(
+                  <SectionStack>
+                    <CatalogTile label="Type hierarchy">
+                      <Eyebrow style={{ marginBottom: 10 }}>Eyebrow</Eyebrow>
+                      <Title size="titleSm" style={{ fontSize: 50 }}>Title</Title>
+                      <Subtitle style={{ fontSize: 30, marginTop: 10 }}>Subtitle helps the headline land.</Subtitle>
+                      <Body style={{ fontSize: 24, marginTop: 16 }}>
+                        Body copy handles explanation, while <Mono>Mono</Mono> marks file names, hashes, and code-like terms.
+                      </Body>
+                    </CatalogTile>
+                    <CatalogTile label="Spacing and density">
+                      <BulletList
+                        gap={10}
+                        items={[
+                          'Default slide padding comes from SlideFrame.',
+                          'Keep most text blocks at or below 1300px.',
+                          'Avoid more than three equal-weight cards in one row.',
+                          'Prefer one strong visual idea per slide.',
+                        ]}
+                        style={{ fontSize: 24, paddingLeft: 26, color: COLORS.inkSoft }}
+                      />
+                    </CatalogTile>
+                  </SectionStack>
+                )}
+              />
+            </SlideFrame>
+          );
+        }
+
+        function SlidePrimitives() {
+          return (
+            <SlideFrame>
+              <Eyebrow>Primitives</Eyebrow>
+              <Title>Primitives define the authoring grammar.</Title>
+              <TwoCol
+                left={(
+                  <SectionStack>
+                    <CatalogTile label="Text primitives">
+                      <Eyebrow style={{ marginBottom: 8 }}>Scene setting</Eyebrow>
+                      <Title size="titleSm" style={{ fontSize: 46 }}>Start with hierarchy.</Title>
+                      <Subtitle style={{ fontSize: 28, marginTop: 10 }}>
+                        Then keep supporting text calm and readable.
+                      </Subtitle>
+                      <Body style={{ fontSize: 24, marginTop: 18 }}>
+                        Use <Mono>Mono</Mono> for filenames, method names, hashes, and other literal tokens.
+                      </Body>
+                    </CatalogTile>
+                    <CatalogTile label="Rule, Numeral, BulletList">
+                      <div style={{ display: 'grid', gridTemplateColumns: '80px 1fr', gap: 20, alignItems: 'start' }}>
+                        <Numeral n={4} />
+                        <div>
+                          <Body style={{ fontSize: 24, marginBottom: 12 }}>
+                            Numeral marks an ordered point or a major step.
+                          </Body>
+                          <Rule style={{ margin: '10px 0 16px' }} />
+                          <BulletList
+                            gap={8}
+                            items={[
+                              'Use BulletList for actual lists, not paragraphs.',
+                              'Lead with the teaching point, then support it.',
+                              'Keep list wording parallel.',
+                            ]}
+                            style={{ fontSize: 22, paddingLeft: 24, color: COLORS.inkSoft }}
+                          />
+                        </div>
+                      </div>
+                    </CatalogTile>
+                  </SectionStack>
+                )}
+                right={(
+                  <SectionStack>
+                    <CatalogTile label="Layout shells" note="Most decks only need SlideFrame, TwoCol, SectionStack, and ContentBand.">
+                      <div style={{ display: 'grid', gridTemplateColumns: '1.1fr 0.9fr', gap: 14 }}>
+                        <div style={{ border: `1px solid ${COLORS.rule}`, padding: 14 }}>
+                          <AssetCaption style={{ textAlign: 'left' }}>TwoCol</AssetCaption>
+                          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginTop: 12 }}>
+                            <div style={{ border: `1px solid ${COLORS.ruleFaint}`, padding: 12, minHeight: 92 }} />
+                            <div style={{ border: `1px solid ${COLORS.ruleFaint}`, padding: 12, minHeight: 92 }} />
+                          </div>
+                        </div>
+                        <div style={{ border: `1px solid ${COLORS.rule}`, padding: 14 }}>
+                          <AssetCaption style={{ textAlign: 'left' }}>SectionStack</AssetCaption>
+                          <div style={{ display: 'grid', gap: 10, marginTop: 12 }}>
+                            <div style={{ border: `1px solid ${COLORS.ruleFaint}`, minHeight: 24 }} />
+                            <div style={{ border: `1px solid ${COLORS.ruleFaint}`, minHeight: 24 }} />
+                            <div style={{ border: `1px solid ${COLORS.ruleFaint}`, minHeight: 24 }} />
+                          </div>
+                        </div>
+                      </div>
+                      <div style={{ border: `1px solid ${COLORS.rule}`, padding: 14, marginTop: 14 }}>
+                        <AssetCaption style={{ textAlign: 'left' }}>ContentBand</AssetCaption>
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 10, marginTop: 12 }}>
+                          <div style={{ border: `1px solid ${COLORS.ruleFaint}`, minHeight: 70 }} />
+                          <div style={{ border: `1px solid ${COLORS.ruleFaint}`, minHeight: 70 }} />
+                          <div style={{ border: `1px solid ${COLORS.ruleFaint}`, minHeight: 70 }} />
+                        </div>
+                      </div>
+                    </CatalogTile>
+                    <CatalogTile label="ActionRow, DeckButton, ToggleButton">
+                      <ActionRow gap={12}>
+                        <DeckButton>Ink Button</DeckButton>
+                        <DeckButton tone="accent">Accent</DeckButton>
+                        <DeckButton tone="paper">Paper</DeckButton>
+                        <DeckButton tone="ghost">Ghost</DeckButton>
+                      </ActionRow>
+                      <ActionRow gap={12} style={{ marginTop: 16 }}>
+                        <ToggleButton active>Selected</ToggleButton>
+                        <ToggleButton>Idle</ToggleButton>
+                        <Badge tone="gold">ActionRow</Badge>
+                      </ActionRow>
+                    </CatalogTile>
+                  </SectionStack>
+                )}
+              />
+            </SlideFrame>
+          );
+        }
+
+        function SlideCardsCallouts() {
+          return (
+            <SlideFrame>
+              <Eyebrow>Content Patterns</Eyebrow>
+              <Title>Use named roles instead of inventing new card styles.</Title>
+              <Callout kicker="Callout" tone="gold" style={{ marginTop: 28 }}>
+                Callouts frame the interpretation. They should sharpen the lesson, not absorb all the explanation.
+              </Callout>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 24, marginTop: 30 }}>
+                <InfoCard title="InfoCard">
+                  Use for one concept, one definition, or one supporting chunk of explanation.
+                </InfoCard>
+                <InfoCard title={'InfoCard tone="ink"'} tone="ink">
+                  Save dark cards for emphasis, contrast, or when a slide already carries several light panels.
+                </InfoCard>
+                <ComparisonCard title="ComparisonCard" subtitle="Best inside TwoCol">
+                  Comparison cards are for matched tradeoffs or alternative system behaviors.
+                </ComparisonCard>
+                <StatCard
+                  value="3"
+                  label="Equal-weight cards per row, max"
+                  note="Beyond that, most slides start feeling crowded."
+                />
+              </div>
+              <ActionRow style={{ marginTop: 24 }}>
+                <Badge filled>Callout</Badge>
+                <Badge tone="gold">InfoCard</Badge>
+                <Badge tone="ok">ComparisonCard</Badge>
+                <Badge tone="danger">StatCard</Badge>
+              </ActionRow>
+            </SlideFrame>
+          );
+        }
+
+        function SlideQuotesAndFlow() {
+          return (
+            <SlideFrame>
+              <Eyebrow>Voice And Structure</Eyebrow>
+              <Title>Quotes, process steps, and recaps each do different work.</Title>
+              <TwoCol
+                left={(
+                  <SectionStack gap={20}>
+                    <QuoteBlock source="Pull quote">
+                      The tracker is a phone book, not a file server.
+                    </QuoteBlock>
+                    <QuoteBlock variant="policy" source="Policy excerpt">
+                      Use policy-style quotes for excerpts, TOS language, or small source pullouts.
+                    </QuoteBlock>
+                    <QuoteBlock variant="warning" tone="danger" source="Teaching caution">
+                      Warning quotes should call out a misconception, failure mode, or tempting oversimplification.
+                    </QuoteBlock>
+                  </SectionStack>
+                )}
+                right={(
+                  <SectionStack gap={22}>
+                    <ProcessStep step={1} title="Introduce the action">
+                      Start with the user move or system event so the audience knows what kicked the process off.
+                    </ProcessStep>
+                    <ProcessStep step={2} title="Explain the handoff">
+                      Then show which peer, service, or component takes responsibility next.
+                    </ProcessStep>
+                    <TimelineStep label="Later" title="Use TimelineStep for chronology">
+                      Timeline steps are for before/after or phase-based explanations, not for task instructions.
+                    </TimelineStep>
+                  </SectionStack>
+                )}
+              />
+              <RecapBlock
+                style={{ marginTop: 28 }}
+                body="RecapBlock belongs near the end of a lesson, section, or conceptual arc."
+              >
+                Quotes carry voice; process and timeline blocks carry sequence.
+              </RecapBlock>
+            </SlideFrame>
+          );
+        }
+
+        function SlideDiagramHelpers() {
+          return (
+            <SlideFrame>
+              <Eyebrow>Diagram Helpers</Eyebrow>
+              <Title>Labels, legends, badges, and arrows standardize diagram language.</Title>
+              <ContentBand gap={28} style={{ marginTop: 34, alignItems: 'stretch' }}>
+                <DiagramFrame
+                  caption="Use DiagramLabel, Legend, Badge, and StageArrow inside framed diagrams."
+                  style={{ flex: 1 }}
+                >
+                  <DiagramLabel tone="accent">Flow Diagram</DiagramLabel>
+                  <svg viewBox="0 0 560 250" width="100%" height="250" style={{ marginTop: 10 }}>
+                    <g transform="translate(28,46)">
+                      <ServerRackSvg />
+                    </g>
+                    <g transform="translate(402,40)">
+                      <NetworkPersonSvg name="Alice" />
+                    </g>
+                    <StageArrow from={[145, 120]} to={[400, 120]} label="announce" sublabel="metadata" />
+                  </svg>
+                  <Legend
+                    style={{ marginTop: 8 }}
+                    items={[
+                      { label: 'authority', color: COLORS.ink },
+                      { label: 'highlight', color: COLORS.gold },
+                      { label: 'warning', color: COLORS.danger },
+                    ]}
+                  />
+                  <ActionRow style={{ marginTop: 16 }}>
+                    <Badge tone="gold" filled>Active</Badge>
+                    <Badge tone="danger">Broken</Badge>
+                    <Badge tone="ok">Healthy</Badge>
+                  </ActionRow>
+                </DiagramFrame>
+                <DiagramFrame
+                  tone="ink"
+                  caption={'DiagramFrame tone="ink" is available when the diagram needs a dark panel.'}
+                  style={{ flex: 1 }}
+                >
+                  <DiagramLabel tone="accent">Network Motion</DiagramLabel>
+                  <svg viewBox="0 0 560 250" width="100%" height="250" style={{ marginTop: 10 }}>
+                    <g transform="translate(18,42)">
+                      <NetworkPersonSvg name="Alice" />
+                    </g>
+                    <g transform="translate(215,42)">
+                      <NetworkPersonSvg name="Bob" />
+                    </g>
+                    <g transform="translate(410,46)">
+                      <ServerRackSvg />
+                    </g>
+                    <NetworkLinkLine x1={130} y1={118} x2={280} y2={118} />
+                    <NetworkLinkLine x1={300} y1={118} x2={420} y2={118} dashed />
+                    <PacketOnEdge x1={130} y1={118} x2={280} y2={118} t={1} phase={0.32} />
+                    <PacketOnEdge x1={300} y1={118} x2={420} y2={118} t={1} phase={0.68} color={COLORS.accent} />
+                  </svg>
+                  <div style={{ ...noteStyle, color: 'rgba(245,239,227,0.58)' }}>
+                    Dashed links work for hypothetical, broken, or waiting routes.
+                  </div>
+                </DiagramFrame>
+              </ContentBand>
+            </SlideFrame>
+          );
+        }
+
+        function SlidePeopleAndNetworks() {
+          return (
+            <SlideFrame>
+              <Eyebrow>People And Networks</Eyebrow>
+              <Title>Shared actors and topology assets cover peer-to-peer lessons.</Title>
+              <ContentBand gap={22} style={{ marginTop: 34, alignItems: 'stretch' }}>
+                <CatalogTile
+                  label="PeerSvg"
+                  note="PeerSvg is the preferred author-facing wrapper for bust-style peers."
+                  style={{ flex: 1 }}
+                >
+                  <div style={{ display: 'flex', justifyContent: 'space-around', alignItems: 'flex-end', gap: 18 }}>
+                    <PeerSvg name="Alice" size={138} />
+                    <PeerSvg name="Eve" size={138} />
+                  </div>
+                </CatalogTile>
+                <CatalogTile
+                  label="FriendBust"
+                  note="Use FriendBust when the slide centers on balances, people, or ledger stories."
+                  style={{ flex: 1 }}
+                >
+                  <div style={{ display: 'flex', justifyContent: 'space-around', alignItems: 'flex-end', gap: 18 }}>
+                    <FriendBust name="Charlie" size={126} />
+                    <FriendBust name="You" label="You" size={126} />
+                  </div>
+                </CatalogTile>
+                <CatalogTile
+                  label="Lettered shirts"
+                  note="Peers stay hair-free, and the shirt letter carries the identity cue."
+                  style={{ flex: 1 }}
+                >
+                  <div style={{ display: 'flex', justifyContent: 'space-around', alignItems: 'flex-end', gap: 18 }}>
+                    <PeerSvg name="Alice" size={118} />
+                    <PeerSvg name="Bob" size={118} />
+                  </div>
+                </CatalogTile>
+              </ContentBand>
+              <DiagramFrame
+                caption="NetworkPersonSvg and ServerRackSvg belong inside larger SVG diagrams with shared link assets."
+                style={{ marginTop: 26 }}
+              >
+                <svg viewBox="0 0 1500 250" width="100%" height="250">
+                  <g transform="translate(60,48)">
+                    <NetworkPersonSvg name="Alice" />
+                  </g>
+                  <g transform="translate(360,48)">
+                    <NetworkPersonSvg name="Bob" />
+                  </g>
+                  <g transform="translate(660,48)">
+                    <NetworkPersonSvg name="Peer" />
+                  </g>
+                  <g transform="translate(1080,52)">
+                    <ServerRackSvg />
+                  </g>
+                  <NetworkLinkLine x1={170} y1={126} x2={420} y2={126} />
+                  <NetworkLinkLine x1={470} y1={126} x2={720} y2={126} />
+                  <NetworkLinkLine x1={770} y1={126} x2={1110} y2={126} dashed />
+                  <PacketOnEdge x1={170} y1={126} x2={420} y2={126} t={1} phase={0.15} />
+                  <PacketOnEdge x1={470} y1={126} x2={720} y2={126} t={1} phase={0.55} color={COLORS.ok} />
+                </svg>
+              </DiagramFrame>
+            </SlideFrame>
+          );
+        }
+
+        function SlideDocumentAndCryptoAssets() {
+          return (
+            <SlideFrame>
+              <Eyebrow>Documents And Crypto Symbols</Eyebrow>
+              <Title>Use the shared library for documents, keys, locks, and envelopes.</Title>
+              <TwoCol
+                left={(
+                  <CatalogTile
+                    label="DocumentSvg, FileIconSvg, DocCard"
+                    note="Pick the smallest asset that still communicates the idea clearly."
+                  >
+                    <div style={{ display: 'flex', gap: 24, alignItems: 'center', justifyContent: 'space-between' }}>
+                      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10 }}>
+                        <DocumentSvg width={112} height={140} label="DocumentSvg" />
+                      </div>
+                      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10 }}>
+                        <FileIconSvg size={110} label="FileIconSvg" />
+                      </div>
+                      <DocCard
+                        w={250}
+                        h={300}
+                        label={'tracker:\npeer list\ninfo hash'}
+                        foot="DocCard"
+                      />
+                    </div>
+                  </CatalogTile>
+                )}
+                right={(
+                  <CatalogTile
+                    label="KeyIcon, Padlock, Envelope"
+                    note="These are metaphor assets for encryption, signatures, and transport narratives."
+                  >
+                    <SectionStack gap={20}>
+                      <ActionRow gap={24} justify="space-between">
+                        <KeyIcon kind="public" size={46} label="public" />
+                        <KeyIcon kind="private" size={46} label="private" />
+                        <KeyIcon kind="symmetric" size={46} label="symmetric" />
+                      </ActionRow>
+                      <ActionRow gap={28} justify="space-between">
+                        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8 }}>
+                          <Padlock size={70} />
+                          <AssetCaption>Padlock</AssetCaption>
+                        </div>
+                        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8 }}>
+                          <Padlock open size={70} />
+                          <AssetCaption>Padlock open</AssetCaption>
+                        </div>
+                        <Envelope w={164} h={108} locked label="Envelope" />
+                      </ActionRow>
+                    </SectionStack>
+                  </CatalogTile>
+                )}
+              />
+            </SlideFrame>
+          );
+        }
+
+        function SlideHashAndGridAssets() {
+          return (
+            <SlideFrame>
+              <Eyebrow>Hashes And Grids</Eyebrow>
+              <Title>Hash boxes, pipelines, and grid assets explain verification cleanly.</Title>
+              <ContentBand gap={26} style={{ marginTop: 30, alignItems: 'stretch' }}>
+                <CatalogTile
+                  label="HashBox"
+                  note="Use diffFrom to highlight avalanche changes or invalidated comparisons."
+                  style={{ flex: '0 0 470px' }}
+                >
+                  <HashBox value={sampleHashB} diffFrom={sampleHashA} label="digest" w={410} />
+                </CatalogTile>
+                <CatalogTile
+                  label="BitGrid and CellGridSvg"
+                  note="BitGrid compares digests; CellGridSvg handles chunks, occupancy, or piece maps."
+                  style={{ flex: 1 }}
+                >
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 24 }}>
+                    <div>
+                      <BitGrid hexA={sampleHashA} hexB={sampleHashB} cols={16} dot={16} gap={4} />
+                      <Legend
+                        style={{ marginTop: 14 }}
+                        items={[
+                          { label: 'same', color: COLORS.ink },
+                          { label: 'changed', color: COLORS.accent },
+                        ]}
+                      />
+                    </div>
+                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12 }}>
+                      <CellGridSvg rows={5} cols={8} size={20} gap={5} active={activeCells} />
+                      <AssetCaption>CellGridSvg</AssetCaption>
+                    </div>
+                  </div>
+                </CatalogTile>
+              </ContentBand>
+              <DiagramFrame
+                caption="HashPipeline is the default wide explainer for input -> hash function -> fixed digest."
+                style={{ marginTop: 24 }}
+              >
+                <HashPipeline inputLabel="peer metadata" digest={sampleHashA} />
+              </DiagramFrame>
+            </SlideFrame>
+          );
+        }
+
+        function SlideLedgerAndBlockchain() {
+          return (
+            <SlideFrame>
+              <Eyebrow>Ledger And Blockchain</Eyebrow>
+              <Title>Payment, ledger, and block-chain visuals reuse the same building blocks.</Title>
+              <ContentBand gap={24} style={{ marginTop: 32, alignItems: 'stretch' }}>
+                <CatalogTile
+                  label="FriendBust and PaymentArrow"
+                  note="Use lettered busts for actors and PaymentArrow for annotated transfers."
+                  style={{ flex: 1 }}
+                >
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', gap: 18 }}>
+                    <FriendBust name="Alice" size={96} owe={20} />
+                    <FriendBust name="Bob" size={96} get={20} />
+                  </div>
+                  <svg viewBox="0 0 540 180" width="100%" height="180" style={{ marginTop: 18 }}>
+                    <PaymentArrow x1={90} y1={122} x2={450} y2={122} label="$20" labelOffset={-18} />
+                    <PaymentArrow
+                      x1={450}
+                      y1={150}
+                      x2={90}
+                      y2={150}
+                      label="IOU"
+                      dashed
+                      faded
+                      labelOffset={18}
+                    />
+                  </svg>
+                </CatalogTile>
+                <CatalogTile
+                  label="BlockSvg, BlockCard, MinerSvg"
+                  note="BlockSvg is the quick wrapper; BlockCard exposes stateful variants like tampered or compromised."
+                  style={{ flex: 1.2 }}
+                >
+                  <div style={{ display: 'flex', gap: 18, alignItems: 'flex-start', justifyContent: 'space-between' }}>
+                    <BlockSvg
+                      size={210}
+                      prevHash="0000f6c1"
+                      lines={['Alice -> Bob $20', 'Charlie -> Dana $5']}
+                      pow="proof of work"
+                      hash="0000ab91"
+                    />
+                    <BlockCard
+                      width={210}
+                      prevHash="0000ab91"
+                      lines={['Mallory edited amount']}
+                      hash="91ae3d77"
+                      tampered
+                    />
+                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 14, paddingTop: 6 }}>
+                      <MinerSvg size={76} />
+                      <MinerSvg size={76} winner />
+                      <AssetCaption>MinerSvg</AssetCaption>
+                    </div>
+                  </div>
+                </CatalogTile>
+              </ContentBand>
+            </SlideFrame>
+          );
+        }
+
+        function SlideChecklist() {
+          return (
+            <SlideFrame>
+              <Eyebrow>Using The Guide</Eyebrow>
+              <Title>Build new decks by composing from the shared layer.</Title>
+              <TwoCol
+                left={(
+                  <RecapBlock
+                    body="If a visual or pattern shows up in two lessons, promote it into _shared and add it to this guide deck."
+                  >
+                    Name components by teaching role, not by surface appearance.
+                  </RecapBlock>
+                )}
+                right={(
+                  <CatalogTile label="Checklist" note="This file is both the template and the visual reference.">
+                    <BulletList
+                      gap={10}
+                      items={[
+                        'Start with SlideFrame, then choose the right layout primitive.',
+                        'Prefer shared patterns over one-off card or quote markup.',
+                        'Promote repeated visuals into window.HTCS_ASSETS.',
+                        'Keep future examples in this file so the guide stays current.',
+                      ]}
+                      style={{ fontSize: 24, paddingLeft: 26, color: COLORS.inkSoft }}
+                    />
+                    <Rule style={{ margin: '20px 0 18px' }} />
+                    <Body style={{ fontSize: 24 }}>
+                      Shared files live in <Mono>public/static/code/lessons/HTCS/_shared/</Mono>.
+                    </Body>
+                  </CatalogTile>
+                )}
+              />
+              <ActionRow style={{ marginTop: 28 }}>
+                <Badge filled>Primitives</Badge>
+                <Badge tone="gold" filled>Patterns</Badge>
+                <Badge tone="ok" filled>Assets</Badge>
+                <Badge tone="danger">Promote repeats</Badge>
+              </ActionRow>
+            </SlideFrame>
+          );
+        }
+
+        function mountTemplateDeck() {
+          const stage = document.querySelector('deck-stage');
+          if (!stage) return;
+          while (stage.firstChild) stage.removeChild(stage.firstChild);
+          const slides = [
+            ['Cover', SlideCover],
+            ['Foundations', SlideFoundations],
+            ['Primitives', SlidePrimitives],
+            ['Cards And Callouts', SlideCardsCallouts],
+            ['Quotes And Flow', SlideQuotesAndFlow],
+            ['Diagram Helpers', SlideDiagramHelpers],
+            ['People And Networks', SlidePeopleAndNetworks],
+            ['Documents And Crypto', SlideDocumentAndCryptoAssets],
+            ['Hashes And Grids', SlideHashAndGridAssets],
+            ['Ledger And Blockchain', SlideLedgerAndBlockchain],
+            ['Checklist', SlideChecklist],
+          ];
+
+          slides.forEach(([label, Component], index) => {
+            const section = document.createElement('section');
+            section.setAttribute('data-label', `${String(index + 1).padStart(2, '0')} ${label}`);
+            stage.appendChild(section);
+            ReactDOM.createRoot(section).render(<Component />);
+          });
+        }
+
+        if (document.readyState === 'loading') {
+          document.addEventListener('DOMContentLoaded', mountTemplateDeck, { once: true });
+        } else {
+          mountTemplateDeck();
+        }
+      }
+    </script>
+  </body>
+</html>
