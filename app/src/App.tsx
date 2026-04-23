@@ -10,6 +10,8 @@ import WidgetRoute from './pages/WidgetRoute.tsx'
 import ArrayListVisualizer from './pages/ArrayListVisualizer.tsx'
 import BinaryExplorer from './pages/BinaryExplorer.tsx'
 import Sha1FlowExplorer from './pages/Sha1FlowExplorer.tsx'
+import HtcsUnit6Day4React from './pages/HtcsUnit6Day4React.tsx'
+import HtcsUnit6Day5React from './pages/HtcsUnit6Day5React.tsx'
 import { CODE_WIDGETS, HISTORY_WIDGETS, HTCS_LESSON_WIDGETS, MATH_WIDGETS, STATS_WIDGETS } from './pages/widgetMaps'
 import HtcsLessons from './pages/HtcsLessons.tsx'
 import History from './history/History.tsx'
@@ -66,9 +68,12 @@ function TopNav() {
 }
 
 export default function App() {
+  const { pathname } = useLocation()
+  const hideChrome = pathname.startsWith('/code/htcs-lessons/day') && pathname.endsWith('-react')
+
   return (
     <>
-      <TopNav />
+      {!hideChrome ? <TopNav /> : null}
       <Routes>
         <Route path="/" element={<Home />} />
         <Route path="math" element={<Math />} />
@@ -80,6 +85,8 @@ export default function App() {
         <Route path="code/binary-explorer" element={<BinaryExplorer />} />
         <Route path="code/sha1-flow-explorer" element={<Sha1FlowExplorer />} />
         <Route path="code/htcs-lessons" element={<HtcsLessons />} />
+        <Route path="code/htcs-lessons/day4-react" element={<HtcsUnit6Day4React />} />
+        <Route path="code/htcs-lessons/day5-react" element={<HtcsUnit6Day5React />} />
         <Route path="code/htcs-lessons/:widget" element={<WidgetRoute widgets={HTCS_LESSON_WIDGETS} backTo="/code/htcs-lessons" />} />
         <Route path="code/:widget" element={<WidgetRoute widgets={CODE_WIDGETS} backTo="/code" />} />
         <Route path="stats" element={<Stats />} />
@@ -101,11 +108,13 @@ export default function App() {
         <Route path="history/widgets/:widget" element={<WidgetRoute widgets={HISTORY_WIDGETS} backTo="/history" />} />
         <Route path="*" element={<Home />} />
       </Routes>
-      <footer className="hw-footer">
-        <div className="container container--wide">
-          <div className="muted">© Harvard‑Westlake · Demo UI</div>
-        </div>
-      </footer>
+      {!hideChrome ? (
+        <footer className="hw-footer">
+          <div className="container container--wide">
+            <div className="muted">© Harvard‑Westlake · Demo UI</div>
+          </div>
+        </footer>
+      ) : null}
     </>
   )
 }

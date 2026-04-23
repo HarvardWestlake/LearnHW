@@ -8,6 +8,11 @@ const HTCS_LESSONS = [
   { slug: 'htcs-unit-6-day-5', title: 'Unit 6 Day 5', subtitle: 'Lightning Networks' },
 ]
 
+const OPEN_OVERRIDES: Partial<Record<string, string>> = {
+  'htcs-unit-6-day-4': '/code/htcs-lessons/day4-react',
+  'htcs-unit-6-day-5': '/code/htcs-lessons/day5-react',
+}
+
 export default function HtcsLessons() {
   return (
     <main className="page">
@@ -22,6 +27,7 @@ export default function HtcsLessons() {
           {HTCS_LESSONS.map(lesson => {
             const src = HTCS_LESSON_WIDGETS[lesson.slug].src
             const filename = src.split('/').pop()!
+            const openHref = OPEN_OVERRIDES[lesson.slug] || src
             return (
               <div key={lesson.slug} className="widget-card" style={{ display: 'flex', flexDirection: 'column' }}>
                 <div className="title-row">
@@ -31,7 +37,7 @@ export default function HtcsLessons() {
                 <div style={{ display: 'flex', gap: '.5rem', marginTop: 'auto' }}>
                   <a
                     className="button"
-                    href={src}
+                    href={openHref}
                     target="_blank"
                     rel="noreferrer"
                     style={{ flex: 1, textAlign: 'center' }}

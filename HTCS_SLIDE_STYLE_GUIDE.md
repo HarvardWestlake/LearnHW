@@ -18,7 +18,7 @@ Start new decks from [htcs-deck-template.html](/Users/jlopez/Library/CloudStorag
 
 ### Type system
 - `Eyebrow`: uppercase scene-setting label
-- `Title`: main slide headline
+- `Title`: main slide headline, left-aligned by default
 - `Subtitle`: italic support line under a title
 - `Body`: primary prose block
 - `Mono`: inline technical token, filename, hash, key, or code term
@@ -86,6 +86,9 @@ function ExampleSlide() {
   );
 }
 ```
+
+Alignment rule:
+- `Title` is left-aligned by default. Only center a title when the slide concept specifically calls for a centered composition, and do that explicitly with `style={{ textAlign: 'center' }}`.
 
 ## Component Catalog
 ### `Callout`

@@ -103,6 +103,7 @@
             letterSpacing: '-0.015em',
             color: color || COLORS.ink,
             margin: 0,
+            textAlign: 'left',
             textWrap: 'balance',
             ...style,
           }}
