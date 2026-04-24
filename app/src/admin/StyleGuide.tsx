@@ -3,6 +3,23 @@ import { OverviewPage, OverviewGroup, OverviewSection, OverviewConnector } from 
 import { WidgetShell, OperationField, MetricsDisplay } from '../components/widget'
 import { IconCpu, IconMemory, IconBinary, IconInbox, IconSearch } from '../components/icons'
 
+const demoFrame = {
+  border: '1px dashed var(--hw-secondary-khaki)',
+  borderRadius: 'var(--hw-radius-sm)',
+  padding: '.5rem',
+  background: 'var(--hw-secondary-khaki-20)',
+}
+
+function SectionGroup({ label }: { label: string }) {
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginTop: '3rem', marginBottom: '-.25rem' }}>
+      <span style={{ width: 20, height: 2, background: 'var(--hw-brand-red)', flexShrink: 0, display: 'block' }} />
+      <span style={{ fontSize: '.7rem', fontWeight: 700, letterSpacing: '.1em', textTransform: 'uppercase', color: 'var(--hw-brand-red)', whiteSpace: 'nowrap' }}>{label}</span>
+      <span style={{ flex: 1, height: 1, background: 'var(--hw-border)', display: 'block' }} />
+    </div>
+  )
+}
+
 export default function StyleGuide() {
   const [activeTab, setActiveTab] = useState(0)
   const [openAccordion, setOpenAccordion] = useState<number | null>(0)
@@ -40,229 +57,53 @@ export default function StyleGuide() {
     <main className="page styleguide-page">
       <div className="container styleguide">
         <h1 className="h2">Style Guide</h1>
+        <p className="muted" style={{ marginTop: '.25rem' }}>
+          HW brand tokens, UI components, and page templates used across the class resources app.
+        </p>
 
-        {/* Widget Layout */}
+        <SectionGroup label="Foundations" />
+
+        {/* Color Tokens */}
         <section className="panel">
-          <h2 className="h5 eyebrow">Widget Layout</h2>
+          <h2 className="h5 eyebrow">Color Tokens</h2>
           <p className="muted">
-            Two-column interactive widget shell: a fixed-width <code>.sidebar</code> on the left for controls,
-            and a fluid <code>.chartarea</code> on the right for the visualization. Wrap both in{' '}
-            <code>.controls-container</code>. On narrow screens they stack vertically.
+            Approved brand palette only. Primary colors stay solid; every secondary color ships in 100%, 50%, and 20% opacity tokens.
           </p>
-          <div className="controls-container" style={{ marginTop: '1rem', pointerEvents: 'none', opacity: 0.85 }}>
-            <aside className="sidebar">
-              <div className="panel">
-                <h3 className="h5 eyebrow" style={{ marginBottom: '.5rem' }}>Controls</h3>
-                <div className="stack-sm">
-                  <div>
-                    <label className="label" htmlFor="sg-input">Label</label>
-                    <input id="sg-input" className="input" placeholder="Input field" readOnly />
-                  </div>
-                  <button className="btn btn--block">Primary action</button>
-                  <div className="divider" />
-                  <button className="btn btn--outline btn--block">Secondary action</button>
-                  <div>
-                    <label className="label" htmlFor="sg-range">Speed</label>
-                    <input id="sg-range" type="range" className="range" defaultValue={50} />
-                  </div>
-                </div>
-              </div>
-              <div className="panel">
-                <h3 className="h5 eyebrow" style={{ marginBottom: '.5rem' }}>Metrics</h3>
-                <div className="metrics-grid">
-                  <div className="metric"><span className="metric__label">Size</span><span className="metric__value">12</span></div>
-                  <div className="metric"><span className="metric__label">Capacity</span><span className="metric__value">20</span></div>
-                </div>
-              </div>
-              <div className="panel">
-                <h3 className="h5 eyebrow" style={{ marginBottom: '.5rem' }}>Legend</h3>
-                <div className="legend-key">
-                  <div className="legend-key__item"><span className="legend-key__dot" style={{ background: 'var(--hw-red)' }} />Active</div>
-                  <div className="legend-key__item"><span className="legend-key__dot" style={{ background: 'var(--hw-gold)' }} />Modified</div>
-                  <div className="legend-key__item"><span className="legend-key__dot" style={{ background: 'var(--hw-secondary-khaki-50)' }} />Free</div>
-                </div>
-              </div>
-            </aside>
-            <div className="chartarea" style={{ minHeight: 160, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <p className="muted" style={{ textAlign: 'center' }}>Visualization canvas / grid goes here</p>
-            </div>
-          </div>
-          <div className="stack-sm" style={{ marginTop: '1rem', fontSize: '.9rem' }}>
-            <p><code>.controls-container</code> — flex row, wraps on mobile.</p>
-            <p><code>.sidebar</code> — fixed 320 px, stacks its children with gap.</p>
-            <p><code>.chartarea</code> — grows to fill remaining width; white card with shadow.</p>
-          </div>
-        </section>
-
-        {/* Widget Components */}
-        <section className="panel">
-          <h2 className="h5 eyebrow">Widget Components</h2>
-          <p className="muted">
-            React components for building interactive widget pages. Use{' '}
-            <code>WidgetShell</code> as the outer layout, <code>OperationField</code> for every
-            labeled input + button row, and <code>MetricsDisplay</code> for at-a-glance stat grids.
-            These match the visual structure of the quadratic-transformations-explorer widget
-            (controls left · visualization center · info right).
-          </p>
-
-          <h3 className="h6" style={{ marginTop: '1rem' }}>Live example</h3>
-          <div style={{ pointerEvents: 'none', opacity: 0.9 }}>
-            <WidgetShell
-              controls={
-                <div className="panel" style={{ display: 'flex', flexDirection: 'column', gap: '.75rem' }}>
-                  <h3 className="h5 eyebrow" style={{ margin: 0 }}>Controls</h3>
-                  <OperationField htmlFor="sg-wc-cap" label="Initial capacity" buttonLabel="Create" onAction={() => {}}>
-                    <input id="sg-wc-cap" type="number" className="input" style={{ flex: 1, minWidth: 0 }} defaultValue={10} readOnly />
-                  </OperationField>
-                  <OperationField htmlFor="sg-wc-add" label="add(value)" buttonLabel="add()" onAction={() => {}}>
-                    <input id="sg-wc-add" type="text" className="input" style={{ flex: 1, minWidth: 0 }} placeholder="42 or 'cat'" readOnly />
-                  </OperationField>
-                  <OperationField htmlFor="sg-wc-rem" label="remove(index)" buttonLabel="remove()" onAction={() => {}} hint="Shifts elements left – O(n)">
-                    <input id="sg-wc-rem" type="number" className="input" style={{ flex: 1, minWidth: 0 }} placeholder="index" readOnly />
-                  </OperationField>
-                  <button className="btn btn--outline btn--block">toString()</button>
-                  <div>
-                    <label className="label" htmlFor="sg-wc-speed">Speed: <strong>2x</strong></label>
-                    <input id="sg-wc-speed" type="range" className="range" defaultValue={50} readOnly />
-                  </div>
-                </div>
-              }
-              info={
-                <>
-                  <div className="panel" style={{ display: 'flex', flexDirection: 'column', gap: '.75rem' }}>
-                    <h3 className="h5 eyebrow" style={{ margin: 0 }}>Snapshot</h3>
-                    <span className="badge badge--accent" style={{ alignSelf: 'flex-start' }}>Ready for operations</span>
-                    <MetricsDisplay
-                      metrics={[
-                        { label: 'Size', value: 3 },
-                        { label: 'Capacity', value: 10 },
-                        { label: 'Growth', value: '×2' },
-                      ]}
-                    />
-                  </div>
-                  <div className="panel">
-                    <h3 className="h5 eyebrow" style={{ marginBottom: '.5rem' }}>Legend</h3>
-                    <div className="legend-key" style={{ flexDirection: 'column', gap: '.5rem' }}>
-                      <div className="legend-key__item"><span className="legend-key__dot" style={{ background: 'var(--hw-red)' }} />Filled slot</div>
-                      <div className="legend-key__item"><span className="legend-key__dot" style={{ background: 'var(--hw-brand-red-20)', border: '2px solid var(--hw-red)' }} />Allocated</div>
-                      <div className="legend-key__item"><span className="legend-key__dot" style={{ border: '2px solid var(--hw-gold)' }} />Current cell</div>
+          <div className="stack-md" style={{ marginTop: '1rem' }}>
+            <div>
+              <h3 className="h6">Primary</h3>
+              <div className="token-grid" style={{ marginTop: '.75rem' }}>
+                {primaryTokens.map(t => (
+                  <div className="token-swatch" key={t.name}>
+                    <div className="token-swatch__color" style={{ background: t.bg, display: 'flex', alignItems: 'flex-end', padding: '4px 6px' }}>
+                      <span style={{ fontSize: '.6rem', fontWeight: 700, color: t.light ? 'white' : 'var(--hw-brand-black)', fontFamily: 'monospace' }}>{t.value}</span>
+                    </div>
+                    <div className="token-swatch__label">
+                      {t.name.replace('--', '')}
+                      <span className="token-swatch__hex">{t.value}</span>
+                      <span className="token-swatch__meta">{t.cmyk}</span>
                     </div>
                   </div>
-                </>
-              }
-            >
-              <div className="panel" style={{ minHeight: 140, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                <p className="muted" style={{ textAlign: 'center' }}>Visualization goes here<br />(memory grid, canvas, chart…)</p>
+                ))}
               </div>
-            </WidgetShell>
-          </div>
-
-          <h3 className="h6" style={{ marginTop: '1.25rem' }}>Component API</h3>
-          <table className="table table--sm">
-            <thead>
-              <tr><th>Component</th><th>Role</th><th>Key props</th></tr>
-            </thead>
-            <tbody>
-              <tr>
-                <td><code>WidgetShell</code></td>
-                <td>Two- or three-column grid layout. Renders <code>.widget-shell--two-col</code> (no <code>info</code>) or <code>.widget-shell--three-col</code>.</td>
-                <td className="muted"><code>controls</code> (left), <code>children</code> (center), <code>info?</code> (right), <code>className?</code></td>
-              </tr>
-              <tr>
-                <td><code>OperationField</code></td>
-                <td>Labeled row: label above, input(s) + action button in a flex row. Accepts any input(s) as children.</td>
-                <td className="muted"><code>htmlFor</code>, <code>label</code>, <code>buttonLabel</code>, <code>onAction</code>, <code>disabled?</code>, <code>hint?</code></td>
-              </tr>
-              <tr>
-                <td><code>MetricsDisplay</code></td>
-                <td>Compact stat grid. Uses <code>.metrics-grid</code>; pass <code>className</code> to override column count.</td>
-                <td className="muted"><code>metrics: &#123; label, value, note? &#125;[]</code>, <code>className?</code></td>
-              </tr>
-            </tbody>
-          </table>
-
-          <h3 className="h6" style={{ marginTop: '1.25rem' }}>Layout classes</h3>
-          <div className="stack-sm" style={{ fontSize: '.9rem' }}>
-            <p><code>.widget-shell--two-col</code> — 300 px sidebar + fluid main. Collapses to 1-col at 720 px.</p>
-            <p><code>.widget-shell--three-col</code> — 300 px controls + fluid main + 280 px info. At 1100 px info drops below main (info spans left, main spans both rows). At 720 px all three stack.</p>
-            <p><code>.op-field__row</code> / <code>.op-field__btn</code> — flex row inside each <code>OperationField</code>; button has <code>min-width: 100px</code> for visual consistency.</p>
-          </div>
-        </section>
-
-        {/* Homepage Layout (Header, Sections, Modules) */}
-        <section className="panel">
-          <h2 className="h5 eyebrow">Homepage Layout</h2>
-          <p className="muted">Demonstrates the homepage header, section headings, and module grid using shared classes.</p>
-          <div className="widgets-page">
-            <h1 className="h1">Class Resources (Demo)</h1>
-
-            <h2>Subjects</h2>
-            <div className="widgets-grid">
-              <a className="widget-card" href="#">
-                <div className="title-row">
-                  <h3>Math</h3>
-                </div>
-                <p>Interactive math learning widgets and explorations.</p>
-                <span className="button">Open</span>
-              </a>
-              <a className="widget-card" href="#">
-                <div className="title-row">
-                  <h3>Code</h3>
-                </div>
-                <p>Programming visualizations, data structures, and crypto demos.</p>
-                <span className="button">Open</span>
-              </a>
-              <a className="widget-card" href="#">
-                <div className="title-row">
-                  <h3>Economics</h3>
-                </div>
-                <p>Micro and macro interactive widgets.</p>
-                <span className="button">Open</span>
-              </a>
             </div>
-
-            <h2>Admin</h2>
-            <div className="widgets-grid">
-              <a className="widget-card" href="#">
-                <div className="title-row">
-                  <h3>Style Guide</h3>
-                </div>
-                <p>UI components, tokens, and patterns used across the app.</p>
-                <span className="button">Open</span>
-              </a>
-            </div>
-          </div>
-        </section>
-
-        {/* Subject Page Layout */}
-        <section className="panel">
-          <h2 className="h5 eyebrow">Subject Page Layout</h2>
-          <p className="muted">Demonstrates the standard subject page pattern: centered h1 title, subtitle, and one or more sectioned panels with eyebrow headers and widget grids.</p>
-          <div className="widgets-page" style={{ marginTop: '1rem' }}>
-            <h1 className="h1">Subject Name (Demo)</h1>
-            <p className="muted" style={{ marginTop: '.25rem' }}>
-              Short description of what this subject covers.
-            </p>
-            <section className="panel" style={{ marginTop: '2rem' }}>
-              <h2 className="h5 eyebrow">INTERACTIVE TOOLS</h2>
-              <p className="muted">Brief description of what this group of widgets covers.</p>
-              <div className="widgets-grid" style={{ marginTop: '1.25rem' }}>
-                <a className="widget-card" href="#">
-                  <div className="title-row">
-                    <h3>Widget Title</h3>
+            <div>
+              <h3 className="h6">Secondary</h3>
+              <div className="token-grid" style={{ marginTop: '.75rem' }}>
+                {secondaryTokens.map(t => (
+                  <div className="token-swatch" key={t.name}>
+                    <div className="token-swatch__color" style={{ background: t.bg, display: 'flex', alignItems: 'flex-end', padding: '4px 6px' }}>
+                      <span style={{ fontSize: '.6rem', fontWeight: 700, color: t.light ? 'white' : 'var(--hw-brand-black)', fontFamily: 'monospace' }}>{t.value}</span>
+                    </div>
+                    <div className="token-swatch__label">
+                      {t.name.replace('--', '')}
+                      <span className="token-swatch__hex">{t.value}</span>
+                      <span className="token-swatch__meta">{t.cmyk}</span>
+                    </div>
                   </div>
-                  <p>Short description of what this widget does.</p>
-                  <span className="button">Open</span>
-                </a>
-                <a className="widget-card" href="#">
-                  <div className="title-row">
-                    <h3>Another Widget</h3>
-                  </div>
-                  <p>Short description of what this widget does.</p>
-                  <span className="button">Open</span>
-                </a>
+                ))}
               </div>
-            </section>
+            </div>
           </div>
         </section>
 
@@ -449,50 +290,6 @@ export default function StyleGuide() {
           </table>
         </section>
 
-        {/* Color Tokens */}
-        <section className="panel">
-          <h2 className="h5 eyebrow">Color Tokens</h2>
-          <p className="muted">
-            Approved brand palette only. Primary colors stay solid; every secondary color ships in 100%, 50%, and 20% opacity tokens.
-          </p>
-          <div className="stack-md" style={{ marginTop: '1rem' }}>
-            <div>
-              <h3 className="h6">Primary</h3>
-              <div className="token-grid" style={{ marginTop: '.75rem' }}>
-                {primaryTokens.map(t => (
-                  <div className="token-swatch" key={t.name}>
-                    <div className="token-swatch__color" style={{ background: t.bg, display: 'flex', alignItems: 'flex-end', padding: '4px 6px' }}>
-                      <span style={{ fontSize: '.6rem', fontWeight: 700, color: t.light ? 'white' : 'var(--hw-brand-black)', fontFamily: 'monospace' }}>{t.value}</span>
-                    </div>
-                    <div className="token-swatch__label">
-                      {t.name.replace('--', '')}
-                      <span className="token-swatch__hex">{t.value}</span>
-                      <span className="token-swatch__meta">{t.cmyk}</span>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-            <div>
-              <h3 className="h6">Secondary</h3>
-              <div className="token-grid" style={{ marginTop: '.75rem' }}>
-                {secondaryTokens.map(t => (
-                  <div className="token-swatch" key={t.name}>
-                    <div className="token-swatch__color" style={{ background: t.bg, display: 'flex', alignItems: 'flex-end', padding: '4px 6px' }}>
-                      <span style={{ fontSize: '.6rem', fontWeight: 700, color: t.light ? 'white' : 'var(--hw-brand-black)', fontFamily: 'monospace' }}>{t.value}</span>
-                    </div>
-                    <div className="token-swatch__label">
-                      {t.name.replace('--', '')}
-                      <span className="token-swatch__hex">{t.value}</span>
-                      <span className="token-swatch__meta">{t.cmyk}</span>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-        </section>
-
         {/* Code Blocks */}
         <section className="panel">
           <h2 className="h5 eyebrow">Code Blocks</h2>
@@ -520,47 +317,7 @@ export default function StyleGuide() {
           </div>
         </section>
 
-        {/* Tabs */}
-        <section className="panel">
-          <h2 className="h5 eyebrow">Tabs</h2>
-          <p className="muted">Horizontal tab strip for switching between views within a panel.</p>
-          <div style={{ marginTop: '1rem' }}>
-            <div className="tabs">
-              {['Overview', 'Code', 'Output'].map((label, i) => (
-                <button key={label} className={`tab${activeTab === i ? ' active' : ''}`} onClick={() => setActiveTab(i)}>{label}</button>
-              ))}
-            </div>
-            <div className={`tab-panel${activeTab === 0 ? ' active' : ''}`}>
-              <p className="muted">This is the <strong>Overview</strong> tab. Describe the concept or module here.</p>
-            </div>
-            <div className={`tab-panel${activeTab === 1 ? ' active' : ''}`}>
-              <pre className="code-block"><span className="code-block__lang">Java</span>{`// Example code tab\nint x = 42;`}</pre>
-            </div>
-            <div className={`tab-panel${activeTab === 2 ? ' active' : ''}`}>
-              <p className="muted">Program output or results appear here.</p>
-            </div>
-          </div>
-        </section>
-
-        {/* Tooltips */}
-        <section className="panel">
-          <h2 className="h5 eyebrow">Tooltips</h2>
-          <p className="muted">Hover any element wrapped in <code>.tooltip-wrap</code> to reveal the label.</p>
-          <div className="stack-sm" style={{ marginTop: '1rem', display: 'flex', gap: '1.5rem', flexWrap: 'wrap', alignItems: 'center' }}>
-            <span className="tooltip-wrap">
-              <button className="btn btn--sm">Hover me</button>
-              <span className="tooltip-tip">Primary action</span>
-            </span>
-            <span className="tooltip-wrap">
-              <button className="btn btn--outline btn--sm">What does this do?</button>
-              <span className="tooltip-tip">Cancels the operation</span>
-            </span>
-            <span className="tooltip-wrap">
-              <span className="badge badge--accent">NEW</span>
-              <span className="tooltip-tip">Added in v2.4</span>
-            </span>
-          </div>
-        </section>
+        <SectionGroup label="Feedback & Status" />
 
         {/* Toasts */}
         <section className="panel">
@@ -590,6 +347,26 @@ export default function StyleGuide() {
           </div>
         </section>
 
+        {/* Tooltips */}
+        <section className="panel">
+          <h2 className="h5 eyebrow">Tooltips</h2>
+          <p className="muted">Hover any element wrapped in <code>.tooltip-wrap</code> to reveal the label.</p>
+          <div className="stack-sm" style={{ marginTop: '1rem', display: 'flex', gap: '1.5rem', flexWrap: 'wrap', alignItems: 'center' }}>
+            <span className="tooltip-wrap">
+              <button className="btn btn--sm">Hover me</button>
+              <span className="tooltip-tip">Primary action</span>
+            </span>
+            <span className="tooltip-wrap">
+              <button className="btn btn--outline btn--sm">What does this do?</button>
+              <span className="tooltip-tip">Cancels the operation</span>
+            </span>
+            <span className="tooltip-wrap">
+              <span className="badge badge--accent">NEW</span>
+              <span className="tooltip-tip">Added in v2.4</span>
+            </span>
+          </div>
+        </section>
+
         {/* Progress */}
         <section className="panel">
           <h2 className="h5 eyebrow">Progress Bars</h2>
@@ -608,6 +385,95 @@ export default function StyleGuide() {
               <div className="progress progress--lg"><div className="progress__bar progress__bar--gold" style={{ width: '40%' }} /></div>
             </div>
             <div className="progress progress--sm"><div className="progress__bar" style={{ width: '20%' }} /></div>
+          </div>
+        </section>
+
+        {/* Skeleton Loader */}
+        <section className="panel">
+          <h2 className="h5 eyebrow">Skeleton Loader</h2>
+          <p className="muted">Animated placeholder while content loads.</p>
+          <div className="stack-md" style={{ marginTop: '1rem' }}>
+            <div className="stack-sm">
+              <span className="skeleton skeleton--heading" style={{ width: '45%' }} />
+              <span className="skeleton skeleton--text" style={{ width: '90%' }} />
+              <span className="skeleton skeleton--text" style={{ width: '75%' }} />
+              <span className="skeleton skeleton--text" style={{ width: '60%' }} />
+            </div>
+            <div className="grid grid-3@md gap-md">
+              <span className="skeleton skeleton--rect" />
+              <span className="skeleton skeleton--rect" />
+              <span className="skeleton skeleton--rect" />
+            </div>
+            <div style={{ display: 'flex', gap: '.75rem', alignItems: 'center' }}>
+              <span className="skeleton skeleton--circle" style={{ width: 40, height: 40, flexShrink: 0 }} />
+              <div className="stack-xs" style={{ flex: 1 }}>
+                <span className="skeleton skeleton--text" style={{ width: '50%' }} />
+                <span className="skeleton skeleton--text" style={{ width: '80%' }} />
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* Empty State */}
+        <section className="panel">
+          <h2 className="h5 eyebrow">Empty State</h2>
+          <p className="muted">Placeholder for when a list or section has no content yet.</p>
+          <div className="grid grid-2@md gap-md" style={{ marginTop: '1rem' }}>
+            <div className="empty-state">
+              <div className="empty-state__icon"><IconInbox size={40} /></div>
+              <p className="empty-state__title">No widgets yet</p>
+              <p className="empty-state__body">This subject doesn't have any interactive tools yet. Check back soon.</p>
+              <button className="btn btn--sm">Browse all widgets</button>
+            </div>
+            <div className="empty-state">
+              <div className="empty-state__icon"><IconSearch size={40} /></div>
+              <p className="empty-state__title">No results</p>
+              <p className="empty-state__body">Try adjusting your search or clearing the filters.</p>
+              <button className="btn btn--outline btn--sm">Clear filters</button>
+            </div>
+          </div>
+        </section>
+
+        <SectionGroup label="Navigation & Controls" />
+
+        {/* Breadcrumb */}
+        <section className="panel">
+          <h2 className="h5 eyebrow">Breadcrumb</h2>
+          <p className="muted">Navigation trail for deep pages.</p>
+          <div className="stack-sm" style={{ marginTop: '1rem' }}>
+            <nav className="breadcrumb" aria-label="Breadcrumb">
+              <div className="breadcrumb__item"><a className="breadcrumb__link" href="#">Home</a><span className="breadcrumb__sep">/</span></div>
+              <div className="breadcrumb__item"><a className="breadcrumb__link" href="#">Code</a><span className="breadcrumb__sep">/</span></div>
+              <div className="breadcrumb__item"><span className="breadcrumb__current">SHA-1 Explorer</span></div>
+            </nav>
+            <nav className="breadcrumb" aria-label="Breadcrumb">
+              <div className="breadcrumb__item"><a className="breadcrumb__link" href="#">Home</a><span className="breadcrumb__sep">/</span></div>
+              <div className="breadcrumb__item"><a className="breadcrumb__link" href="#">Math</a><span className="breadcrumb__sep">/</span></div>
+              <div className="breadcrumb__item"><a className="breadcrumb__link" href="#">Calculus</a><span className="breadcrumb__sep">/</span></div>
+              <div className="breadcrumb__item"><span className="breadcrumb__current">Derivatives</span></div>
+            </nav>
+          </div>
+        </section>
+
+        {/* Tabs */}
+        <section className="panel">
+          <h2 className="h5 eyebrow">Tabs</h2>
+          <p className="muted">Horizontal tab strip for switching between views within a panel.</p>
+          <div style={{ marginTop: '1rem' }}>
+            <div className="tabs">
+              {['Overview', 'Code', 'Output'].map((label, i) => (
+                <button key={label} className={`tab${activeTab === i ? ' active' : ''}`} onClick={() => setActiveTab(i)}>{label}</button>
+              ))}
+            </div>
+            <div className={`tab-panel${activeTab === 0 ? ' active' : ''}`}>
+              <p className="muted">This is the <strong>Overview</strong> tab. Describe the concept or module here.</p>
+            </div>
+            <div className={`tab-panel${activeTab === 1 ? ' active' : ''}`}>
+              <pre className="code-block"><span className="code-block__lang">Java</span>{`// Example code tab\nint x = 42;`}</pre>
+            </div>
+            <div className={`tab-panel${activeTab === 2 ? ' active' : ''}`}>
+              <p className="muted">Program output or results appear here.</p>
+            </div>
           </div>
         </section>
 
@@ -655,6 +521,23 @@ export default function StyleGuide() {
             </div>
           </div>
         </section>
+
+        {/* Chips + Divider */}
+        <section className="panel">
+          <h2 className="h5 eyebrow">Chips & Labeled Divider</h2>
+          <p className="muted">Interactive removable tags and a divider with an inline label.</p>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '.5rem', marginTop: '1rem' }}>
+            <span className="chip">Sorting</span>
+            <span className="chip chip--active">Cryptography <button className="chip__remove" aria-label="Remove">✕</button></span>
+            <span className="chip">Data Structures</span>
+            <span className="chip chip--gold">SHA-1 <button className="chip__remove" aria-label="Remove">✕</button></span>
+            <span className="chip">Recursion</span>
+          </div>
+          <div className="divider--labeled" style={{ marginTop: '1.25rem' }}>OR</div>
+          <div className="divider--labeled" style={{ marginTop: '.75rem' }}>SECTION BREAK</div>
+        </section>
+
+        <SectionGroup label="Data Display" />
 
         {/* Selectable Cards */}
         <section className="panel">
@@ -748,86 +631,6 @@ export default function StyleGuide() {
           </div>
         </section>
 
-        {/* Chips + Divider */}
-        <section className="panel">
-          <h2 className="h5 eyebrow">Chips & Labeled Divider</h2>
-          <p className="muted">Interactive removable tags and a divider with an inline label.</p>
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '.5rem', marginTop: '1rem' }}>
-            <span className="chip">Sorting</span>
-            <span className="chip chip--active">Cryptography <button className="chip__remove" aria-label="Remove">✕</button></span>
-            <span className="chip">Data Structures</span>
-            <span className="chip chip--gold">SHA-1 <button className="chip__remove" aria-label="Remove">✕</button></span>
-            <span className="chip">Recursion</span>
-          </div>
-          <div className="divider--labeled" style={{ marginTop: '1.25rem' }}>OR</div>
-          <div className="divider--labeled" style={{ marginTop: '.75rem' }}>SECTION BREAK</div>
-        </section>
-
-        {/* Breadcrumb */}
-        <section className="panel">
-          <h2 className="h5 eyebrow">Breadcrumb</h2>
-          <p className="muted">Navigation trail for deep pages.</p>
-          <div className="stack-sm" style={{ marginTop: '1rem' }}>
-            <nav className="breadcrumb" aria-label="Breadcrumb">
-              <div className="breadcrumb__item"><a className="breadcrumb__link" href="#">Home</a><span className="breadcrumb__sep">/</span></div>
-              <div className="breadcrumb__item"><a className="breadcrumb__link" href="#">Code</a><span className="breadcrumb__sep">/</span></div>
-              <div className="breadcrumb__item"><span className="breadcrumb__current">SHA-1 Explorer</span></div>
-            </nav>
-            <nav className="breadcrumb" aria-label="Breadcrumb">
-              <div className="breadcrumb__item"><a className="breadcrumb__link" href="#">Home</a><span className="breadcrumb__sep">/</span></div>
-              <div className="breadcrumb__item"><a className="breadcrumb__link" href="#">Math</a><span className="breadcrumb__sep">/</span></div>
-              <div className="breadcrumb__item"><a className="breadcrumb__link" href="#">Calculus</a><span className="breadcrumb__sep">/</span></div>
-              <div className="breadcrumb__item"><span className="breadcrumb__current">Derivatives</span></div>
-            </nav>
-          </div>
-        </section>
-
-        {/* Skeleton Loader */}
-        <section className="panel">
-          <h2 className="h5 eyebrow">Skeleton Loader</h2>
-          <p className="muted">Animated placeholder while content loads.</p>
-          <div className="stack-md" style={{ marginTop: '1rem' }}>
-            <div className="stack-sm">
-              <span className="skeleton skeleton--heading" style={{ width: '45%' }} />
-              <span className="skeleton skeleton--text" style={{ width: '90%' }} />
-              <span className="skeleton skeleton--text" style={{ width: '75%' }} />
-              <span className="skeleton skeleton--text" style={{ width: '60%' }} />
-            </div>
-            <div className="grid grid-3@md gap-md">
-              <span className="skeleton skeleton--rect" />
-              <span className="skeleton skeleton--rect" />
-              <span className="skeleton skeleton--rect" />
-            </div>
-            <div style={{ display: 'flex', gap: '.75rem', alignItems: 'center' }}>
-              <span className="skeleton skeleton--circle" style={{ width: 40, height: 40, flexShrink: 0 }} />
-              <div className="stack-xs" style={{ flex: 1 }}>
-                <span className="skeleton skeleton--text" style={{ width: '50%' }} />
-                <span className="skeleton skeleton--text" style={{ width: '80%' }} />
-              </div>
-            </div>
-          </div>
-        </section>
-
-        {/* Empty State */}
-        <section className="panel">
-          <h2 className="h5 eyebrow">Empty State</h2>
-          <p className="muted">Placeholder for when a list or section has no content yet.</p>
-          <div className="grid grid-2@md gap-md" style={{ marginTop: '1rem' }}>
-            <div className="empty-state">
-              <div className="empty-state__icon"><IconInbox size={40} /></div>
-              <p className="empty-state__title">No widgets yet</p>
-              <p className="empty-state__body">This subject doesn't have any interactive tools yet. Check back soon.</p>
-              <button className="btn btn--sm">Browse all widgets</button>
-            </div>
-            <div className="empty-state">
-              <div className="empty-state__icon"><IconSearch size={40} /></div>
-              <p className="empty-state__title">No results</p>
-              <p className="empty-state__body">Try adjusting your search or clearing the filters.</p>
-              <button className="btn btn--outline btn--sm">Clear filters</button>
-            </div>
-          </div>
-        </section>
-
         {/* Canvas Card + Legend */}
         <section className="panel">
           <h2 className="h5 eyebrow">Canvas Card & Legend</h2>
@@ -850,107 +653,6 @@ export default function StyleGuide() {
           </div>
         </section>
 
-        {/* Overview Page Type */}
-        <section className="panel">
-          <h2 className="h5 eyebrow">Page type · Overview</h2>
-          <p className="muted">
-            Reusable template for subject-level introduction pages (e.g. <code>/code/overview</code>).
-            Composed of <code>OverviewPage</code> → <code>OverviewGroup</code> →
-            <code> OverviewSection</code> with an optional <code>OverviewConnector</code> between sections.
-            Each section accepts its own <code>hero</code> and <code>watermark</code> as React nodes, so
-            the per-topic graphics live inline in the page that renders them and are trivial to swap.
-          </p>
-
-          <h3 className="h6" style={{ marginTop: '1rem' }}>Minimal live example</h3>
-          <div style={{
-            border: '1px dashed var(--hw-secondary-khaki)',
-            borderRadius: 'var(--hw-radius-sm)',
-            padding: '.5rem',
-            background: 'var(--hw-secondary-khaki-20)',
-          }}>
-            <OverviewPage eyebrow="Example subject" title="Topic title" blurb="One-paragraph intro to the topic; frames why it matters and what the sections cover.">
-              <OverviewGroup label="Group A · shared concept" accent="gray">
-                <OverviewSection
-                  eyebrow="01"
-                  title="First idea"
-                  blurb="Short description; what this section introduces and how it sets up the next one."
-                  takeaways={[<>Key takeaway one.</>, <>Key takeaway two.</>]}
-                  links={[{ to: '#', label: 'Example lesson' }]}
-                  hero={
-                    <svg viewBox="0 0 200 120" role="img" aria-label="placeholder hero">
-                      <rect x="10" y="10" width="180" height="100" rx="0" fill="var(--hw-secondary-khaki-20)" stroke="var(--hw-border)" />
-                      <text x="100" y="66" textAnchor="middle" fontSize="14" fontWeight="700" fill="var(--hw-secondary-black)">hero goes here</text>
-                    </svg>
-                  }
-                  watermark={
-                    <svg viewBox="0 0 300 300" preserveAspectRatio="xMidYMid slice"><g fill="currentColor" fontFamily="monospace" fontSize="60" fontWeight="900"><text x="20" y="80">◆</text><text x="120" y="160">◆</text><text x="220" y="240">◆</text></g></svg>
-                  }
-                  accent="gray"
-                />
-                <OverviewConnector />
-                <OverviewSection
-                  eyebrow="02"
-                  title="Second idea"
-                  blurb="Follows from the first; this is where a connector often helps."
-                  hero={<svg viewBox="0 0 200 120" role="img"><circle cx="100" cy="60" r="36" fill="var(--hw-brand-red-20)" /><text x="100" y="66" textAnchor="middle" fontSize="13" fontWeight="700" fill="var(--hw-red)">hero slot</text></svg>}
-                  accent="gray"
-                />
-              </OverviewGroup>
-
-              <OverviewGroup label="Group B · sibling concept" accent="gold">
-                <OverviewSection
-                  eyebrow="03"
-                  title="Related idea"
-                  blurb="Sits alongside the previous group as a parallel concept; no connector needed."
-                  accent="gold"
-                  hero={<svg viewBox="0 0 200 120" role="img"><rect x="40" y="30" width="120" height="60" rx="0" fill="var(--hw-brand-gold-20)" /><text x="100" y="66" textAnchor="middle" fontSize="13" fontWeight="700" fill="var(--hw-warning)">hero slot</text></svg>}
-                />
-              </OverviewGroup>
-            </OverviewPage>
-          </div>
-
-          <h3 className="h6" style={{ marginTop: '1.25rem' }}>Component API</h3>
-          <table className="table table--sm">
-            <thead>
-              <tr><th>Component</th><th>Role</th><th>Key props</th></tr>
-            </thead>
-            <tbody>
-              <tr>
-                <td><code>OverviewPage</code></td>
-                <td>Shell — title, eyebrow, intro paragraph, optional back button.</td>
-                <td className="muted"><code>title</code>, <code>eyebrow</code>, <code>blurb</code>, <code>backTo</code>, <code>backLabel</code></td>
-              </tr>
-              <tr>
-                <td><code>OverviewGroup</code></td>
-                <td>Visually bands related sections together with a labeled accent bar.</td>
-                <td className="muted"><code>label</code>, <code>accent</code>: <code>gray</code> | <code>red</code> | <code>gold</code> | <code>black</code></td>
-              </tr>
-              <tr>
-                <td><code>OverviewSection</code></td>
-                <td>One two-column section: copy left, hero right, faded watermark behind.</td>
-                <td className="muted"><code>eyebrow</code>, <code>title</code>, <code>blurb</code>, <code>takeaways</code>, <code>links</code>, <code>hero</code>, <code>watermark</code>, <code>accent</code></td>
-              </tr>
-              <tr>
-                <td><code>OverviewConnector</code></td>
-                <td>Drop between sections where the narrative genuinely chains (not between siblings).</td>
-                <td className="muted"><code>accent</code> to tint the arrow</td>
-              </tr>
-            </tbody>
-          </table>
-
-          <h3 className="h6" style={{ marginTop: '1.25rem' }}>Routing convention</h3>
-          <p className="muted" style={{ marginTop: 0 }}>
-            Each subject's overview lives at <code>/&lt;subject&gt;/overview</code>. If that subject has no
-            overview yet, the route redirects back to <code>/#subject-&lt;key&gt;</code> and the Home page
-            scrolls to the matching card. Clicking a subject title on the Home page navigates to its
-            overview; clicking the rest of the card opens the subject's widget index as before. Overviews
-            aren't advertised as separate cards.
-          </p>
-          <p className="muted">
-            Live example: <a className="link" href="/code/overview">/code/overview</a> (Cryptography).
-          </p>
-        </section>
-
         {/* Memory Visualization — square grid tile pattern */}
         <section className="panel">
           <h2 className="h5 eyebrow">Memory Visualization — Grid Tile</h2>
@@ -963,19 +665,15 @@ export default function StyleGuide() {
 
           <div className="mem-viz-frame" data-label="Backing Array — Java Heap Memory" style={{ marginTop: '1.25rem' }}>
             <div className="mem-grid" style={{ '--mem-cols': '10' } as React.CSSProperties}>
-              {/* Unused */}
               {Array.from({ length: 3 }, (_, i) => (
                 <div key={`u${i}`} className="mem-cell" />
               ))}
-              {/* Allocated */}
               {Array.from({ length: 4 }, (_, i) => (
                 <div key={`a${i}`} className="mem-cell mem-cell--allocated" />
               ))}
-              {/* Filled */}
               {Array.from({ length: 2 }, (_, i) => (
                 <div key={`f${i}`} className="mem-cell mem-cell--filled">{i === 0 ? '42' : 'hi'}</div>
               ))}
-              {/* Current */}
               <div className="mem-cell mem-cell--allocated mem-cell--current">7</div>
             </div>
           </div>
@@ -1094,6 +792,335 @@ export default function StyleGuide() {
             <p><code>.bit-tile--highlight</code> — gold ring highlight (applied via hover or interaction state).</p>
             <p><code>.bit-byte-group</code> — white card grouping 8 bits into one byte with a subtle border.</p>
             <p><code>.bit-word-container</code> — responsive grid of byte groups; default 4-column for 32-bit words.</p>
+          </div>
+        </section>
+
+        <SectionGroup label="Page Templates" />
+
+        {/* Widget Layout */}
+        <section className="panel">
+          <h2 className="h5 eyebrow">Widget Layout</h2>
+          <p className="muted">
+            Two-column interactive widget shell: a fixed-width <code>.sidebar</code> on the left for controls,
+            and a fluid <code>.chartarea</code> on the right for the visualization. Wrap both in{' '}
+            <code>.controls-container</code>. On narrow screens they stack vertically.
+          </p>
+          <div style={{ ...demoFrame, marginTop: '1rem' }}>
+            <div className="controls-container" style={{ pointerEvents: 'none', opacity: 0.85 }}>
+              <aside className="sidebar">
+                <div className="panel">
+                  <h3 className="h5 eyebrow" style={{ marginBottom: '.5rem' }}>Controls</h3>
+                  <div className="stack-sm">
+                    <div>
+                      <label className="label" htmlFor="sg-input">Label</label>
+                      <input id="sg-input" className="input" placeholder="Input field" readOnly />
+                    </div>
+                    <button className="btn btn--block">Primary action</button>
+                    <div className="divider" />
+                    <button className="btn btn--outline btn--block">Secondary action</button>
+                    <div>
+                      <label className="label" htmlFor="sg-range">Speed</label>
+                      <input id="sg-range" type="range" className="range" defaultValue={50} />
+                    </div>
+                  </div>
+                </div>
+                <div className="panel">
+                  <h3 className="h5 eyebrow" style={{ marginBottom: '.5rem' }}>Metrics</h3>
+                  <div className="metrics-grid">
+                    <div className="metric"><span className="metric__label">Size</span><span className="metric__value">12</span></div>
+                    <div className="metric"><span className="metric__label">Capacity</span><span className="metric__value">20</span></div>
+                  </div>
+                </div>
+                <div className="panel">
+                  <h3 className="h5 eyebrow" style={{ marginBottom: '.5rem' }}>Legend</h3>
+                  <div className="legend-key">
+                    <div className="legend-key__item"><span className="legend-key__dot" style={{ background: 'var(--hw-red)' }} />Active</div>
+                    <div className="legend-key__item"><span className="legend-key__dot" style={{ background: 'var(--hw-gold)' }} />Modified</div>
+                    <div className="legend-key__item"><span className="legend-key__dot" style={{ background: 'var(--hw-secondary-khaki-50)' }} />Free</div>
+                  </div>
+                </div>
+              </aside>
+              <div className="chartarea" style={{ minHeight: 160, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <p className="muted" style={{ textAlign: 'center' }}>Visualization canvas / grid goes here</p>
+              </div>
+            </div>
+          </div>
+          <div className="stack-sm" style={{ marginTop: '1rem', fontSize: '.9rem' }}>
+            <p><code>.controls-container</code> — flex row, wraps on mobile.</p>
+            <p><code>.sidebar</code> — fixed 320 px, stacks its children with gap.</p>
+            <p><code>.chartarea</code> — grows to fill remaining width; white card with shadow.</p>
+          </div>
+        </section>
+
+        {/* Widget Components */}
+        <section className="panel">
+          <h2 className="h5 eyebrow">Widget Components</h2>
+          <p className="muted">
+            React components for building interactive widget pages. Use{' '}
+            <code>WidgetShell</code> as the outer layout, <code>OperationField</code> for every
+            labeled input + button row, and <code>MetricsDisplay</code> for at-a-glance stat grids.
+            These match the visual structure of the quadratic-transformations-explorer widget
+            (controls left · visualization center · info right).
+          </p>
+
+          <h3 className="h6" style={{ marginTop: '1rem' }}>Live example</h3>
+          <div style={{ ...demoFrame, pointerEvents: 'none', opacity: 0.9 }}>
+            <WidgetShell
+              controls={
+                <div className="panel" style={{ display: 'flex', flexDirection: 'column', gap: '.75rem' }}>
+                  <h3 className="h5 eyebrow" style={{ margin: 0 }}>Controls</h3>
+                  <OperationField htmlFor="sg-wc-cap" label="Initial capacity" buttonLabel="Create" onAction={() => {}}>
+                    <input id="sg-wc-cap" type="number" className="input" style={{ flex: 1, minWidth: 0 }} defaultValue={10} readOnly />
+                  </OperationField>
+                  <OperationField htmlFor="sg-wc-add" label="add(value)" buttonLabel="add()" onAction={() => {}}>
+                    <input id="sg-wc-add" type="text" className="input" style={{ flex: 1, minWidth: 0 }} placeholder="42 or 'cat'" readOnly />
+                  </OperationField>
+                  <OperationField htmlFor="sg-wc-rem" label="remove(index)" buttonLabel="remove()" onAction={() => {}} hint="Shifts elements left – O(n)">
+                    <input id="sg-wc-rem" type="number" className="input" style={{ flex: 1, minWidth: 0 }} placeholder="index" readOnly />
+                  </OperationField>
+                  <button className="btn btn--outline btn--block">toString()</button>
+                  <div>
+                    <label className="label" htmlFor="sg-wc-speed">Speed: <strong>2x</strong></label>
+                    <input id="sg-wc-speed" type="range" className="range" defaultValue={50} readOnly />
+                  </div>
+                </div>
+              }
+              info={
+                <>
+                  <div className="panel" style={{ display: 'flex', flexDirection: 'column', gap: '.75rem' }}>
+                    <h3 className="h5 eyebrow" style={{ margin: 0 }}>Snapshot</h3>
+                    <span className="badge badge--accent" style={{ alignSelf: 'flex-start' }}>Ready for operations</span>
+                    <MetricsDisplay
+                      metrics={[
+                        { label: 'Size', value: 3 },
+                        { label: 'Capacity', value: 10 },
+                        { label: 'Growth', value: '×2' },
+                      ]}
+                    />
+                  </div>
+                  <div className="panel">
+                    <h3 className="h5 eyebrow" style={{ marginBottom: '.5rem' }}>Legend</h3>
+                    <div className="legend-key" style={{ flexDirection: 'column', gap: '.5rem' }}>
+                      <div className="legend-key__item"><span className="legend-key__dot" style={{ background: 'var(--hw-red)' }} />Filled slot</div>
+                      <div className="legend-key__item"><span className="legend-key__dot" style={{ background: 'var(--hw-brand-red-20)', border: '2px solid var(--hw-red)' }} />Allocated</div>
+                      <div className="legend-key__item"><span className="legend-key__dot" style={{ border: '2px solid var(--hw-gold)' }} />Current cell</div>
+                    </div>
+                  </div>
+                </>
+              }
+            >
+              <div className="panel" style={{ minHeight: 140, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <p className="muted" style={{ textAlign: 'center' }}>Visualization goes here<br />(memory grid, canvas, chart…)</p>
+              </div>
+            </WidgetShell>
+          </div>
+
+          <h3 className="h6" style={{ marginTop: '1.25rem' }}>Component API</h3>
+          <table className="table table--sm">
+            <thead>
+              <tr><th>Component</th><th>Role</th><th>Key props</th></tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><code>WidgetShell</code></td>
+                <td>Two- or three-column grid layout. Renders <code>.widget-shell--two-col</code> (no <code>info</code>) or <code>.widget-shell--three-col</code>.</td>
+                <td className="muted"><code>controls</code> (left), <code>children</code> (center), <code>info?</code> (right), <code>className?</code></td>
+              </tr>
+              <tr>
+                <td><code>OperationField</code></td>
+                <td>Labeled row: label above, input(s) + action button in a flex row. Accepts any input(s) as children.</td>
+                <td className="muted"><code>htmlFor</code>, <code>label</code>, <code>buttonLabel</code>, <code>onAction</code>, <code>disabled?</code>, <code>hint?</code></td>
+              </tr>
+              <tr>
+                <td><code>MetricsDisplay</code></td>
+                <td>Compact stat grid. Uses <code>.metrics-grid</code>; pass <code>className</code> to override column count.</td>
+                <td className="muted"><code>metrics: &#123; label, value, note? &#125;[]</code>, <code>className?</code></td>
+              </tr>
+            </tbody>
+          </table>
+
+          <h3 className="h6" style={{ marginTop: '1.25rem' }}>Layout classes</h3>
+          <div className="stack-sm" style={{ fontSize: '.9rem' }}>
+            <p><code>.widget-shell--two-col</code> — 300 px sidebar + fluid main. Collapses to 1-col at 720 px.</p>
+            <p><code>.widget-shell--three-col</code> — 300 px controls + fluid main + 280 px info. At 1100 px info drops below main (info spans left, main spans both rows). At 720 px all three stack.</p>
+            <p><code>.op-field__row</code> / <code>.op-field__btn</code> — flex row inside each <code>OperationField</code>; button has <code>min-width: 100px</code> for visual consistency.</p>
+          </div>
+        </section>
+
+        {/* Overview Page Type */}
+        <section className="panel">
+          <h2 className="h5 eyebrow">Page type · Overview</h2>
+          <p className="muted">
+            Reusable template for subject-level introduction pages (e.g. <code>/code/overview</code>).
+            Composed of <code>OverviewPage</code> → <code>OverviewGroup</code> →
+            <code> OverviewSection</code> with an optional <code>OverviewConnector</code> between sections.
+            Each section accepts its own <code>hero</code> and <code>watermark</code> as React nodes, so
+            the per-topic graphics live inline in the page that renders them and are trivial to swap.
+          </p>
+
+          <h3 className="h6" style={{ marginTop: '1rem' }}>Live example</h3>
+          <div style={demoFrame}>
+            <OverviewPage eyebrow="Example subject" title="Topic title" blurb="One-paragraph intro to the topic; frames why it matters and what the sections cover.">
+              <OverviewGroup label="Group A · shared concept" accent="gray">
+                <OverviewSection
+                  eyebrow="01"
+                  title="First idea"
+                  blurb="Short description; what this section introduces and how it sets up the next one."
+                  takeaways={[<>Key takeaway one.</>, <>Key takeaway two.</>]}
+                  links={[{ to: '#', label: 'Example lesson' }]}
+                  hero={
+                    <svg viewBox="0 0 200 120" role="img" aria-label="placeholder hero">
+                      <rect x="10" y="10" width="180" height="100" rx="0" fill="var(--hw-secondary-khaki-20)" stroke="var(--hw-border)" />
+                      <text x="100" y="66" textAnchor="middle" fontSize="14" fontWeight="700" fill="var(--hw-secondary-black)">hero goes here</text>
+                    </svg>
+                  }
+                  watermark={
+                    <svg viewBox="0 0 300 300" preserveAspectRatio="xMidYMid slice"><g fill="currentColor" fontFamily="monospace" fontSize="60" fontWeight="900"><text x="20" y="80">◆</text><text x="120" y="160">◆</text><text x="220" y="240">◆</text></g></svg>
+                  }
+                  accent="gray"
+                />
+                <OverviewConnector />
+                <OverviewSection
+                  eyebrow="02"
+                  title="Second idea"
+                  blurb="Follows from the first; this is where a connector often helps."
+                  hero={<svg viewBox="0 0 200 120" role="img"><circle cx="100" cy="60" r="36" fill="var(--hw-brand-red-20)" /><text x="100" y="66" textAnchor="middle" fontSize="13" fontWeight="700" fill="var(--hw-red)">hero slot</text></svg>}
+                  accent="gray"
+                />
+              </OverviewGroup>
+
+              <OverviewGroup label="Group B · sibling concept" accent="gold">
+                <OverviewSection
+                  eyebrow="03"
+                  title="Related idea"
+                  blurb="Sits alongside the previous group as a parallel concept; no connector needed."
+                  accent="gold"
+                  hero={<svg viewBox="0 0 200 120" role="img"><rect x="40" y="30" width="120" height="60" rx="0" fill="var(--hw-brand-gold-20)" /><text x="100" y="66" textAnchor="middle" fontSize="13" fontWeight="700" fill="var(--hw-warning)">hero slot</text></svg>}
+                />
+              </OverviewGroup>
+            </OverviewPage>
+          </div>
+
+          <h3 className="h6" style={{ marginTop: '1.25rem' }}>Component API</h3>
+          <table className="table table--sm">
+            <thead>
+              <tr><th>Component</th><th>Role</th><th>Key props</th></tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><code>OverviewPage</code></td>
+                <td>Shell — title, eyebrow, intro paragraph, optional back button.</td>
+                <td className="muted"><code>title</code>, <code>eyebrow</code>, <code>blurb</code>, <code>backTo</code>, <code>backLabel</code></td>
+              </tr>
+              <tr>
+                <td><code>OverviewGroup</code></td>
+                <td>Visually bands related sections together with a labeled accent bar.</td>
+                <td className="muted"><code>label</code>, <code>accent</code>: <code>gray</code> | <code>red</code> | <code>gold</code> | <code>black</code></td>
+              </tr>
+              <tr>
+                <td><code>OverviewSection</code></td>
+                <td>One two-column section: copy left, hero right, faded watermark behind.</td>
+                <td className="muted"><code>eyebrow</code>, <code>title</code>, <code>blurb</code>, <code>takeaways</code>, <code>links</code>, <code>hero</code>, <code>watermark</code>, <code>accent</code></td>
+              </tr>
+              <tr>
+                <td><code>OverviewConnector</code></td>
+                <td>Drop between sections where the narrative genuinely chains (not between siblings).</td>
+                <td className="muted"><code>accent</code> to tint the arrow</td>
+              </tr>
+            </tbody>
+          </table>
+
+          <h3 className="h6" style={{ marginTop: '1.25rem' }}>Routing convention</h3>
+          <p className="muted" style={{ marginTop: 0 }}>
+            Each subject's overview lives at <code>/&lt;subject&gt;/overview</code>. If that subject has no
+            overview yet, the route redirects back to <code>/#subject-&lt;key&gt;</code> and the Home page
+            scrolls to the matching card. Clicking a subject title on the Home page navigates to its
+            overview; clicking the rest of the card opens the subject's widget index as before. Overviews
+            aren't advertised as separate cards.
+          </p>
+          <p className="muted">
+            Live example: <a className="link" href="/code/overview">/code/overview</a> (Cryptography).
+          </p>
+        </section>
+
+        {/* Homepage Layout (Header, Sections, Modules) */}
+        <section className="panel">
+          <h2 className="h5 eyebrow">Homepage Layout</h2>
+          <p className="muted">Demonstrates the homepage header, section headings, and module grid using shared classes.</p>
+          <div style={{ ...demoFrame, marginTop: '1rem', pointerEvents: 'none' }}>
+            <div className="widgets-page">
+              <h1 className="h1">Class Resources (Demo)</h1>
+
+              <h2>Subjects</h2>
+              <div className="widgets-grid">
+                <a className="widget-card" href="#">
+                  <div className="title-row">
+                    <h3>Math</h3>
+                  </div>
+                  <p>Interactive math learning widgets and explorations.</p>
+                  <span className="button">Open</span>
+                </a>
+                <a className="widget-card" href="#">
+                  <div className="title-row">
+                    <h3>Code</h3>
+                  </div>
+                  <p>Programming visualizations, data structures, and crypto demos.</p>
+                  <span className="button">Open</span>
+                </a>
+                <a className="widget-card" href="#">
+                  <div className="title-row">
+                    <h3>Economics</h3>
+                  </div>
+                  <p>Micro and macro interactive widgets.</p>
+                  <span className="button">Open</span>
+                </a>
+              </div>
+
+              <h2>Admin</h2>
+              <div className="widgets-grid">
+                <a className="widget-card" href="#">
+                  <div className="title-row">
+                    <h3>Style Guide</h3>
+                  </div>
+                  <p>UI components, tokens, and patterns used across the app.</p>
+                  <span className="button">Open</span>
+                </a>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* Subject Page Layout */}
+        <section className="panel">
+          <h2 className="h5 eyebrow">Subject Page Layout</h2>
+          <p className="muted">Demonstrates the standard subject page pattern: centered h1 title, subtitle, and one or more sectioned panels with eyebrow headers and widget grids.</p>
+          <div style={{ ...demoFrame, marginTop: '1rem', pointerEvents: 'none' }}>
+            <div className="widgets-page">
+              <h1 className="h1">Subject Name (Demo)</h1>
+              <p className="muted" style={{ marginTop: '.25rem' }}>
+                Short description of what this subject covers.
+              </p>
+              <section className="panel" style={{ marginTop: '2rem' }}>
+                <h2 className="h5 eyebrow">INTERACTIVE TOOLS</h2>
+                <p className="muted">Brief description of what this group of widgets covers.</p>
+                <div className="widgets-grid" style={{ marginTop: '1.25rem' }}>
+                  <a className="widget-card" href="#">
+                    <div className="title-row">
+                      <h3>Widget Title</h3>
+                    </div>
+                    <p>Short description of what this widget does.</p>
+                    <span className="button">Open</span>
+                  </a>
+                  <a className="widget-card" href="#">
+                    <div className="title-row">
+                      <h3>Another Widget</h3>
+                    </div>
+                    <p>Short description of what this widget does.</p>
+                    <span className="button">Open</span>
+                  </a>
+                </div>
+              </section>
+            </div>
           </div>
         </section>
 

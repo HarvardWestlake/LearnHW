@@ -44,7 +44,7 @@ export default function Code() {
             <span className="button">Open</span>
           </Link>
 
-          {['array-list', 'singly-linked-list', 'objects-static'].map(slug => {
+          {['singly-linked-list', 'objects-static'].map(slug => {
             const w = CODE_WIDGETS[slug as keyof typeof CODE_WIDGETS]
             return (
               <Link key={slug} className="widget-card" to={`/code/${slug}`}>

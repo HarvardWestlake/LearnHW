@@ -380,6 +380,7 @@ canvas {
 
 .al-speed-segments .segment {
   text-align: center;
+  width: 100%;
 }
 
 .al-state-badge { align-self: flex-start; }
@@ -3298,22 +3299,6 @@ h1, h2, h3, h4, h5, h6 { color: var(--hw-black); }
 .overview-connector--gold { color: var(--hw-gold); opacity: .75; }
 .overview-connector--black { color: var(--hw-black); opacity: .45; }
 
-/* --- Subject-title link affordance on the Home page --- */
-.widget-card__title--linked {
-  cursor: pointer;
-  display: inline;
-  position: relative;
-}
-.widget-card__title--linked:hover,
-.widget-card__title--linked:focus {
-  color: var(--hw-red);
-  text-decoration: underline;
-  outline: none;
-}
-.widget-card__title--linked:focus-visible {
-  box-shadow: var(--hw-focus-ring);
-  border-radius: 3px;
-}
 
 /* ================================================================
    NEW STYLE GUIDE COMPONENTS

@@ -1,5 +1,5 @@
 import { useEffect } from 'react'
-import { Link, useLocation, useNavigate } from 'react-router-dom'
+import { Link, useLocation } from 'react-router-dom'
 
 interface Subject {
   key: string
@@ -18,28 +18,10 @@ const SUBJECTS: Subject[] = [
 ]
 
 function SubjectCard({ subject }: { subject: Subject }) {
-  const navigate = useNavigate()
-  const overviewTo = `${subject.to}/overview`
-
-  const goOverview = (e: React.MouseEvent | React.KeyboardEvent) => {
-    e.preventDefault()
-    if ('stopPropagation' in e) e.stopPropagation()
-    navigate(overviewTo)
-  }
-
   return (
     <Link id={`subject-${subject.key}`} className="widget-card" to={subject.to}>
       <div className="title-row">
-        <h3
-          className="widget-card__title widget-card__title--linked"
-          role="link"
-          tabIndex={0}
-          onClick={goOverview}
-          onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') goOverview(e) }}
-          title={`Overview of ${subject.title}`}
-        >
-          {subject.title}
-        </h3>
+        <h3 className="widget-card__title">{subject.title}</h3>
       </div>
       <p>{subject.blurb}</p>
       <span className="button">Open</span>
