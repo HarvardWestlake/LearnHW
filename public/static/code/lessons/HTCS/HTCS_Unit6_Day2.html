@@ -731,7 +731,7 @@
         const { COLORS, TYPE_SCALE, FONTS } = window.HTCS_TOKENS;
         const { useState, useMemo, useEffect, useRef } = React;
         const { NetworkPersonSvg, ServerRackSvg, NetworkLinkLine, PacketOnEdge } = window.HTCS_ASSETS;
-        const { Bullet, TwoCol } = window.HTCS_PRIMITIVES;
+        const { Bullet, Mono, TwoCol } = window.HTCS_PRIMITIVES;
         const { Card, TosPullQuote } = window.HTCS_PATTERNS;
 
         // ── Animated network primitives (Day 02) ───────────────────────────────
@@ -3372,11 +3372,73 @@
         }
 
         function SlideD2Forever() {
+          const [selectedStory, setSelectedStory] = useState(null);
           const stories = [
-            ['Dec. 1, 2010', 'WikiLeaks Cablegate', 'After WikiLeaks was pushed off Amazon, the Guardian reported the cable archive was already moving through BitTorrent.'],
-            ['Apr. 6, 2009', 'Wolverine workprint', 'Fox sent takedowns after the unfinished movie leaked; TorrentFreak reported 1M+ BitTorrent downloads in under a week.'],
-            ['May 9, 2013', '3D gun blueprints', 'The State Department ordered files removed, but the Guardian reported 100K+ downloads and Pirate Bay copies.'],
+            {
+              date: 'Dec. 1, 2010',
+              title: 'WikiLeaks Cablegate',
+              detail: 'After WikiLeaks was pushed off Amazon, the Guardian reported the cable archive was already moving through BitTorrent.',
+              popup: {
+                leaked: 'A large archive of classified U.S. diplomatic cables.',
+                controversial: 'The cables exposed private diplomacy and raised national-security concerns.',
+                happened: 'Hosting, DNS, and payment pressure hit WikiLeaks while mirrors and torrents spread.',
+                why: 'The files had already been copied widely, so removing one host did not remove every copy.',
+                trouble: 'Chelsea Manning was sentenced to 35 years in prison in 2013 for leaking classified material; President Obama commuted the sentence in 2017.',
+              },
+            },
+            {
+              date: 'Apr. 6, 2009',
+              title: 'Wolverine workprint',
+              detail: 'Fox sent takedowns after the unfinished movie leaked; TorrentFreak reported 1M+ BitTorrent downloads in under a week.',
+              popup: {
+                leaked: 'An unfinished workprint of X-Men Origins: Wolverine before release.',
+                controversial: 'It was copyrighted studio property and an unreleased commercial film.',
+                happened: 'Fox sent takedowns and the FBI investigated, but the file spread fast.',
+                why: 'BitTorrent swarms and reuploads multiplied faster than individual takedowns could remove them.',
+                trouble: 'Gilberto Sanchez pleaded guilty to uploading the workprint and was sentenced to one year in federal prison in 2011.',
+              },
+            },
+            {
+              date: 'May 9, 2013',
+              title: '3D gun blueprints',
+              detail: 'The State Department ordered files removed, but the Guardian reported 100K+ downloads and Pirate Bay copies.',
+              popup: {
+                leaked: 'CAD files for a 3D-printable gun design.',
+                controversial: 'The files raised public-safety and export-control concerns.',
+                happened: 'Defense Distributed removed the files after a government demand.',
+                why: 'Copies had already been downloaded and mirrored on other sites, including torrent indexes.',
+                trouble: 'No uploader went to prison in this episode; Defense Distributed fought the government in court over publication rights.',
+              },
+            },
           ];
+          const storyButtonStyle = {
+            appearance: 'none',
+            border: 0,
+            background: 'transparent',
+            padding: 0,
+            margin: 0,
+            fontFamily: FONTS.serif,
+            fontSize: 25,
+            lineHeight: 1.18,
+            color: COLORS.ink,
+            textAlign: 'left',
+            cursor: 'pointer',
+            borderBottom: `1px solid ${COLORS.accent}`,
+          };
+          const popupLabelStyle = {
+            fontFamily: FONTS.sans,
+            fontSize: 12,
+            letterSpacing: '0.14em',
+            textTransform: 'uppercase',
+            color: COLORS.accent,
+            marginBottom: 4,
+          };
+          const popupTextStyle = {
+            fontFamily: FONTS.serif,
+            fontSize: 21,
+            lineHeight: 1.28,
+            color: COLORS.ink,
+          };
           return (
             <SlideFrame>
               <Eyebrow>Permanence is a feature and a curse</Eyebrow>
@@ -3388,11 +3450,11 @@
               </Body>
               <div style={{ display: 'grid', gridTemplateColumns: '0.92fr 1.08fr', gap: 34, marginTop: 34, flex: '1 1 auto', minHeight: 0, alignItems: 'stretch' }}>
                 <div style={{ display: 'grid', gap: 14, alignContent: 'center' }}>
-                  {stories.map(([date, label, detail]) => (
-                    <div key={label} style={{ borderTop: `1px solid ${COLORS.rule}`, paddingTop: 13 }}>
-                      <div style={{ fontFamily: FONTS.sans, fontSize: 13, letterSpacing: '0.14em', textTransform: 'uppercase', color: COLORS.accent, marginBottom: 6 }}>{date}</div>
-                      <div style={{ fontFamily: FONTS.serif, fontSize: 25, lineHeight: 1.18, color: COLORS.ink, marginBottom: 4 }}>{label}</div>
-                      <div style={{ fontFamily: FONTS.serif, fontSize: 19, lineHeight: 1.28, color: COLORS.inkSoft }}>{detail}</div>
+                  {stories.map((story) => (
+                    <div key={story.title} style={{ borderTop: `1px solid ${COLORS.rule}`, paddingTop: 13 }}>
+                      <div style={{ fontFamily: FONTS.sans, fontSize: 13, letterSpacing: '0.14em', textTransform: 'uppercase', color: COLORS.accent, marginBottom: 6 }}>{story.date}</div>
+                      <button type="button" onClick={() => setSelectedStory(story)} style={storyButtonStyle}>{story.title}</button>
+                      <div style={{ fontFamily: FONTS.serif, fontSize: 19, lineHeight: 1.28, color: COLORS.inkSoft, marginTop: 5 }}>{story.detail}</div>
                     </div>
                   ))}
                 </div>
@@ -3400,6 +3462,33 @@
                   <ForeverSwarmDiagram />
                 </div>
               </div>
+              {selectedStory && (
+                <div style={{ position: 'absolute', inset: 0, background: 'rgba(18, 32, 54, 0.34)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 70 }}>
+                  <div style={{ width: 760, background: COLORS.paper, border: `2px solid ${COLORS.ink}`, padding: '30px 34px 28px', boxShadow: '0 22px 70px rgba(18, 32, 54, 0.24)' }}>
+                    <div style={{ display: 'flex', alignItems: 'start', gap: 24, marginBottom: 22 }}>
+                      <div style={{ flex: 1 }}>
+                        <div style={{ ...popupLabelStyle, marginBottom: 8 }}>{selectedStory.date}</div>
+                        <div style={{ fontFamily: FONTS.serif, fontSize: 38, lineHeight: 1.05, color: COLORS.ink }}>{selectedStory.title}</div>
+                      </div>
+                      <button type="button" onClick={() => setSelectedStory(null)} style={{ fontFamily: FONTS.sans, fontSize: 14, letterSpacing: '0.12em', textTransform: 'uppercase', border: `1px solid ${COLORS.ink}`, background: COLORS.ink, color: COLORS.paper, padding: '9px 13px', cursor: 'pointer' }}>Close</button>
+                    </div>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '18px 24px' }}>
+                      {[
+                        ['What leaked?', selectedStory.popup.leaked],
+                        ['Why controversial?', selectedStory.popup.controversial],
+                        ['What happened?', selectedStory.popup.happened],
+                        ["Why didn't takedown work?", selectedStory.popup.why],
+                        ['Who got in trouble?', selectedStory.popup.trouble],
+                      ].map(([label, text]) => (
+                        <div key={label} style={{ borderTop: `1px solid ${COLORS.rule}`, paddingTop: 12 }}>
+                          <div style={popupLabelStyle}>{label}</div>
+                          <div style={popupTextStyle}>{text}</div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              )}
             </SlideFrame>
           );
         }
@@ -3428,32 +3517,84 @@
         }
 
         function SlideD2LiveDemo() {
+          const practiceLinks = [
+            {
+              title: 'Install qBittorrent',
+              detail: 'Required torrent client for this practice.',
+              href: 'https://www.qbittorrent.org/download',
+              external: true,
+            },
+            {
+              title: 'Download Raspberry Pi OS torrent',
+              detail: 'Local copy: 64-bit Trixie image metadata.',
+              href: 'downloads/2026-04-21-raspios-trixie-arm64.img.xz.torrent',
+              download: '2026-04-21-raspios-trixie-arm64.img.xz.torrent',
+            },
+            {
+              title: 'Download Sea of Stars EPUB torrent',
+              detail: 'Small practice torrent for a lighter demo.',
+              href: 'downloads/seaofstars_vol1_lostinthewildheavens.epub.torrent',
+              download: 'seaofstars_vol1_lostinthewildheavens.epub.torrent',
+            },
+            {
+              title: 'Download latest Raspberry Pi OS torrent',
+              detail: 'Direct official 64-bit torrent link.',
+              href: 'https://downloads.raspberrypi.com/raspios_arm64/images/raspios_arm64-2026-04-21/2026-04-21-raspios-trixie-arm64.img.xz.torrent',
+              external: true,
+            },
+          ];
+          const linkCardStyle = {
+            display: 'block',
+            minHeight: 122,
+            border: `1px solid ${COLORS.rule}`,
+            background: COLORS.paper,
+            padding: '20px 22px',
+            textDecoration: 'none',
+            color: COLORS.ink,
+          };
+          const linkTitleStyle = {
+            fontFamily: FONTS.serif,
+            fontSize: 30,
+            lineHeight: 1.05,
+            color: COLORS.ink,
+            marginBottom: 10,
+          };
+          const linkDetailStyle = {
+            fontFamily: FONTS.sans,
+            fontSize: 17,
+            lineHeight: 1.25,
+            color: COLORS.muted,
+          };
           return (
             <SlideFrame>
               <Eyebrow>Demo break</Eyebrow>
-              <Title>Watch a real swarm <em>in motion.</em></Title>
-              <div style={{
-                marginTop: 28,
-                border: `2px dashed ${COLORS.rule}`,
-                background: COLORS.paper,
-                padding: '38px 44px',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                fontFamily: FONTS.mono,
-                fontSize: 28,
-                color: COLORS.muted,
-                letterSpacing: '0.06em',
-              }}>
-                &lt;&lt; insert live torrent client demo here &gt;&gt;
+              <Title>Practice with <em>qBittorrent.</em></Title>
+              <Body size="bodyLg" style={{ marginTop: 18, maxWidth: 1500 }}>
+                Install qBittorrent first, then open one of these legal practice torrents so you can inspect the swarm, peers, trackers, and progress.
+              </Body>
+              <div style={{ marginTop: 28, display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 18 }}>
+                {practiceLinks.map((link) => (
+                  <a
+                    key={link.title}
+                    href={link.href}
+                    download={link.download}
+                    target={link.external ? '_blank' : undefined}
+                    rel={link.external ? 'noopener noreferrer' : undefined}
+                    style={linkCardStyle}
+                  >
+                    <div style={linkTitleStyle}>{link.title}</div>
+                    <div style={linkDetailStyle}>{link.detail}</div>
+                  </a>
+                ))}
               </div>
               <div style={{ marginTop: 34 }}>
-                <div style={{ fontFamily: FONTS.sans, fontSize: 16, letterSpacing: '0.2em', textTransform: 'uppercase', color: COLORS.muted, marginBottom: 14 }}>Presenter checklist</div>
-                <ul style={{ fontFamily: FONTS.serif, fontSize: 30, lineHeight: 1.35, paddingLeft: 32 }}>
-                  <Bullet>Open the peers panel and show IP addresses from multiple countries.</Bullet>
-                  <Bullet>Switch to the pieces view and watch the grid fill in non-sequentially.</Bullet>
-                  <Bullet>Pause the download, then resume. Same percentage, no restart.</Bullet>
-                  <Bullet>Open Popcorn Time as a bonus: streaming-while-downloading on top of the same protocol.</Bullet>
+                <div style={{ fontFamily: FONTS.sans, fontSize: 16, letterSpacing: '0.2em', textTransform: 'uppercase', color: COLORS.muted, marginBottom: 14 }}>qBittorrent checklist</div>
+                <ul style={{ fontFamily: FONTS.serif, fontSize: 29, lineHeight: 1.32, paddingLeft: 32, margin: 0 }}>
+                  <Bullet>Install qBittorrent from the official download page before opening a torrent file.</Bullet>
+                  <Bullet>Open a practice <Mono>.torrent</Mono> file in qBittorrent and choose a temporary download folder.</Bullet>
+                  <Bullet>Use the Peers and Trackers tabs to identify discovery, peer IPs, ports, and swarm health.</Bullet>
+                  <Bullet>Watch progress fill in chunks, then pause and resume to confirm the download continues.</Bullet>
+                  <Bullet>When finished, remove the torrent from qBittorrent and delete any large downloaded files you do not need.</Bullet>
                 </ul>
               </div>
             </SlideFrame>
