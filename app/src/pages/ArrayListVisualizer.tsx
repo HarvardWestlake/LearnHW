@@ -498,35 +498,12 @@ export default function ArrayListVisualizer() {
                   </button>
                 </section>
 
-                <section className="al-operation-card">
-                  <div className="al-operation-card__title">Animation</div>
-                  <div className="segment-group al-speed-segments" role="group" aria-label="Animation speed">
-                    {SPEED_OPTIONS.map(option => (
-                      <button
-                        key={option.label}
-                        type="button"
-                        className={`segment${speed === option.value ? ' active' : ''}`}
-                        onClick={() => setSpeed(option.value)}
-                        aria-pressed={speed === option.value}
-                      >
-                        {option.label}
-                      </button>
-                    ))}
-                  </div>
-                </section>
-
-                <button
-                  className="btn btn--ghost btn--sm btn--block"
-                  onClick={() => setShowHowItWorks(true)}
-                >
-                  How It Works
-                </button>
               </div>
             </section>
           }
 
           info={
-            /* ── Right: snapshot + legend ── */
+            /* ── Right: snapshot + details ── */
             <>
               <section className="panel al-side-panel">
                 <div className="widget-panel__head al-side-panel__head">
@@ -543,33 +520,35 @@ export default function ArrayListVisualizer() {
                     { label: 'Growth', value: `×${GROWTH_FACTOR}` },
                   ]}
                 />
-                <p className="helper-text al-side-note">
-                  The <code>ArrayList</code> keeps a backing array in memory, so capacity can stay ahead of size.
-                </p>
               </section>
 
               <section className="panel al-side-panel">
                 <div className="widget-panel__head al-side-panel__head">
-                  <div className="eyebrow">Memory Key</div>
+                  <div className="eyebrow">Animation &amp; Details</div>
                 </div>
-                <div className="legend-key al-legend-list">
-                  <div className="legend-key__item">
-                    <span className="legend-key__dot al-legend-dot al-legend-dot--unused" />
-                    Unused memory
-                  </div>
-                  <div className="legend-key__item">
-                    <span className="legend-key__dot al-legend-dot al-legend-dot--allocated" />
-                    Allocated capacity
-                  </div>
-                  <div className="legend-key__item">
-                    <span className="legend-key__dot al-legend-dot al-legend-dot--filled" />
-                    Filled slot
-                  </div>
-                  <div className="legend-key__item">
-                    <span className="legend-key__dot al-legend-dot al-legend-dot--current" />
-                    Current cell
-                  </div>
+                <div className="al-operation-card__title">Animation Speed</div>
+                <div className="segment-group al-speed-segments" role="group" aria-label="Animation speed">
+                  {SPEED_OPTIONS.map(option => (
+                    <button
+                      key={option.label}
+                      type="button"
+                      className={`segment${speed === option.value ? ' active' : ''}`}
+                      onClick={() => setSpeed(option.value)}
+                      aria-pressed={speed === option.value}
+                    >
+                      {option.label}
+                    </button>
+                  ))}
                 </div>
+                <p className="helper-text al-side-note">
+                  Adjust the playback pace, then open the quick explainer for resizing, access time, and element shifts.
+                </p>
+                <button
+                  className="btn btn--outline btn--sm btn--block"
+                  onClick={() => setShowHowItWorks(true)}
+                >
+                  ArrayLists Explained
+                </button>
               </section>
             </>
           }
@@ -603,6 +582,24 @@ export default function ArrayListVisualizer() {
                   <MemoryGrid cells={cells} label="Program memory grid" />
                 </div>
               </div>
+              <div className="legend-key al-legend-inline al-legend-inline--below" aria-label="Memory key">
+                <div className="legend-key__item">
+                  <span className="legend-key__dot al-legend-dot al-legend-dot--unused" />
+                  Unused memory
+                </div>
+                <div className="legend-key__item">
+                  <span className="legend-key__dot al-legend-dot al-legend-dot--allocated" />
+                  Allocated capacity
+                </div>
+                <div className="legend-key__item">
+                  <span className="legend-key__dot al-legend-dot al-legend-dot--filled" />
+                  Filled slot
+                </div>
+                <div className="legend-key__item">
+                  <span className="legend-key__dot al-legend-dot al-legend-dot--current" />
+                  Current cell
+                </div>
+              </div>
             </div>
 
             {output && (
@@ -626,16 +623,32 @@ export default function ArrayListVisualizer() {
         <div className="al-modal-overlay" onClick={() => setShowHowItWorks(false)}>
           <div className="al-modal" onClick={e => e.stopPropagation()}>
             <div className="al-modal-header">
-              <h2 className="h5 eyebrow" style={{ margin: 0 }}>How It Works</h2>
+              <h2 className="h5 eyebrow" style={{ margin: 0 }}>ArrayLists Explained</h2>
               <button className="al-modal-close" onClick={() => setShowHowItWorks(false)} aria-label="Close">×</button>
             </div>
             <div className="stack-xs" style={{ fontSize: '.9rem' }}>
-              <div className="eyebrow">DYNAMIC SIZING</div>
-              <p className="muted">Wraps a plain Java array. When full, a 2× array is allocated and all elements are copied over.</p>
-              <div className="eyebrow" style={{ marginTop: '.5rem' }}>INDEXED ACCESS</div>
-              <p className="muted"><code>get(i)</code> / <code>set(i, v)</code> — O(1). <code>contains()</code> — O(n) linear scan.</p>
-              <div className="eyebrow" style={{ marginTop: '.5rem' }}>REMOVE SHIFTS</div>
-              <p className="muted"><code>remove(idx)</code> — O(n). Every element after the gap shifts one position left.</p>
+              <div className="eyebrow">BACKING ARRAY</div>
+              <p className="muted">
+                A Java <code>ArrayList</code> stores its elements in a regular array behind the scenes. That is why the
+                capacity can be larger than the size: the list may reserve extra memory slots before they are filled.
+              </p>
+              <div className="eyebrow" style={{ marginTop: '.5rem' }}>RESIZING</div>
+              <p className="muted">
+                When the current array runs out of room, the <code>ArrayList</code> allocates a larger array and copies
+                every existing element into the new one. That resize takes extra work in the moment, but it helps future{' '}
+                <code>add()</code> operations stay fast overall.
+              </p>
+              <div className="eyebrow" style={{ marginTop: '.5rem' }}>ACCESS AND SEARCH</div>
+              <p className="muted">
+                Methods like <code>get(i)</code> and <code>set(i, value)</code> are usually <code>O(1)</code> because the
+                list can jump straight to a numbered position. The <code>contains(value)</code> method is <code>O(n)</code>
+                because it may need to check each element one at a time.
+              </p>
+              <div className="eyebrow" style={{ marginTop: '.5rem' }}>REMOVING ELEMENTS</div>
+              <p className="muted">
+                The <code>remove(index)</code> method is <code>O(n)</code> because every element after the removed item has
+                to shift one position to the left to close the gap.
+              </p>
             </div>
           </div>
         </div>

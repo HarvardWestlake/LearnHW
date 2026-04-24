@@ -213,6 +213,7 @@ canvas {
 
 .al-page {
   padding-block: 1rem 1.5rem;
+  background: var(--hw-wolverine), #f2f0ec;
   --hw-brand-black-rgb: 0 0 0;
   --hw-brand-red-rgb: 218 0 22;
   --hw-brand-gold-rgb: 237 163 0;
@@ -390,6 +391,16 @@ canvas {
 .al-side-note {
   margin: 0;
   line-height: 1.45;
+}
+
+.al-legend-inline {
+  justify-content: flex-end;
+  align-items: center;
+}
+
+.al-legend-inline--below {
+  justify-content: center;
+  margin-top: .85rem;
 }
 
 .al-legend-list {
@@ -841,6 +852,8 @@ input[type="password"]:focus, select:focus, textarea:focus {
 
   --hw-page-bg: radial-gradient(1200px 600px at 0 -10%, var(--hw-secondary-blue-20), transparent 60%),
                 linear-gradient(white, var(--hw-secondary-khaki-20));
+
+  --hw-wolverine: url('./assets/lion-olive.webp') right center / min(45vw, 700px) auto no-repeat fixed;
 }
 
 /* 2) Document -------------------------------------------------------------- */
@@ -1388,7 +1401,9 @@ html.no-touch .panel--right-decor:hover::after{ transform: translate(15%, -50%) 
 }
 
 .styleguide-page {
-  background: linear-gradient(180deg, rgb(191 194 153 / 20%) 0%, #ffffff 100%);
+  background:
+    var(--hw-wolverine),
+    linear-gradient(180deg, rgb(191 194 153 / 20%) 0%, #ffffff 100%);
 }
 
 .styleguide {
@@ -1478,11 +1493,13 @@ body { background: #f2f0ec; }
 /* Some containers previously added radius; normalize */
 .container { border-radius: 0; }
 
-/* Ensure main page wrappers show grey with lion-olive image on the right */
+/* Ensure main page wrappers show grey with fixed lion-olive image on the right */
 .page {
-  background:
-    url('./assets/lion-olive.webp') right center / min(45vw, 700px) auto no-repeat,
-    #f2f0ec;
+  background: var(--hw-wolverine), #f2f0ec;
+}
+
+@media (max-width: 768px) {
+  :root { --hw-wolverine: none; }
 }
 
 /* Buttons – square corners */
@@ -1849,6 +1866,7 @@ h1, h2, h3, h4, h5, h6 { color: var(--hw-black); }
   --accent:   var(--hw-red);
 
   padding-block: 1rem 3rem;
+  background: var(--hw-wolverine), #f2f0ec;
 }
 
 .sha1-explorer .hidden { display: none !important; }
