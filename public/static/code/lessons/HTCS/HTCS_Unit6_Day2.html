@@ -45,14 +45,13 @@
 "Open with the side-by-side animated comparison so the class sees the contrast in one frame. In a centralized model every participant is a client and one server is the authority. In P2P, each participant can be both a client and a server — every machine is a node, and useful behavior emerges from the swarm rather than a central operator. Step the visualization from nodes only, to links, to moving packets so they see the same five peers laid out as a star versus a mesh.",
 "Centralization is not just a technical choice — it transfers ownership. Use Instagram as the canonical example: every photo you upload is licensed to Meta, surfaced or hidden by their ranking, and deletable on their schedule. Then ground it locally: anything written on the school's tools belongs to the school. Same pattern at any employer. The takeaway is that centralized systems concentrate the power to delete, censor, and monetize.",
 "Run the topology demo. Toggle modes and fail nodes. In centralized mode, one failure can collapse service. In P2P mode, traffic reroutes around failures if enough peers remain connected. This is the visceral version of the architectural argument from the previous two slides.",
-"Part 02. Now that the contrast is clear, here is how a swarm actually moves a file from many peers to many peers. We will go from chunking, to the tracker, to torrent metadata, to the info hash, to DHT, to magnet links, to the jobs the client performs, to a full walkthrough, and then back to resilience and vocabulary.",
-"The key scaling trick in P2P file sharing is chunking. A file is split into many pieces, and different peers host different subsets. Downloaders request many pieces in parallel rather than waiting on one source.",
-"Explain the tracker before the hashing slide so they understand how peers even find each other. The tracker only stores the peer map — file bytes never flow through it. Make the mapping explicit: info hash to a list of IP addresses and ports. That is why a tracker acts like a directory, not a file host.",
+"Part 02. Now that the contrast is clear, here is how a swarm actually moves a file from many peers to many peers. We will go from chunking, to torrent metadata, to the info hash, to the tracker, to DHT, to magnet links, to a full walkthrough, and then back to resilience and vocabulary.",
+"The key scaling trick in P2P file sharing is chunking. A file is split into many pieces, and different peers host different subsets. Downloaders request many pieces in parallel rather than waiting on one source. Be explicit that the speedup model assumes the central server has only one peer-sized uplink, each peer can devote that much upload to you, your own download link is not the bottleneck, and the needed pieces are available. A strong CDN/server can absolutely beat a weak or sparse swarm.",
 "Walk through each field. Emphasize that the .torrent file is a receipt — it describes the content precisely enough to verify every byte, but doesn't contain a single byte of the actual movie or software.",
 "The info hash is the torrent's identity. Anything that calls itself the same torrent has the same info hash. That hash is how trackers index swarms and how the client knows it's fetching the right file.",
-"DHT lets the swarm coordinate even if every tracker goes offline. The BitTorrent clients themselves become the directory. This is why 'just shut down the tracker' rarely ends a torrent.",
+"Explain the tracker after the info hash slide so they understand what key the tracker lookup uses. The tracker stores swarm membership, not piece ownership: info hash to a list of peer IP addresses and ports. After connecting, peers exchange bitfields to learn who has which pieces. That is why a tracker acts like a directory, not a file host.",
+"DHT can let the swarm coordinate even if every tracker goes offline, as long as DHT is enabled and peers have announced themselves there. DHT-enabled BitTorrent clients share the lookup work. This is why 'just shut down the tracker' often does not end a torrent.",
 "A magnet link is just a URL containing the info hash. The client uses that hash to find peers via DHT or the listed trackers, then fetches the full metadata from those peers. The magnet itself fits in a tweet.",
-"The client is the only active software in this whole system. The tracker just answers one question. DHT just routes a lookup. The client does all seven of these steps, in order, every time.",
 "Use the resilience demo to remove peers one by one. Students can see exactly when the swarm still reconstructs the file and when availability finally fails. This is the mechanical version of resilience — we will revisit it as a cultural property in Part 04.",
 "Lock in the terminology before moving on: node, peer, seeder, leecher, tracker, piece, and swarm. Students should leave fluent in this language so the rest of the deck — and any torrent client they open later — reads cleanly.",
 "Run through this slowly. Each step maps back to a component we defined earlier. Step 3 is where the tracker or DHT earns its keep. Step 6 is where Day 01's hashing pays off.",
@@ -1310,16 +1309,18 @@
           Erin:  '#8B7355',
         };
 
-        // Slide 6 demo — three-stage walk-through of how a file is split,
+        // Slide 8 demo — three-stage walk-through of how a file is split,
         // why a single host bottlenecks, and how a P2P swarm trades centralized
         // bandwidth for parallel peers. Same per-source rate constant across
-        // stages so the speedup is honest (server upstream is divided across
-        // clients; each peer brings its own upload).
+        // stages so the toy model is explicit: the central server has one
+        // peer-sized uplink divided across clients; each peer brings one
+        // additional peer-sized uplink.
         const CHUNK_PIECES = 24;
         // One uplink's worth of bandwidth, in pieces/sec. Both the server's
         // single uplink and each peer's individual uplink push at this rate,
         // so the comparison stays apples-to-apples and the speedup is honest.
-        // Speedup = (N · R) / (R / N) = N²  — independent of R itself.
+        // In this weak-server toy model, speedup = (N * R) / (R / N) = N^2.
+        // A server with more uplink capacity changes the comparison.
         const CHUNK_UPLINK_RATE = 5;
         const CHUNK_PEER_RATE = CHUNK_UPLINK_RATE;          // pieces/sec per peer uplink
         const CHUNK_SERVER_TOTAL_RATE = CHUNK_UPLINK_RATE;  // server's total uplink, shared
@@ -1517,7 +1518,7 @@
                 </div>
                 <div style={{ marginTop: 12, padding: '10px 14px', background: `${serverColor}14`, border: `1px solid ${serverColor}`, borderLeftWidth: 4 }}>
                   <div style={{ fontFamily: FONTS.serif, fontSize: 17, color: COLORS.ink, fontStyle: 'italic' }}>
-                    One source, many askers. Bandwidth and risk concentrate at the host. The more clients show up, the slower everyone gets.
+                    One source, many askers. Bandwidth and risk concentrate at the host. More clients slow everyone down unless the host adds more capacity.
                   </div>
                 </div>
               </div>
@@ -1592,12 +1593,15 @@
                   Downloaded <strong>{delivered}</strong> / {CHUNK_PIECES} pieces · elapsed <strong>{elapsed.toFixed(1)}s</strong>{done ? '. Complete.' : '...'}
                 </div>
                 <div style={{ fontFamily: FONTS.serif, fontSize: 17, color: COLORS.inkSoft, marginTop: 6, lineHeight: 1.4 }}>
-                  Each peer contributes <strong>{CHUNK_PEER_RATE.toFixed(0)} pieces/sec</strong>. With <strong>{N}</strong> peers in parallel, total throughput ≈ <strong>{(N * CHUNK_PEER_RATE).toFixed(0)} pieces/sec</strong>, about <strong>N² = {N * N}×</strong> the centralized rate.
+                  Each peer contributes <strong>{CHUNK_PEER_RATE.toFixed(0)} pieces/sec</strong>. With <strong>{N}</strong> peers in parallel, total throughput ≈ <strong>{(N * CHUNK_PEER_RATE).toFixed(0)} pieces/sec</strong>. The <strong>N² = {N * N}×</strong> speedup is the best case for this demo, not a general P2P rule.
                 </div>
                 <div style={{ marginTop: 12, padding: '10px 14px', background: `${COLORS.ok}14`, border: `1px solid ${COLORS.ok}`, borderLeftWidth: 4 }}>
                   <div style={{ fontFamily: FONTS.serif, fontSize: 17, color: COLORS.ink, fontStyle: 'italic' }}>
                     Many sources in parallel. Every new peer brings its own upload pipe; load and risk spread across the swarm instead of stacking on one host.
                   </div>
+                </div>
+                <div style={{ marginTop: 10, padding: '9px 12px', background: COLORS.paper, border: `1px dashed ${COLORS.rule}`, fontFamily: FONTS.serif, fontSize: 15.5, lineHeight: 1.35, color: COLORS.inkSoft }}>
+                  Demo assumption: the whole server has one peer-sized upload pipe and splits it among all clients. Real systems vary: a strong server or CDN can match or beat a weak swarm.
                 </div>
                 <div style={{ marginTop: 12, display: 'flex', flexWrap: 'wrap', gap: 12 }}>
                   {PEER_NAMES.map((name) => (
@@ -1644,7 +1648,7 @@
               {stage === 0 && <ChunkSplitStage elapsed={elapsed} />}
               {stage === 1 && <ChunkCentralizedStage elapsed={elapsedShown} t={t} />}
               {stage === 2 && <ChunkSwarmStage elapsed={elapsedShown} t={t} />}
-              <ChunkRealWorldNote />
+              {stage === 0 && <ChunkRealWorldNote />}
             </div>
           );
         }
@@ -2295,7 +2299,7 @@
               <Eyebrow>How a download actually scales</Eyebrow>
               <Title>Split the file. Then ask <em>where</em> the pieces come from.</Title>
               <Body size="bodyLg" style={{ maxWidth: 1500, marginTop: 16 }}>
-                Step through the same 24-piece download three ways: how the file is broken up, what one server has to endure, and how a swarm trades centralized bandwidth for parallel peers.
+                Step through the same 24-piece download three ways: how the file is broken up, what a one-uplink server has to endure, and how a swarm can trade centralized bandwidth for parallel peers.
               </Body>
               <ChunkDistributionDemo />
             </SlideFrame>
@@ -2554,7 +2558,7 @@
 
         function TrackerDiagram() {
           const w = 960;
-          const h = 460;
+          const h = 480;
 
           const PEER_COLORS = {
             Alice: COLORS.accent,
@@ -2563,18 +2567,11 @@
             Dana: COLORS.inkSoft,
           };
           const peers = [
-            { name: 'Alice', pieces: [1, 2, 3, 4, 5] },
-            { name: 'Bob', pieces: [5, 6, 7, 8, 9] },
-            { name: 'Carol', pieces: [9, 10, 11, 12, 13] },
-            { name: 'Dana', pieces: [13, 14, 15, 1, 7] },
+            { name: 'Alice', endpoint: '203.0.113.14:51413', pieces: [1, 2, 3, 4, 5] },
+            { name: 'Bob', endpoint: '198.51.100.8:6881', pieces: [5, 6, 7, 8, 9] },
+            { name: 'Carol', endpoint: '192.0.2.44:49152', pieces: [9, 10, 11, 12, 13] },
+            { name: 'Dana', endpoint: '198.51.100.23:62000', pieces: [13, 14, 15, 1, 7] },
           ];
-
-          // piece -> [holderName, ...]
-          const holders = {};
-          for (let p = 1; p <= 15; p++) holders[p] = [];
-          peers.forEach(({ name, pieces }) => {
-            pieces.forEach((p) => holders[p].push(name));
-          });
 
           // Tracker box
           const trackerX = 80;
@@ -2582,22 +2579,15 @@
           const trackerW = 800;
           const trackerH = 170;
 
-          // File strip inside tracker
-          const cellW = 44;
-          const cellH = 56;
-          const cellGap = 4;
-          const stripW = 15 * cellW + 14 * cellGap; // 716
-          const stripX = (w - stripW) / 2; // 122
-          const stripY = trackerY + 80;
-
           // Peer row
-          const peerY = 220;
+          const peerY = 248;
           const personScale = 0.5;
           const personW = 110 * personScale; // 55
           const personH = 140 * personScale; // 70
-          const peerStripY = 320;
+          const peerStripY = 350;
           const slotW = 200;
           const peerCenters = peers.map((_, i) => (w - peers.length * slotW) / 2 + slotW / 2 + i * slotW);
+          const client = { x: w / 2, y: 206, w: 190, h: 46 };
 
           // Mini-strip for each peer
           const mCellW = 26;
@@ -2610,51 +2600,45 @@
               {/* Tracker box */}
               <rect x={trackerX} y={trackerY} width={trackerW} height={trackerH} fill={COLORS.paper} stroke={COLORS.ink} strokeWidth="2" />
               <text x={w / 2} y={trackerY + 32} textAnchor="middle" fontFamily={FONTS.sans} fontSize="20" letterSpacing="0.20em" fill={COLORS.ink}>TRACKER</text>
-              <text x={w / 2} y={trackerY + 58} textAnchor="middle" fontFamily={FONTS.serif} fontStyle="italic" fontSize="18" fill={COLORS.inkSoft}>who has which pieces, not the assembled file</text>
-
-              {/* 15-cell file strip, color-coded by holder(s) */}
-              {Array.from({ length: 15 }, (_, i) => {
-                const num = i + 1;
-                const cx = stripX + i * (cellW + cellGap);
-                const cy = stripY;
-                const cellHolders = holders[num];
-                const single = cellHolders.length === 1;
-                return (
-                  <g key={`cell-${num}`}>
-                    {single ? (
-                      <rect x={cx} y={cy} width={cellW} height={cellH} fill={PEER_COLORS[cellHolders[0]]} />
-                    ) : (
-                      <g>
-                        <polygon points={`${cx},${cy} ${cx + cellW},${cy} ${cx},${cy + cellH}`} fill={PEER_COLORS[cellHolders[0]]} />
-                        <polygon points={`${cx + cellW},${cy} ${cx + cellW},${cy + cellH} ${cx},${cy + cellH}`} fill={PEER_COLORS[cellHolders[1]]} />
-                      </g>
-                    )}
-                    <rect x={cx} y={cy} width={cellW} height={cellH} fill="none" stroke={COLORS.ink} strokeWidth="1.5" />
-                    <text x={cx + cellW / 2} y={cy + cellH / 2 + 6} textAnchor="middle" fontFamily={FONTS.sans} fontSize="18" fontWeight="600" fill={COLORS.paper}>{num}</text>
-                  </g>
-                );
-              })}
-
-              {/* Legend (color → peer name) inside tracker, below strip */}
+              <text x={w / 2} y={trackerY + 58} textAnchor="middle" fontFamily={FONTS.serif} fontStyle="italic" fontSize="18" fill={COLORS.inkSoft}>who is in this swarm?</text>
+              <text x={150} y={trackerY + 96} fontFamily={FONTS.sans} fontSize="13" letterSpacing="0.16em" fill={COLORS.muted}>LOOKUP KEY</text>
+              <text x={150} y={trackerY + 124} fontFamily={FONTS.mono} fontSize="20" fill={COLORS.accent}>info hash</text>
+              <text x={284} y={trackerY + 124} fontFamily={FONTS.mono} fontSize="20" fill={COLORS.ink}>a8f2...c91b</text>
+              <text x={430} y={trackerY + 124} fontFamily={FONTS.mono} fontSize="20" fill={COLORS.ink}>-&gt;</text>
+              <text x={480} y={trackerY + 96} fontFamily={FONTS.sans} fontSize="13" letterSpacing="0.16em" fill={COLORS.muted}>PEERS RETURNED</text>
               {peers.map((p, i) => {
-                const itemW = 110;
-                const totalW = peers.length * itemW;
-                const startX = (w - totalW) / 2;
-                const x = startX + i * itemW;
-                const y = trackerY + trackerH - 18;
+                const col = i % 2;
+                const row = Math.floor(i / 2);
+                const x = 480 + col * 190;
+                const y = trackerY + 122 + row * 28;
                 return (
-                  <g key={`legend-${p.name}`}>
-                    <rect x={x} y={y - 12} width={14} height={14} fill={PEER_COLORS[p.name]} stroke={COLORS.ink} strokeWidth="1" />
-                    <text x={x + 22} y={y} fontFamily={FONTS.sans} fontSize="14" letterSpacing="0.10em" fill={COLORS.ink}>{p.name}</text>
+                  <g key={`tracker-peer-${p.name}`}>
+                    <rect x={x} y={y - 14} width={12} height={12} fill={PEER_COLORS[p.name]} stroke={COLORS.ink} strokeWidth="1" />
+                    <text x={x + 18} y={y - 4} fontFamily={FONTS.mono} fontSize="13" fill={COLORS.ink}>{p.endpoint}</text>
                   </g>
                 );
               })}
 
-              {/* Dashed metadata lines: tracker → each peer */}
+              {/* Tracker returns peer endpoints to your client. */}
+              <line
+                x1={w / 2}
+                y1={trackerY + trackerH}
+                x2={client.x}
+                y2={client.y - client.h / 2}
+                stroke={COLORS.muted}
+                strokeWidth="1.6"
+                strokeDasharray="6 6"
+                opacity="0.8"
+              />
+              <text x={client.x + 108} y={client.y - 15} fontFamily={FONTS.sans} fontSize="11" letterSpacing="0.16em" fill={COLORS.muted}>IP:PORTS</text>
+              <rect x={client.x - client.w / 2} y={client.y - client.h / 2} width={client.w} height={client.h} fill={COLORS.ink} stroke={COLORS.ink} strokeWidth="2" />
+              <text x={client.x} y={client.y + 5} textAnchor="middle" fontFamily={FONTS.sans} fontSize="15" letterSpacing="0.12em" fill={COLORS.paper}>TORRENT CLIENT</text>
+
+              {/* After connecting, peers report piece availability to the client. */}
               {peers.map((p, i) => (
                 <line
-                  key={`meta-${i}`}
-                  x1={peerCenters[i]} y1={trackerY + trackerH}
+                  key={`client-peer-${i}`}
+                  x1={client.x} y1={client.y + client.h / 2}
                   x2={peerCenters[i]} y2={peerY - 2}
                   stroke={COLORS.muted}
                   strokeWidth="1.5"
@@ -2662,8 +2646,6 @@
                   opacity="0.75"
                 />
               ))}
-              <text x={peerCenters[0] + 10} y={peerY - 8} fontFamily={FONTS.sans} fontSize="11" letterSpacing="0.18em" fill={COLORS.muted}>METADATA ONLY</text>
-
               {/* Solid file-byte links between adjacent peers (between mini-strips) */}
               {[0, 1, 2].map((i) => (
                 <NetworkLinkLine
@@ -2742,7 +2724,7 @@
             { x: 285, w: 220, label: 'info dictionary', sub: 'the part that gets hashed' },
             { x: 550, w: 160, label: 'SHA-1', sub: 'run the hash' },
             { x: 755, w: 210, label: 'info hash', sub: 'swarm identity' },
-            { x: 1010, w: 250, label: 'tracker / DHT lookup', sub: 'who has peers for this hash?' },
+            { x: 1010, w: 250, label: 'tracker / DHT lookup', sub: 'who knows peers for this hash?' },
           ];
           return (
             <svg viewBox={`0 0 ${w} ${h}`} preserveAspectRatio="xMidYMid meet" style={{ width: '100%', height: '100%', display: 'block' }}>
@@ -2837,7 +2819,7 @@
               <text x="208" y="30" textAnchor="middle" fontFamily={FONTS.sans} fontSize="18" letterSpacing="0.18em" fill={COLORS.muted}>TRACKER</text>
               <text x="776" y="30" textAnchor="middle" fontFamily={FONTS.sans} fontSize="18" letterSpacing="0.18em" fill={COLORS.muted}>DHT</text>
               <text x="208" y="54" textAnchor="middle" fontFamily={FONTS.serif} fontSize="18" fill={COLORS.inkSoft}>one directory answers the lookup</text>
-              <text x="776" y="54" textAnchor="middle" fontFamily={FONTS.serif} fontSize="18" fill={COLORS.inkSoft}>the peers form the directory</text>
+              <text x="776" y="54" textAnchor="middle" fontFamily={FONTS.serif} fontSize="18" fill={COLORS.inkSoft}>DHT nodes share the lookup work</text>
               {trackerPeerAnchors.map((peer) => (
                 <line key={`tracker-link-${peer.name}`} x1={trackerHub.x} y1={trackerHub.y} x2={peer.ax} y2={peer.ay} stroke={COLORS.ink} strokeWidth="2.2" markerEnd="url(#dhtArrow)" />
               ))}
@@ -3006,36 +2988,43 @@
                   )}
                 </g>
               ))}
-              <rect x="194" y="108" width="212" height="78" rx="18" fill="#F3EBDD" stroke={COLORS.ink} strokeWidth="2" />
-              <text x="300" y="140" textAnchor="middle" fontFamily={FONTS.sans} fontSize="16" letterSpacing="0.14em" fill={COLORS.ink}>ONE COMPLETE COPY</text>
-              <text x="300" y="166" textAnchor="middle" fontFamily={FONTS.serif} fontSize="22" fill={COLORS.inkSoft}>is enough to keep the file alive</text>
             </svg>
           );
         }
 
         function UntouchableDiagram() {
+          const networkPeers = [
+            { x: 220, y: 414, name: 'Alice' },
+            { x: 462, y: 414, name: 'Carol' },
+            { x: 340, y: 474, name: 'Bob' },
+          ];
+          const nodeAnchor = (peer) => ({
+            x: peer.x + 30,
+            y: peer.y + 54,
+          });
+          const [alice, carol, bob] = networkPeers.map(nodeAnchor);
           return (
-            <svg viewBox="0 0 1080 360" preserveAspectRatio="xMidYMid meet" style={{ width: '100%', height: '100%', display: 'block' }}>
-              <line x1="540" y1="38" x2="540" y2="324" stroke={COLORS.rule} strokeWidth="2" />
-              <text x="270" y="34" textAnchor="middle" fontFamily={FONTS.sans} fontSize="18" letterSpacing="0.18em" fill={COLORS.muted}>LEGAL / PLATFORM PRESSURE</text>
-              <text x="810" y="34" textAnchor="middle" fontFamily={FONTS.sans} fontSize="18" letterSpacing="0.18em" fill={COLORS.muted}>NETWORK REALITY</text>
-              <rect x="70" y="68" width="400" height="210" rx="20" fill={COLORS.paper} stroke={COLORS.ink} strokeWidth="2" />
-              <rect x="610" y="68" width="400" height="210" rx="20" fill={COLORS.paper} stroke={COLORS.ink} strokeWidth="2" />
+            <svg viewBox="0 0 760 620" preserveAspectRatio="xMidYMid meet" style={{ width: '100%', height: '100%', display: 'block' }}>
+              <text x="380" y="34" textAnchor="middle" fontFamily={FONTS.sans} fontSize="18" letterSpacing="0.18em" fill={COLORS.muted}>LEGAL / PLATFORM PRESSURE</text>
+              <rect x="70" y="62" width="620" height="210" rx="20" fill={COLORS.paper} stroke={COLORS.ink} strokeWidth="2" />
               {['site takedown', 'cease-and-desist', 'one user stops seeding'].map((label, i) => (
                 <g key={label}>
-                  <rect x="112" y={104 + i * 52} width="220" height="34" rx="10" fill="#F3EBDD" stroke={COLORS.rule} strokeWidth="1.2" />
-                  <text x="222" y={126 + i * 52} textAnchor="middle" fontFamily={FONTS.sans} fontSize="15" fill={COLORS.ink}>{label}</text>
-                  <line x1="344" y1={121 + i * 52} x2="430" y2={121 + i * 52} stroke={COLORS.danger} strokeWidth="2.4" />
-                  <text x="447" y={126 + i * 52} fontFamily={FONTS.sans} fontSize="14" fill={COLORS.danger}>removes one path</text>
+                  <rect x="118" y={98 + i * 52} width="250" height="34" rx="10" fill="#F3EBDD" stroke={COLORS.rule} strokeWidth="1.2" />
+                  <text x="243" y={120 + i * 52} textAnchor="middle" fontFamily={FONTS.sans} fontSize="15" fill={COLORS.ink}>{label}</text>
+                  <line x1="396" y1={115 + i * 52} x2="496" y2={115 + i * 52} stroke={COLORS.danger} strokeWidth="2.4" />
+                  <text x="520" y={120 + i * 52} fontFamily={FONTS.sans} fontSize="14" fill={COLORS.danger}>removes one path</text>
                 </g>
               ))}
-              {[0, 1, 2].map((i) => (
-                <g key={i} transform={`translate(${660 + i * 108}, ${118 + (i % 2) * 92}) scale(0.5)`}><NetworkPersonSvg name={PEER_NAMES[i]} /></g>
+              <text x="380" y="334" textAnchor="middle" fontFamily={FONTS.sans} fontSize="18" letterSpacing="0.18em" fill={COLORS.muted}>NETWORK REALITY</text>
+              <rect x="70" y="362" width="620" height="240" rx="20" fill={COLORS.paper} stroke={COLORS.ink} strokeWidth="2" />
+              <line x1={alice.x} y1={alice.y} x2={bob.x} y2={bob.y} stroke={COLORS.ink} strokeWidth="2.2" />
+              <line x1={carol.x} y1={carol.y} x2={bob.x} y2={bob.y} stroke={COLORS.ink} strokeWidth="2.2" />
+              <line x1={alice.x} y1={alice.y} x2={carol.x} y2={carol.y} stroke={COLORS.ink} strokeWidth="2.2" strokeDasharray="7 7" opacity="0.65" />
+              {networkPeers.map((peer) => (
+                <g key={peer.name} transform={`translate(${peer.x}, ${peer.y}) scale(0.5)`}><NetworkPersonSvg name={peer.name} /></g>
               ))}
-              <line x1="724" y1="154" x2="832" y2="246" stroke={COLORS.ink} strokeWidth="2.2" />
-              <line x1="832" y1="154" x2="940" y2="246" stroke={COLORS.ink} strokeWidth="2.2" />
-              <line x1="724" y1="246" x2="940" y2="246" stroke={COLORS.ink} strokeWidth="2.2" />
-              <text x="810" y="302" textAnchor="middle" fontFamily={FONTS.serif} fontSize="20" fill={COLORS.inkSoft}>other peers and mirrors keep the swarm reachable</text>
+              <rect x="274" y="566" width="212" height="26" rx="8" fill="#F3EBDD" stroke={COLORS.rule} strokeWidth="1.2" />
+              <text x="380" y="584" textAnchor="middle" fontFamily={FONTS.sans} fontSize="13" letterSpacing="0.10em" fill={COLORS.ink}>SWARM STILL REACHABLE</text>
             </svg>
           );
         }
@@ -3088,9 +3077,9 @@
           return (
             <SlideFrame>
               <Eyebrow>How peers find each other</Eyebrow>
-              <Title>The tracker is a <em>phone book,</em> not a server.</Title>
+              <Title>The tracker is a <em>phone book,</em> not a file host.</Title>
               <Body size="bodyLg" style={{ maxWidth: 1500, marginTop: 18 }}>
-                A torrent app uses a tracker to learn <em>which peers hold which pieces</em>. The pieces themselves can be scattered across the world. The tracker just hands you the addresses.
+                A torrent app uses a tracker to learn <em>which peers are in the swarm</em> for an info hash. After connecting, peers tell each other which pieces they have.
               </Body>
               <div style={{ flex: '1 1 auto', minHeight: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', marginTop: 12 }}>
                 <TrackerDiagram />
@@ -3098,14 +3087,14 @@
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 48, marginTop: 18 }}>
                 <div style={keyPointStyle}>
                   <div style={keyLabelStyle}>The map</div>
-                  Stores a piece-to-peer map, never the file bytes.
+                  Stores a swarm membership map, never file bytes or piece ownership.
                   <div style={{ marginTop: 12 }}>
                     <Mono style={{ fontSize: '0.92em' }}>info hash -&gt; [IP:port, IP:port, ...]</Mono>
                   </div>
                 </div>
                 <div style={keyPointStyle}>
                   <div style={keyLabelStyle}>The handoff</div>
-                  Once you have peer addresses, data flows directly between you and them.
+                  Once connected, peers exchange piece lists, then file bytes flow directly between clients.
                 </div>
                 <div style={keyPointStyle}>
                   <div style={keyLabelStyle}>The fallback</div>
@@ -3230,9 +3219,9 @@
           return (
             <SlideFrame>
               <Eyebrow>Decentralized peer discovery</Eyebrow>
-              <Title>DHT: no single directory, <em>no single point of failure.</em></Title>
+              <Title>DHT: no single directory <em>has to answer.</em></Title>
               <Body size="bodyLg" style={{ marginTop: 20, maxWidth: 1520 }}>
-                DHT, or Distributed Hash Table, is an alternative to trackers and a complement to them. The lookup network is formed by BitTorrent clients themselves, so your client can ask, &ldquo;Who has peers for this info hash?&rdquo; without relying on one central server.
+                DHT, or Distributed Hash Table, is an alternative to trackers and a complement to them. DHT-enabled clients form a lookup network, so your client can ask, &ldquo;Who knows peers for this info hash?&rdquo; without relying on one central tracker.
               </Body>
               <div style={{ marginTop: 18, minHeight: 0, flex: '1 1 auto', display: 'flex', alignItems: 'center' }}>
                 <DHTComparisonDiagram />
@@ -3246,7 +3235,7 @@
                 )}
                 right={(
                   <Card title="DHT">
-                    Distributed directory. Every client is a node, so there&apos;s no single operator to remove.
+                    Distributed lookup. DHT-enabled clients are nodes, so discovery can survive a tracker outage.
                   </Card>
                 )}
               />
@@ -3332,7 +3321,7 @@
           const steps = [
             'User opens .torrent file or magnet link',
             'Client extracts or fetches the info hash',
-            'Client asks tracker and/or DHT: "Who has pieces for this hash?"',
+            'Client asks tracker and/or DHT: "Who is in the swarm for this hash?"',
             'Client connects to returned peers',
             'Client learns piece availability, then requests and downloads pieces in parallel',
             'Client verifies each piece hash and reconstructs the complete file',
@@ -3383,41 +3372,34 @@
         }
 
         function SlideD2Forever() {
+          const stories = [
+            ['Dec. 1, 2010', 'WikiLeaks Cablegate', 'After WikiLeaks was pushed off Amazon, the Guardian reported the cable archive was already moving through BitTorrent.'],
+            ['Apr. 6, 2009', 'Wolverine workprint', 'Fox sent takedowns after the unfinished movie leaked; TorrentFreak reported 1M+ BitTorrent downloads in under a week.'],
+            ['May 9, 2013', '3D gun blueprints', 'The State Department ordered files removed, but the Guardian reported 100K+ downloads and Pirate Bay copies.'],
+          ];
           return (
             <SlideFrame>
               <Eyebrow>Permanence is a feature and a curse</Eyebrow>
-              <div style={{ display: 'grid', gridTemplateColumns: '1.06fr 0.94fr', gap: 56, alignItems: 'end' }}>
-                <Title size="titleSm" style={{ maxWidth: 980 }}>
-                  Once a swarm exists, one surviving copy can keep the file <em>alive.</em>
-                </Title>
-                <div style={{ borderTop: `1px solid ${COLORS.rule}`, borderBottom: `1px solid ${COLORS.rule}`, padding: '16px 0 18px' }}>
-                  <div style={{ fontFamily: FONTS.sans, fontSize: 15, letterSpacing: '0.18em', textTransform: 'uppercase', color: COLORS.muted, marginBottom: 10 }}>
-                    The key idea
-                  </div>
-                  <div style={{ fontFamily: FONTS.serif, fontSize: 30, lineHeight: 1.24, color: COLORS.ink }}>
-                    Deleting a few copies does not erase the file if the swarm still contains one complete copy.
-                  </div>
-                </div>
-              </div>
-              <div style={{ display: 'grid', gridTemplateColumns: '0.9fr 1.1fr', gap: 56, marginTop: 30, alignItems: 'stretch', flex: '1 1 auto', minHeight: 0 }}>
-                <Card title="Why this matters">
-                  Imagine an embarrassing video of you leaks. You can email hosts, get some copies removed, even sue. But can you ever be <em>100% certain</em> every copy is gone? In a swarm, as long as one peer keeps a copy, the file lives on.
-                </Card>
-                <div style={{ display: 'grid', gridTemplateRows: 'auto 1fr', gap: 16, minHeight: 0 }}>
-                  <div style={{ fontFamily: FONTS.sans, fontSize: 16, letterSpacing: '0.18em', textTransform: 'uppercase', color: COLORS.accent }}>
-                    Copies can disappear, but the swarm survives
-                  </div>
-                  <div style={{ minHeight: 0, border: `1px solid ${COLORS.rule}`, background: COLORS.paper, padding: '20px 22px' }}>
-                    <ForeverSwarmDiagram />
-                  </div>
-                </div>
-              </div>
-              <Callout kicker="Two sides of the same coin" style={{ marginTop: 34 }}>
-                The same property that lets a P2P network <em>survive outages</em> also lets it <em>survive takedowns.</em> Resilience and permanence are the same mechanism.
-              </Callout>
-              <Body size="body" style={{ marginTop: 26, fontStyle: 'italic', color: COLORS.inkSoft }}>
-                The internet&apos;s old saying applies twice over: once it&apos;s out there, it&apos;s out there.
+              <Title size="titleSm" style={{ maxWidth: 1160 }}>
+                Once a swarm exists, one surviving copy can keep the file <em>alive.</em>
+              </Title>
+              <Body size="bodyLg" style={{ marginTop: 22, maxWidth: 1380 }}>
+                Deleting a few copies does not erase the file if the swarm still contains one complete copy. Resilience against outages and permanence after takedowns come from the same mechanism.
               </Body>
+              <div style={{ display: 'grid', gridTemplateColumns: '0.92fr 1.08fr', gap: 34, marginTop: 34, flex: '1 1 auto', minHeight: 0, alignItems: 'stretch' }}>
+                <div style={{ display: 'grid', gap: 14, alignContent: 'center' }}>
+                  {stories.map(([date, label, detail]) => (
+                    <div key={label} style={{ borderTop: `1px solid ${COLORS.rule}`, paddingTop: 13 }}>
+                      <div style={{ fontFamily: FONTS.sans, fontSize: 13, letterSpacing: '0.14em', textTransform: 'uppercase', color: COLORS.accent, marginBottom: 6 }}>{date}</div>
+                      <div style={{ fontFamily: FONTS.serif, fontSize: 25, lineHeight: 1.18, color: COLORS.ink, marginBottom: 4 }}>{label}</div>
+                      <div style={{ fontFamily: FONTS.serif, fontSize: 19, lineHeight: 1.28, color: COLORS.inkSoft }}>{detail}</div>
+                    </div>
+                  ))}
+                </div>
+                <div style={{ minHeight: 0, border: `1px solid ${COLORS.rule}`, background: COLORS.paper, padding: '28px 32px' }}>
+                  <ForeverSwarmDiagram />
+                </div>
+              </div>
             </SlideFrame>
           );
         }
@@ -3482,7 +3464,7 @@
           SlideD2Cover, SlideD2Agenda, SlideD2Models, SlideD2NetworkCompare, SlideD2Topology, SlideD2Chunking,
           SlideD2Hashing, SlideD2Resilience, SlideD2Vocab, SlideD2Tradeoffs, SlideD2Recap, SlideD2Next,
           SlideD2DataOwnership, SlideD2Tracker, SlideD2TorrentFile, SlideD2InfoHash, SlideD2DHT, SlideD2MagnetLinks,
-          SlideD2ClientJobs, SlideD2Walkthrough, SlideD2Misconceptions, SlideD2Forever, SlideD2Untouchable, SlideD2LiveDemo,
+          SlideD2Walkthrough, SlideD2Misconceptions, SlideD2Forever, SlideD2Untouchable, SlideD2LiveDemo,
           SlideD2Part1Divider, SlideD2Part2Divider, SlideD2Part3Divider, SlideD2Part4Divider,
         });
       }
@@ -3502,9 +3484,9 @@
           const stage = document.querySelector('deck-stage');
 
           // Part 01 — Centralized vs P2P. Slides 4–6.
-          // Part 02 — Swarm Mechanics. Slides 8–17.
-          // Part 03 — Trust the Bytes. Slide 19.
-          // Part 04 — In the Wild. Slides 21–27.
+          // Part 02 — Swarm Mechanics. Slides 8–16.
+          // Part 03 — Trust the Bytes. Slide 18.
+          // Part 04 — In the Wild. Slides 20–26.
           const SLIDES = [
             ['Cover', SlideD2Cover],
             ['Agenda', SlideD2Agenda],
@@ -3514,12 +3496,11 @@
             ['Topology Demo', SlideD2Topology],
             ['Part 02', SlideD2Part2Divider],
             ['Chunking', SlideD2Chunking],
-            ['Tracker', SlideD2Tracker],
             ['Torrent File', SlideD2TorrentFile],
             ['Info Hash', SlideD2InfoHash],
+            ['Tracker', SlideD2Tracker],
             ['DHT', SlideD2DHT],
             ['Magnet Links', SlideD2MagnetLinks],
-            ['Client Jobs', SlideD2ClientJobs],
             ['Resilience Demo', SlideD2Resilience],
             ['Vocabulary', SlideD2Vocab],
             ['Walkthrough', SlideD2Walkthrough],
