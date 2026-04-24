@@ -369,6 +369,18 @@ export default function ArrayListVisualizer() {
     stepsPerSecondRef.current = speed * 3
   }, [speed])
 
+  useEffect(() => {
+    if (!showHowItWorks) return
+    const handleKeyDown = (e: KeyboardEvent) => { if (e.key === 'Escape') setShowHowItWorks(false) }
+    const prevOverflow = document.body.style.overflow
+    document.body.style.overflow = 'hidden'
+    window.addEventListener('keydown', handleKeyDown)
+    return () => {
+      document.body.style.overflow = prevOverflow
+      window.removeEventListener('keydown', handleKeyDown)
+    }
+  }, [showHowItWorks])
+
   const activityTone = busy ? 'badge--primary' : displayCapacity > 0 ? 'badge--accent' : 'badge--neutral'
   const activityLabel = busy
     ? 'Animation running'
@@ -540,9 +552,6 @@ export default function ArrayListVisualizer() {
                     </button>
                   ))}
                 </div>
-                <p className="helper-text al-side-note">
-                  Adjust the playback pace, then open the quick explainer for resizing, access time, and element shifts.
-                </p>
                 <button
                   className="btn btn--outline btn--sm btn--block"
                   onClick={() => setShowHowItWorks(true)}
@@ -620,11 +629,17 @@ export default function ArrayListVisualizer() {
       </div>
 
       {showHowItWorks && (
-        <div className="al-modal-overlay" onClick={() => setShowHowItWorks(false)}>
-          <div className="al-modal" onClick={e => e.stopPropagation()}>
-            <div className="al-modal-header">
-              <h2 className="h5 eyebrow" style={{ margin: 0 }}>ArrayLists Explained</h2>
-              <button className="al-modal-close" onClick={() => setShowHowItWorks(false)} aria-label="Close">×</button>
+        <div className="popup-overlay" role="presentation" onClick={() => setShowHowItWorks(false)}>
+          <section
+            className="panel popup popup--sm"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="al-modal-title"
+            onClick={e => e.stopPropagation()}
+          >
+            <div className="popup__header">
+              <div className="eyebrow" id="al-modal-title">ArrayLists Explained</div>
+              <button type="button" className="btn btn--outline btn--sm popup__close" onClick={() => setShowHowItWorks(false)}>Close</button>
             </div>
             <div className="stack-xs" style={{ fontSize: '.9rem' }}>
               <div className="eyebrow">BACKING ARRAY</div>
@@ -650,7 +665,7 @@ export default function ArrayListVisualizer() {
                 to shift one position to the left to close the gap.
               </p>
             </div>
-          </div>
+          </section>
         </div>
       )}
 

@@ -144,3 +144,47 @@ export function IconSearch({ size = defaults.size, color = defaults.color, class
     </svg>
   )
 }
+
+export function IconGamepad({ size = defaults.size, color = defaults.color, className }: IconProps) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 32 32" fill="none" stroke={color} strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" className={className} aria-hidden>
+      <rect x="4" y="10" width="24" height="14" rx="5" />
+      <line x1="9" y1="14" x2="9" y2="20" />
+      <line x1="6" y1="17" x2="12" y2="17" />
+      <circle cx="22" cy="15" r="1.5" fill={color} stroke="none" />
+      <circle cx="25" cy="19" r="1.5" fill={color} stroke="none" />
+    </svg>
+  )
+}
+
+export function IconFloppy({ size = defaults.size, color = defaults.color, className }: IconProps) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 32 32" fill="none" stroke={color} strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" className={className} aria-hidden>
+      <path d="M6 3h16l6 6v20a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z" />
+      <rect x="9" y="18" width="14" height="10" rx="1" />
+      <rect x="10" y="3" width="10" height="8" rx="1" />
+      <line x1="17" y1="3" x2="17" y2="11" />
+    </svg>
+  )
+}
+
+export function IconPhone({ size = defaults.size, color = defaults.color, className }: IconProps) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 32 32" fill="none" stroke={color} strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" className={className} aria-hidden>
+      <rect x="9" y="2" width="14" height="28" rx="3" />
+      <line x1="13" y1="27" x2="19" y2="27" />
+      <line x1="14" y1="5" x2="18" y2="5" />
+    </svg>
+  )
+}
+
+export function IconDesktop({ size = defaults.size, color = defaults.color, className }: IconProps) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 32 32" fill="none" stroke={color} strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" className={className} aria-hidden>
+      <rect x="2" y="3" width="28" height="20" rx="2" />
+      <line x1="13" y1="23" x2="11" y2="29" />
+      <line x1="19" y1="23" x2="21" y2="29" />
+      <line x1="9" y1="29" x2="23" y2="29" />
+    </svg>
+  )
+}

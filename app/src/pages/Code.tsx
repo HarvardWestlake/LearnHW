@@ -36,6 +36,14 @@ export default function Code() {
 
         <h2 className="h5 eyebrow" style={{ marginTop: '2rem' }}>Memory &amp; Data Structures</h2>
         <div className="widgets-grid">
+          <Link className="widget-card" to="/code/array-list">
+            <div className="title-row">
+              <h3>Java ArrayList — Memory Visualizer</h3>
+            </div>
+            <p>Native React component. See allocation, growth, and shifting as you add or remove elements from an ArrayList.</p>
+            <span className="button">Open</span>
+          </Link>
+
           <Link className="widget-card" to="/code/binary-explorer">
             <div className="title-row">
               <h3>Binary Interpretation Explorer</h3>

@@ -1,11 +1,21 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { WidgetShell } from '../components/widget';
+import { IconGamepad, IconFloppy, IconPhone, IconDesktop, IconLock } from '../components/icons';
 
 type InputType = 'int' | 'char' | 'hex' | 'eth';
+
+const systems: { bits: number; icon: React.ReactNode; title: string; label: string }[] = [
+  { bits: 8,   icon: <IconGamepad size={20} />, title: 'Retro Console',   label: '8-bit' },
+  { bits: 16,  icon: <IconFloppy size={20} />,  title: 'Classic PC',      label: '16-bit' },
+  { bits: 32,  icon: <IconPhone size={20} />,   title: 'Early Smartphone', label: '32-bit' },
+  { bits: 64,  icon: <IconDesktop size={20} />, title: 'Modern System',   label: '64-bit' },
+  { bits: 160, icon: <IconLock size={20} />,    title: 'Crypto Wallet',   label: '160-bit' },
+];
 
 const DEMO_ETH_ADDRESS = '0x742d35Cc6634C0532925a3b844Bc9e7595f0bE7e';
 const ETH_ADDRESS_BITS = 160;
 
-interface BitProps {
+interface BitTileProps {
   value: string;
   index: number;
   isHighlighted: boolean;
@@ -13,9 +23,9 @@ interface BitProps {
   onMouseLeave?: () => void;
 }
 
-const Bit: React.FC<BitProps> = ({ value, index, isHighlighted, onMouseEnter, onMouseLeave }) => (
+const BitTile: React.FC<BitTileProps> = ({ value, index, isHighlighted, onMouseEnter, onMouseLeave }) => (
   <div
-    className={`bit ${value === '1' ? 'bit-1' : 'bit-0'} ${isHighlighted ? 'highlight' : ''}`}
+    className={`bit-tile ${value === '1' ? 'bit-tile--one' : 'bit-tile--zero'}${isHighlighted ? ' bit-tile--highlight' : ''}`}
     data-val={value}
     data-index={index}
     onMouseEnter={onMouseEnter}
@@ -25,10 +35,8 @@ const Bit: React.FC<BitProps> = ({ value, index, isHighlighted, onMouseEnter, on
   </div>
 );
 
-// Format a 160-bit binary string into a readable, grouped 0x-hex Ethereum address:
-// "0x742d 35Cc 6634 C053 2925 a3b8 44Bc 9e75 95f0 bE7e"
+// Format a 160-bit binary string into a readable, grouped 0x-hex Ethereum address.
 function formatEthAddress(bits160: string): string {
-  // Pad to 160 and convert to 40-char hex.
   let bigVal = 0n;
   for (let i = 0; i < 160; i++) bigVal = (bigVal << 1n) | (bits160[i] === '1' ? 1n : 0n);
   const hex = bigVal.toString(16).padStart(40, '0');
@@ -47,19 +55,10 @@ export default function BinaryExplorer() {
     int: '0',
     char: '.',
     hex: '0x00000000',
-    bool: 'False'
+    bool: 'False',
   });
   const [highlightedTarget, setHighlightedTarget] = useState<string | null>(null);
-  const [showCharWarning, setShowCharWarning] = useState(false);
-
-  // System (word-size) options — now includes a 160-bit crypto-wallet option.
-  const systems = [
-    { bits: 8,   icon: '🕹️', title: 'Retro Console',    label: '8-bit Word Size' },
-    { bits: 16,  icon: '💾', title: 'Classic PC',        label: '16-bit Word Size' },
-    { bits: 32,  icon: '📱', title: 'Early Smartphone',  label: '32-bit Word Size' },
-    { bits: 64,  icon: '🖥️', title: 'Modern System',     label: '64-bit Word Size' },
-    { bits: 160, icon: '🔐', title: 'Crypto Wallet',     label: '160-bit Address (Ethereum)' },
-  ];
+  const [showHowItWorks, setShowHowItWorks] = useState(false);
 
   const processInput = useCallback(() => {
     const rawVal = inputValue.trim();
@@ -83,7 +82,6 @@ export default function BinaryExplorer() {
         bigVal = BigInt('0x' + (hexClean || '0'));
       }
 
-      // For Ethereum mode, also compute the full 160-bit representation.
       if (inputType === 'eth') {
         const mask160 = (1n << 160n) - 1n;
         const ethVal = bigVal & mask160;
@@ -92,17 +90,14 @@ export default function BinaryExplorer() {
         setEthAddressBits(null);
       }
 
-      // Apply mask for current word size.
       const mask = (1n << bits) - 1n;
       if (bigVal < 0n) {
-        // Two's complement for negative numbers
         bigVal = ((-bigVal ^ mask) + 1n) & mask;
       } else {
         bigVal = bigVal & mask;
       }
 
-      const binStr = bigVal.toString(2).padStart(currentBits, '0');
-      setBinaryString(binStr);
+      setBinaryString(bigVal.toString(2).padStart(currentBits, '0'));
     } catch {
       setBinaryString('0'.repeat(currentBits));
       if (inputType === 'eth') setEthAddressBits('0'.repeat(160));
@@ -110,7 +105,6 @@ export default function BinaryExplorer() {
   }, [inputValue, inputType, currentBits]);
 
   const updateInterpretations = useCallback((binStr: string) => {
-    // Signed Integer (Two's Complement)
     const isNegative = binStr[0] === '1';
     let intVal: bigint;
     if (isNegative && currentBits > 1) {
@@ -120,7 +114,6 @@ export default function BinaryExplorer() {
       intVal = BigInt('0b' + binStr);
     }
 
-    // Character from lowest 8 bits
     const lowest8 = binStr.slice(-8);
     const charCode = parseInt(lowest8, 2);
     let charDisplay = '.';
@@ -130,29 +123,35 @@ export default function BinaryExplorer() {
       charDisplay = `[${charCode}]`;
     }
 
-    // Hex
     const hexVal = BigInt('0b' + binStr).toString(16).toUpperCase();
     const hexPadding = Math.ceil(currentBits / 4);
     const paddedHex = hexVal.padStart(hexPadding, '0');
-
-    // Boolean
-    const isTrue = binStr.includes('1');
-    const boolDisplay = isTrue ? 'True' : 'False';
 
     setInterpretations({
       int: intVal.toString(),
       char: charDisplay,
       hex: `0x${paddedHex}`,
-      bool: boolDisplay
+      bool: binStr.includes('1') ? 'True' : 'False',
     });
   }, [currentBits]);
 
   useEffect(() => { updateInterpretations(binaryString); }, [binaryString, updateInterpretations]);
   useEffect(() => { processInput(); }, [processInput]);
 
+  useEffect(() => {
+    if (!showHowItWorks) return;
+    const handleKeyDown = (e: KeyboardEvent) => { if (e.key === 'Escape') setShowHowItWorks(false); };
+    const prevOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    window.addEventListener('keydown', handleKeyDown);
+    return () => {
+      document.body.style.overflow = prevOverflow;
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [showHowItWorks]);
+
   const handleSystemChange = (bits: number) => {
     setCurrentBits(bits);
-    // If the user picks the crypto-wallet size, prefill a demo ETH address so the display is non-empty.
     if (bits === ETH_ADDRESS_BITS && inputType !== 'eth') {
       setInputType('eth');
       setInputValue(DEMO_ETH_ADDRESS);
@@ -160,12 +159,7 @@ export default function BinaryExplorer() {
   };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const newValue = e.target.value;
-    setInputValue(newValue);
-    if (inputType === 'char' && newValue.length > 1) {
-      setShowCharWarning(true);
-      setTimeout(() => setShowCharWarning(false), 3000);
-    }
+    setInputValue(e.target.value);
   };
 
   const handleTypeChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
@@ -175,9 +169,6 @@ export default function BinaryExplorer() {
     else setInputValue('');
   };
 
-  const highlightBits = (target: string | null) => { setHighlightedTarget(target); };
-
-  // Shared renderer: lays out any binary string as byte-groups of 8 bits each.
   const renderBitContainer = (bits: string, totalBits: number, highlightMode: 'all' | 'byte0' | 'none' = 'all') => {
     const numBytes = totalBits / 8;
     const byteGroups: React.ReactNode[] = [];
@@ -192,18 +183,18 @@ export default function BinaryExplorer() {
           (highlightMode === 'byte0' && highlightedTarget === 'byte0' && bitPositionFromRight < 8) ||
           (highlightMode === 'all'   && highlightedTarget === 'byte0' && byteIdx === numBytes - 1);
         byteBits.push(
-          <Bit
+          <BitTile
             key={globalBitIndex}
             value={bitValue}
             index={bitPositionFromRight}
             isHighlighted={isHighlighted}
-            onMouseEnter={() => highlightBits('all')}
-            onMouseLeave={() => highlightBits(null)}
+            onMouseEnter={() => setHighlightedTarget('all')}
+            onMouseLeave={() => setHighlightedTarget(null)}
           />
         );
       }
       byteGroups.push(
-        <div key={byteIdx} className="byte-group">
+        <div key={byteIdx} className="bit-byte-group">
           {byteBits}
         </div>
       );
@@ -215,315 +206,275 @@ export default function BinaryExplorer() {
   const showExtraEthBlock = inputType === 'eth' && ethAddressBits && currentBits < ETH_ADDRESS_BITS;
 
   return (
-    <main className="page binary-explorer">
-      <div className="container widgets-page">
-        <div style={{ display: 'flex', gap: '.75rem', alignItems: 'center', flexWrap: 'wrap', marginBottom: '1rem' }}>
-          <h1 className="h1" style={{ margin: 0 }}>Binary Interpretation Explorer</h1>
-        </div>
+    <main className="page be-page">
+      <div className="container container--wide">
 
-        <div className="panel" style={{ marginBottom: '1.5rem' }}>
-          <p className="muted" style={{ marginBottom: '1.25rem', fontSize: '1.05rem' }}>
+        <section className="be-hero">
+          <div className="eyebrow">Computer Science Explorer</div>
+          <h1 className="h2 be-hero__title">Binary Interpretation Explorer</h1>
+          <p className="lead be-hero__lead">
             The exact same bits produce entirely different realities depending on how the software reads them.
           </p>
+        </section>
 
-          {/* System Selector */}
-          <div className="section">
-            <div className="eyebrow" style={{ marginBottom: '0.75rem' }}>WORD SIZE (MEMORY WIDTH)</div>
-            <div className="system-grid">
-              {systems.map((system) => (
-                <div
-                  key={system.bits}
-                  className={`system-card ${currentBits === system.bits ? 'active' : ''}`}
-                  onClick={() => handleSystemChange(system.bits)}
-                >
-                  <div className="system-icon">{system.icon}</div>
-                  <div className="system-title">{system.title}</div>
-                  <div className="system-bits">{system.label}</div>
+        <WidgetShell
+          controls={
+            <>
+              <section className="panel al-side-panel">
+                <div className="widget-panel__head">
+                  <div className="eyebrow">Word Size</div>
                 </div>
-              ))}
-            </div>
-          </div>
+                <div className="grid grid-3 gap-sm">
+                  {systems.map(system => (
+                    <div
+                      key={system.bits}
+                      className={`selectable-card${currentBits === system.bits ? ' active' : ''}`}
+                      style={{ padding: '.6rem .4rem' }}
+                      onClick={() => handleSystemChange(system.bits)}
+                    >
+                      <div className="selectable-card__icon">{system.icon}</div>
+                      <div className="selectable-card__title" style={{ fontSize: '.72rem' }}>{system.title}</div>
+                      <div className="selectable-card__sub" style={{ fontSize: '.65rem' }}>{system.label}</div>
+                    </div>
+                  ))}
+                </div>
+              </section>
 
-          {/* Input Controls */}
-          <div className="input-section">
-            <div className="field" style={{ minWidth: '200px' }}>
-              <label>Interpretation Type</label>
-              <select
-                value={inputType}
-                onChange={handleTypeChange}
-                className="select"
-                style={{ fontSize: '1.1rem', padding: '0.75rem' }}
-              >
-                <option value="int">Signed Integer</option>
-                <option value="char">Character (A-Z)</option>
-                <option value="hex">Hexadecimal (0x)</option>
-                <option value="eth">Ethereum Address</option>
-              </select>
-            </div>
-
-            <div className="field" style={{ flex: 1, maxWidth: inputType === 'eth' ? '520px' : '280px' }}>
-              <label>Data Value</label>
-              <div style={{ position: 'relative' }}>
-                <input
-                  type="text"
-                  value={inputValue}
-                  onChange={handleInputChange}
-                  maxLength={
-                    inputType === 'char' ? 8 :
-                    inputType === 'eth'  ? 42 : 20
-                  }
-                  placeholder={
-                    inputType === 'char' ? 'A'   :
-                    inputType === 'hex'  ? '0x2A' :
-                    inputType === 'eth'  ? DEMO_ETH_ADDRESS : '42'
-                  }
-                  className="input"
-                  style={{
-                    fontSize: inputType === 'eth' ? '1rem' : '1.35rem',
-                    padding: '0.85rem 1rem',
-                    textAlign: inputType === 'eth' ? 'left' : 'center',
-                    fontFamily: 'monospace',
-                    fontWeight: 600,
-                    width: '100%'
-                  }}
-                />
-                {inputType === 'char' && inputValue.length > 1 && (
-                  <div style={{
-                    position: 'absolute',
-                    right: '12px',
-                    top: '50%',
-                    transform: 'translateY(-50%)',
-                    fontSize: '0.75rem',
-                    color: 'var(--hw-secondary-black-50)',
-                    pointerEvents: 'none'
-                  }}>
-                    {inputValue.slice(1)}
+              <section className="panel al-side-panel">
+                <div className="widget-panel__head">
+                  <div className="eyebrow">Input</div>
+                </div>
+                <div className="al-operation-card">
+                  <div className="al-operation-card__title">Interpretation Type</div>
+                  <select
+                    value={inputType}
+                    onChange={handleTypeChange}
+                    className="select"
+                  >
+                    <option value="int">Signed Integer</option>
+                    <option value="char">Character (A–Z)</option>
+                    <option value="hex">Hexadecimal (0x)</option>
+                    <option value="eth">Ethereum Address</option>
+                  </select>
+                </div>
+                <div className="al-operation-card">
+                  <div className="al-operation-card__title">Data Value</div>
+                  <input
+                    type="text"
+                    value={inputValue}
+                    onChange={handleInputChange}
+                    maxLength={inputType === 'char' ? 8 : inputType === 'eth' ? 42 : 20}
+                    placeholder={
+                      inputType === 'char' ? 'A' :
+                      inputType === 'hex'  ? '0x2A' :
+                      inputType === 'eth'  ? DEMO_ETH_ADDRESS : '42'
+                    }
+                    className="input"
+                    style={{ fontFamily: 'monospace', fontWeight: 600 }}
+                  />
+                  {inputType === 'char' && inputValue.length > 1 && (
+                    <div className="alert alert--warning" style={{ margin: '.4rem 0 0', padding: '.4rem .75rem', fontSize: '.8rem' }}>
+                      Only the <strong>first character</strong> is used.
+                    </div>
+                  )}
+                  <div className="helper-text">
+                    {inputType === 'int'  && 'Any integer (positive or negative)'}
+                    {inputType === 'char' && 'Single character — only the first is used'}
+                    {inputType === 'hex'  && 'Hex value (e.g. 2A or 0xFF)'}
+                    {inputType === 'eth'  && '40-char hex Ethereum address (0x + 40 digits)'}
                   </div>
-                )}
+                </div>
+              </section>
+            </>
+          }
+
+          info={
+            <>
+              <section className="panel al-side-panel">
+                <div className="widget-panel__head">
+                  <div className="eyebrow">Interpretations</div>
+                </div>
+                <div className="be-interp-grid">
+
+                  <div
+                    className="be-interp-card"
+                    onMouseEnter={() => setHighlightedTarget('all')}
+                    onMouseLeave={() => setHighlightedTarget(null)}
+                  >
+                    <div className="be-interp-card__label">As Signed Integer</div>
+                    <div
+                      className="be-interp-card__value"
+                      style={{ color: interpretations.int.startsWith('-') ? 'var(--hw-red)' : 'inherit' }}
+                    >
+                      {interpretations.int}
+                    </div>
+                    <div className="be-interp-card__note">Two's Complement · {currentBits} bits</div>
+                  </div>
+
+                  <div
+                    className="be-interp-card"
+                    onMouseEnter={() => setHighlightedTarget('byte0')}
+                    onMouseLeave={() => setHighlightedTarget(null)}
+                  >
+                    <div className="be-interp-card__label">As Character</div>
+                    <div className="be-interp-card__value" style={{ fontFamily: 'monospace' }}>
+                      {interpretations.char}
+                    </div>
+                    <div className="be-interp-card__note">Lowest 8 bits as ASCII</div>
+                  </div>
+
+                  <div
+                    className="be-interp-card"
+                    onMouseEnter={() => setHighlightedTarget('all')}
+                    onMouseLeave={() => setHighlightedTarget(null)}
+                  >
+                    <div className="be-interp-card__label">As Hexadecimal</div>
+                    <div
+                      className="be-interp-card__value"
+                      style={{ fontFamily: 'monospace', letterSpacing: '1px', fontSize: '1.05rem' }}
+                    >
+                      {interpretations.hex}
+                    </div>
+                    <div className="be-interp-card__note">Base-16 representation</div>
+                  </div>
+
+                  <div
+                    className="be-interp-card"
+                    onMouseEnter={() => setHighlightedTarget('all')}
+                    onMouseLeave={() => setHighlightedTarget(null)}
+                  >
+                    <div className="be-interp-card__label">As Boolean</div>
+                    <div
+                      className="be-interp-card__value"
+                      style={{ color: interpretations.bool === 'True' ? 'var(--hw-success)' : 'var(--hw-red)' }}
+                    >
+                      {interpretations.bool}
+                    </div>
+                    <div className="be-interp-card__note">Non-zero memory?</div>
+                  </div>
+
+                  {inputType === 'eth' && formattedEth && (
+                    <div
+                      className="be-interp-card be-interp-card--eth"
+                      onMouseEnter={() => setHighlightedTarget('all')}
+                      onMouseLeave={() => setHighlightedTarget(null)}
+                    >
+                      <div className="be-interp-card__label" style={{ color: 'var(--hw-warning)' }}>
+                        As Ethereum Address
+                      </div>
+                      <div
+                        className="be-interp-card__value"
+                        style={{ fontFamily: 'monospace', fontSize: '.9rem', letterSpacing: '.5px' }}
+                      >
+                        {formattedEth}
+                      </div>
+                      <div className="be-interp-card__note">160-bit · 20 bytes · 40 hex digits</div>
+                    </div>
+                  )}
+
+                </div>
+              </section>
+
+              <section className="panel al-side-panel">
+                <button
+                  className="btn btn--outline btn--sm btn--block"
+                  onClick={() => setShowHowItWorks(true)}
+                >
+                  How It Works
+                </button>
+              </section>
+            </>
+          }
+        >
+          {/* Center: binary memory visualization */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '.75rem' }}>
+
+            <div className="mem-viz-frame" data-label={`Physical Memory — ${currentBits}-Bit Word`}>
+              <div className="be-word-title">Raw Binary · {currentBits}-bit Word</div>
+              <div className="bit-word-container">
+                {renderBitContainer(binaryString, currentBits, 'all')}
               </div>
-              <div className="helper-text" style={{ marginTop: '0.5rem', fontSize: '0.95rem' }}>
-                {inputType === 'int'  && 'Any integer (positive or negative)'}
-                {inputType === 'char' && 'Single character — only the first is used'}
-                {inputType === 'hex'  && 'Hex value (e.g. 2A, 0xFF, or just FF)'}
-                {inputType === 'eth'  && '40-char hex Ethereum address (0x + 40 hex digits = 160 bits = 20 bytes)'}
+              <div className="legend-key al-legend-inline al-legend-inline--below">
+                <div className="legend-key__item">
+                  <span className="be-legend-swatch be-legend-swatch--zero" />
+                  ZERO (false / off)
+                </div>
+                <div className="legend-key__item">
+                  <span className="be-legend-swatch be-legend-swatch--one" />
+                  ONE (true / on)
+                </div>
               </div>
             </div>
-          </div>
-        </div>
 
-        {/* Binary Memory Display — primary word */}
-        <div className="panel binary-master" style={{ marginBottom: '1.5rem' }}>
-          <div className="binary-title">PHYSICAL MEMORY (RAW BINARY) — {currentBits}-BIT WORD</div>
-          <div className="bit-container">
-            {renderBitContainer(binaryString, currentBits, 'all')}
-          </div>
-          <div style={{
-            marginTop: '1.25rem',
-            display: 'flex',
-            gap: '2rem',
-            justifyContent: 'center',
-            fontSize: '0.9rem',
-            color: 'var(--hw-secondary-black-50)'
-          }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-              <div className="bit bit-0" style={{ width: '20px', height: '20px', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontSize: '11px', borderRadius: '4px' }}>0</div>
-              <span>ZERO (false / off)</span>
-            </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-              <div className="bit bit-1" style={{ width: '20px', height: '20px', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontSize: '11px', borderRadius: '4px' }}>1</div>
-              <span>ONE (true / on)</span>
-            </div>
-          </div>
-        </div>
-
-        {/* Secondary 160-bit Ethereum address memory block —
-            only when the user is interpreting as ETH AND the main word can't hold a full address. */}
-        {showExtraEthBlock && ethAddressBits && (
-          <div
-            className="panel binary-master binary-crypto"
-            style={{
-              marginBottom: '1.5rem',
-              borderColor: 'var(--hw-gold)',
-              background: 'linear-gradient(180deg, var(--hw-brand-gold-20) 0%, white 100%)'
-            }}
-          >
-            <div
-              className="binary-title"
-              style={{ color: 'var(--hw-warning)' }}
-            >
-              🔐 ETHEREUM ADDRESS MEMORY — 160 BITS · 20 BYTES
-            </div>
-            <div className="bit-container">
-              {renderBitContainer(ethAddressBits, ETH_ADDRESS_BITS, 'all')}
-            </div>
-            <div style={{
-              marginTop: '1.25rem',
-              textAlign: 'center',
-              fontSize: '0.95rem',
-              color: 'var(--hw-warning)'
-            }}>
-              A full Ethereum address needs <strong>{ETH_ADDRESS_BITS} bits</strong> — {ETH_ADDRESS_BITS / currentBits}× the size of your current <strong>{currentBits}-bit word</strong>. Real wallets store addresses in this longer memory region.
-            </div>
-          </div>
-        )}
-
-        {/* Interpretations */}
-        <div className="interpretations-grid">
-          <div
-            className="interp-card"
-            onMouseEnter={() => highlightBits('all')}
-            onMouseLeave={() => highlightBits(null)}
-          >
-            <div className="interp-label">AS SIGNED INTEGER</div>
-            <div className="interp-value" style={{ color: interpretations.int.startsWith('-') ? 'var(--hw-red)' : 'inherit' }}>
-              {interpretations.int}
-            </div>
-            <span className="interp-subtext">Two's Complement • {currentBits} bits</span>
-          </div>
-
-          <div
-            className="interp-card"
-            onMouseEnter={() => highlightBits('byte0')}
-            onMouseLeave={() => highlightBits(null)}
-          >
-            <div className="interp-label">AS CHARACTER</div>
-            <div className="interp-value" style={{ fontSize: '2rem', fontFamily: 'monospace' }}>
-              {interpretations.char}
-            </div>
-            <span className="interp-subtext">Lowest 8 bits as ASCII</span>
-          </div>
-
-          <div
-            className="interp-card"
-            onMouseEnter={() => highlightBits('all')}
-            onMouseLeave={() => highlightBits(null)}
-          >
-            <div className="interp-label">AS HEXADECIMAL</div>
-            <div className="interp-value" style={{ fontFamily: 'monospace', letterSpacing: '1px' }}>
-              {interpretations.hex}
-            </div>
-            <span className="interp-subtext">Base-16 representation</span>
-          </div>
-
-          <div
-            className="interp-card"
-            onMouseEnter={() => highlightBits('all')}
-            onMouseLeave={() => highlightBits(null)}
-          >
-            <div className="interp-label">AS BOOLEAN</div>
-            <div
-              className="interp-value"
-              style={{
-                color: interpretations.bool === 'True' ? 'var(--hw-success)' : 'var(--hw-red)',
-                fontWeight: 700
-              }}
-            >
-              {interpretations.bool}
-            </div>
-            <span className="interp-subtext">Non-zero memory?</span>
-          </div>
-
-          {inputType === 'eth' && formattedEth && (
-            <div
-              className="interp-card"
-              style={{
-                gridColumn: '1 / -1',
-                borderColor: 'var(--hw-gold)',
-                background: 'linear-gradient(180deg, var(--hw-brand-gold-20) 0%, white 100%)'
-              }}
-            >
-              <div className="interp-label" style={{ color: 'var(--hw-warning)' }}>AS ETHEREUM ADDRESS</div>
+            {showExtraEthBlock && ethAddressBits && (
               <div
-                className="interp-value"
-                style={{
-                  fontSize: '1.1rem',
-                  fontFamily: 'monospace',
-                  letterSpacing: '0.5px',
-                  wordBreak: 'break-all'
-                }}
+                className="mem-viz-frame"
+                data-label="Ethereum Address — 160 Bits · 20 Bytes"
+                style={{ borderColor: 'var(--hw-gold)' }}
               >
-                {formattedEth}
+                <div className="be-word-title" style={{ color: 'var(--hw-warning)' }}>
+                  Ethereum Address Memory — 160 Bits · 20 Bytes
+                </div>
+                <div className="bit-word-container">
+                  {renderBitContainer(ethAddressBits, ETH_ADDRESS_BITS, 'all')}
+                </div>
+                <p className="muted" style={{ marginTop: '1rem', textAlign: 'center', fontSize: '.88rem' }}>
+                  A full Ethereum address needs <strong>{ETH_ADDRESS_BITS} bits</strong> — {ETH_ADDRESS_BITS / currentBits}× the size of your current <strong>{currentBits}-bit word</strong>.
+                </p>
               </div>
-              <span className="interp-subtext">160-bit public-key hash · 20 bytes · 40 hex digits</span>
-            </div>
-          )}
-        </div>
+            )}
 
-        <div className="panel" style={{ marginTop: '2rem' }}>
-          <h3 className="h5" style={{ marginBottom: '0.75rem' }}>How It Works</h3>
-          <div className="grid grid-2 gap-md">
-            <div>
+          </div>
+        </WidgetShell>
+
+      </div>
+
+      {showHowItWorks && (
+        <div className="popup-overlay" role="presentation" onClick={() => setShowHowItWorks(false)}>
+          <section
+            className="panel popup popup--sm"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="be-modal-title"
+            onClick={e => e.stopPropagation()}
+          >
+            <div className="popup__header">
+              <div className="eyebrow" id="be-modal-title">How Binary Interpretation Works</div>
+              <button
+                type="button"
+                className="btn btn--outline btn--sm popup__close"
+                onClick={() => setShowHowItWorks(false)}
+              >
+                Close
+              </button>
+            </div>
+            <div className="stack-xs" style={{ fontSize: '.9rem' }}>
               <div className="eyebrow">MEMORY IS JUST BITS</div>
-              <p className="muted" style={{ fontSize: '0.9rem' }}>
+              <p className="muted">
                 The same sequence of 1s and 0s can be interpreted as an integer, a character,
-                a memory address, or even an instruction. This explorer shows how different
+                a memory address, or even a machine instruction. This explorer shows how different
                 data types reinterpret the exact same physical memory.
               </p>
-            </div>
-            <div>
-              <div className="eyebrow">TWO'S COMPLEMENT</div>
-              <p className="muted" style={{ fontSize: '0.9rem' }}>
-                Negative numbers use two's complement. The leftmost bit is the sign bit.
-                Try entering negative numbers to see how the bit patterns change.
+              <div className="eyebrow" style={{ marginTop: '.5rem' }}>TWO'S COMPLEMENT</div>
+              <p className="muted">
+                Negative numbers use two's complement encoding. The leftmost bit is the sign bit —
+                try entering negative integers to see how the bit pattern changes.
               </p>
-            </div>
-            <div>
-              <div className="eyebrow">CRYPTO ADDRESSES ARE HUGE</div>
-              <p className="muted" style={{ fontSize: '0.9rem' }}>
+              <div className="eyebrow" style={{ marginTop: '.5rem' }}>CRYPTO ADDRESSES ARE HUGE</div>
+              <p className="muted">
                 An Ethereum address is a <strong>160-bit</strong> hash — five times longer than a 32-bit word.
                 That size is what makes collisions effectively impossible (2<sup>160</sup> ≈ 10<sup>48</sup> possibilities).
               </p>
-            </div>
-            <div>
-              <div className="eyebrow">WHY 160 BITS?</div>
-              <p className="muted" style={{ fontSize: '0.9rem' }}>
-                Ethereum takes the last 20 bytes of a Keccak-256 hash of your public key. 20 bytes × 8 bits = 160.
-                Bitcoin's P2PKH addresses use the same 160-bit length for the same reason.
+              <div className="eyebrow" style={{ marginTop: '.5rem' }}>WHY 160 BITS?</div>
+              <p className="muted">
+                Ethereum takes the last 20 bytes of a Keccak-256 hash of your public key.
+                20 bytes × 8 bits = 160. Bitcoin's P2PKH addresses use the same 160-bit length.
               </p>
             </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Character Input Warning Overlay */}
-      {showCharWarning && (
-        <div style={{
-          position: 'fixed',
-          top: '50%',
-          left: '50%',
-          transform: 'translate(-50%, -50%)',
-          background: 'var(--hw-brand-black)',
-          color: 'white',
-          padding: '1.25rem 2rem',
-          borderRadius: '12px',
-          maxWidth: '320px',
-          textAlign: 'center',
-          boxShadow: '0 25px 50px -12px rgb(0 0 0 / 0.4)',
-          zIndex: 100,
-          animation: 'fadeInOut 3s forwards'
-        }}>
-          <div style={{ fontSize: '1.1rem', marginBottom: '0.75rem', fontWeight: 600 }}>
-            Single Character Only
-          </div>
-          <p style={{ margin: 0, opacity: 0.9, lineHeight: 1.5 }}>
-            Only the <strong>first character</strong> is stored in the memory cell.<br />
-            Extra characters are ignored.
-          </p>
-          <div style={{
-            position: 'absolute',
-            bottom: '-6px',
-            left: '50%',
-            transform: 'translateX(-50%)',
-            width: 0,
-            height: 0,
-            borderLeft: '8px solid transparent',
-            borderRight: '8px solid transparent',
-            borderTop: '8px solid var(--hw-brand-black)'
-          }} />
+          </section>
         </div>
       )}
 
-      {/* Note: Binary Explorer styles are defined in index.css */}
     </main>
   );
 }

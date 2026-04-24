@@ -83,7 +83,7 @@ const X_MAX = 6
 const Y_MIN = -8
 const Y_MAX = 12
 const X_TICKS = Array.from({ length: X_MAX - X_MIN + 1 }, (_, i) => X_MIN + i)
-const Y_TICKS = Array.from({ length: (Y_MAX - Y_MIN) / 2 + 1 }, (_, i) => Y_MIN + i * 2)
+const Y_TICKS = Array.from({ length: Y_MAX - Y_MIN + 1 }, (_, i) => Y_MIN + i)
 const SAMPLE_COUNT = 241
 
 function roundToTenth(value: number) {
@@ -92,6 +92,15 @@ function roundToTenth(value: number) {
 
 function nearlyZero(value: number) {
   return Math.abs(value) < 0.0001
+}
+
+function isApproximate(value: number) {
+  return Math.abs(value - roundToTenth(value)) > 0.00001
+}
+
+function formatPoint(x: number, y: number) {
+  const approx = isApproximate(x) || isApproximate(y)
+  return `${approx ? '~' : ''}(${formatNumber(x)}, ${formatNumber(y)})`
 }
 
 function formatNumber(value: number) {
@@ -270,6 +279,7 @@ function EquationCard({ label, equation, note }: EquationCardProps) {
 export default function QuadraticExplorer() {
   const [values, setValues] = useState<ExplorerValues>(DEFAULT_VALUES)
   const [showPresets, setShowPresets] = useState(false)
+  const [restrictDomain, setRestrictDomain] = useState(false)
 
   useEffect(() => {
     const previousTitle = document.title
@@ -303,11 +313,36 @@ export default function QuadraticExplorer() {
   const opensLabel = aSigned >= 0 ? 'Upward' : 'Downward'
   const widthLabel = Math.abs(values.stretch - 1) < 0.001 ? 'Same' : values.stretch > 1 ? 'Narrower' : 'Wider'
   const parentEquation = 'p(x) = x²'
-  const geometricNotation = `(x,y) -> (${formatShiftedX(values.h)}, ${formatScaledShiftedY(aSigned, values.k)})`
+  const geometricNotation = `(x,y) → (${formatShiftedX(values.h)}, ${formatScaledShiftedY(aSigned, values.k)})`
   const absoluteExtremumLabel = aSigned >= 0 ? 'Vertex is Absolute Min' : 'Vertex is Absolute Max'
   const vertexEquation = formatVertexForm(aSigned, values.h, values.k)
   const standardEquation = formatStandardForm(aSigned, values.h, values.k)
-  const domainLabel = '(-∞, ∞)'
+  const domainLabel = restrictDomain
+    ? `[${formatNumber(values.h)}, ∞)`
+    : '(-∞, ∞)'
+
+  const xInterceptsDiscriminant = nearlyZero(aSigned) ? NaN : -values.k / aSigned
+  let xInterceptsLabel: string
+  if (isNaN(xInterceptsDiscriminant) || xInterceptsDiscriminant < -0.0001) {
+    xInterceptsLabel = 'No real roots'
+  } else if (Math.abs(xInterceptsDiscriminant) <= 0.0001) {
+    xInterceptsLabel = formatPoint(values.h, 0)
+  } else {
+    const sqrtD = Math.sqrt(xInterceptsDiscriminant)
+    const x1 = values.h - sqrtD
+    const x2 = values.h + sqrtD
+    xInterceptsLabel = restrictDomain
+      ? formatPoint(x2, 0)
+      : `${formatPoint(x1, 0)},  ${formatPoint(x2, 0)}`
+  }
+
+  let yInterceptLabel: string
+  if (restrictDomain && values.h > 0.0001) {
+    yInterceptLabel = 'Not in domain'
+  } else {
+    const yInt = evaluateQuadratic(0, aSigned, values.h, values.k)
+    yInterceptLabel = formatPoint(0, yInt)
+  }
   const rangeLabel = aSigned >= 0
     ? `[${formatNumber(values.k)}, ∞)`
     : `(-∞, ${formatNumber(values.k)}]`
@@ -326,10 +361,13 @@ export default function QuadraticExplorer() {
     const x = X_MIN + index * sampleStep
     return { x, y: x * x }
   })
-  const transformedPoints = Array.from({ length: SAMPLE_COUNT }, (_, index) => {
+  const allTransformedPoints = Array.from({ length: SAMPLE_COUNT }, (_, index) => {
     const x = X_MIN + index * sampleStep
     return { x, y: evaluateQuadratic(x, aSigned, values.h, values.k) }
   })
+  const transformedPoints = restrictDomain
+    ? [{ x: values.h, y: values.k }, ...allTransformedPoints.filter(p => p.x > values.h + 0.001)]
+    : allTransformedPoints
 
   const parentPath = makeCurvePath(parentPoints, mapX, mapY)
   const transformedPath = makeCurvePath(transformedPoints, mapX, mapY)
@@ -434,9 +472,28 @@ export default function QuadraticExplorer() {
                     onChange={k => setValues(current => ({ ...current, k }))}
                   />
                 </div>
+
+                <div className="qe-control-group">
+                  <div className="qe-control-group__title">Invertibility</div>
+                  <div className="field qe-control">
+                    <button
+                      type="button"
+                      className={`qe-toggle-btn${restrictDomain ? ' qe-toggle-btn--active' : ''}`}
+                      aria-pressed={restrictDomain}
+                      onClick={() => setRestrictDomain(r => !r)}
+                    >
+                      Restrict domain
+                    </button>
+                    <p className="helper-text qe-control__hint">
+                      {restrictDomain
+                        ? `Domain restricted to x ≥ ${formatNumber(values.h)}. g(x) is now invertible.`
+                        : 'Restrict to the right branch to make g(x) one-to-one.'}
+                    </p>
+                  </div>
+                </div>
               </div>
 
-              <button className="btn btn--outline btn--block" onClick={() => setValues(DEFAULT_VALUES)}>
+              <button className="btn btn--outline btn--block" onClick={() => { setValues(DEFAULT_VALUES); setRestrictDomain(false) }}>
                 Reset
               </button>
             </section>
@@ -576,6 +633,26 @@ export default function QuadraticExplorer() {
                 </div>
               </div>
             </section>
+
+            <section className="panel qe-key-points-panel">
+              <div className="widget-panel__head qe-side-panel__head">
+                <div className="eyebrow">Key Points</div>
+              </div>
+              <div className="metrics-grid qe-key-points-grid">
+                <div className="metric">
+                  <span className="metric__label">Vertex</span>
+                  <span className="metric__value qe-metric-value">({formatNumber(vertex.x)}, {formatNumber(vertex.y)})</span>
+                </div>
+                <div className="metric">
+                  <span className="metric__label">x-intercepts</span>
+                  <span className="metric__value qe-metric-value">{xInterceptsLabel}</span>
+                </div>
+                <div className="metric">
+                  <span className="metric__label">y-intercept</span>
+                  <span className="metric__value qe-metric-value">{yInterceptLabel}</span>
+                </div>
+              </div>
+            </section>
           </section>
 
           <aside className="qe-insights">
@@ -585,14 +662,6 @@ export default function QuadraticExplorer() {
               </div>
               <div className="metrics-grid qe-snapshot-grid">
                 <div className="metric">
-                  <span className="metric__label">Vertex</span>
-                  <span className="metric__value">({formatNumber(vertex.x)}, {formatNumber(vertex.y)})</span>
-                </div>
-                <div className="metric">
-                  <span className="metric__label">Axis</span>
-                  <span className="metric__value">x = {formatNumber(values.h)}</span>
-                </div>
-                <div className="metric">
                   <span className="metric__label">Domain</span>
                   <span className="metric__value qe-metric-value">{domainLabel}</span>
                 </div>
@@ -600,9 +669,13 @@ export default function QuadraticExplorer() {
                   <span className="metric__label">Range</span>
                   <span className="metric__value qe-metric-value">{rangeLabel}</span>
                 </div>
-                <div className="metric qe-metric--span-2">
+                <div className="metric">
                   <span className="metric__label">Parent</span>
                   <span className="metric__value qe-metric-value">{parentEquation}</span>
+                </div>
+                <div className="metric">
+                  <span className="metric__label">Axis</span>
+                  <span className="metric__value">x = {formatNumber(values.h)}</span>
                 </div>
                 <div className="metric qe-metric--span-2">
                   <span className="metric__label">Geometric Notation</span>
@@ -629,14 +702,14 @@ export default function QuadraticExplorer() {
                   <span className="metric__value">{widthLabel}</span>
                 </div>
                 <div className="metric">
-                  <span className="metric__label">Horizontal Movement</span>
+                  <span className="metric__label">Horizontal<br />Movement</span>
                   <span className="metric__value qe-metric-value qe-metric-value--stacked">
                     <span>{horizontalMovementLines.firstLine}</span>
                     <span>{horizontalMovementLines.secondLine}</span>
                   </span>
                 </div>
                 <div className="metric">
-                  <span className="metric__label">Vertical Movement</span>
+                  <span className="metric__label">Vertical<br />Movement</span>
                   <span className="metric__value qe-metric-value qe-metric-value--stacked">
                     <span>{verticalMovementLines.firstLine}</span>
                     <span>{verticalMovementLines.secondLine}</span>
@@ -648,19 +721,19 @@ export default function QuadraticExplorer() {
         </div>
 
         {showPresets && (
-          <div className="qe-modal-overlay" role="presentation" onClick={() => setShowPresets(false)}>
+          <div className="popup-overlay" role="presentation" onClick={() => setShowPresets(false)}>
             <section
-              className="panel qe-modal"
+              className="panel popup"
               role="dialog"
               aria-modal="true"
               aria-labelledby="qe-presets-title"
               onClick={event => event.stopPropagation()}
             >
-              <div className="qe-modal__header">
+              <div className="popup__header">
                 <div className="eyebrow" id="qe-presets-title">Presets</div>
                 <button
                   type="button"
-                  className="btn btn--outline btn--sm qe-modal__close"
+                  className="btn btn--outline btn--sm popup__close"
                   onClick={() => setShowPresets(false)}
                 >
                   Close

@@ -1,7 +1,11 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { OverviewPage, OverviewGroup, OverviewSection, OverviewConnector } from '../components/overview'
 import { WidgetShell, OperationField, MetricsDisplay } from '../components/widget'
-import { IconCpu, IconMemory, IconBinary, IconInbox, IconSearch } from '../components/icons'
+import {
+  IconCpu, IconMemory, IconBinary, IconStack, IconHash, IconKey, IconLock,
+  IconGraph, IconGrid, IconFunction, IconInbox, IconSearch,
+  IconGamepad, IconFloppy, IconPhone, IconDesktop,
+} from '../components/icons'
 
 const demoFrame = {
   border: '1px dashed var(--hw-secondary-khaki)',
@@ -25,6 +29,19 @@ export default function StyleGuide() {
   const [openAccordion, setOpenAccordion] = useState<number | null>(0)
   const [activeSeg, setActiveSeg] = useState(0)
   const [activeCard, setActiveCard] = useState(0)
+  const [showPopup, setShowPopup] = useState(false)
+
+  useEffect(() => {
+    if (!showPopup) return
+    const handleKeyDown = (e: KeyboardEvent) => { if (e.key === 'Escape') setShowPopup(false) }
+    const prevOverflow = document.body.style.overflow
+    document.body.style.overflow = 'hidden'
+    window.addEventListener('keydown', handleKeyDown)
+    return () => {
+      document.body.style.overflow = prevOverflow
+      window.removeEventListener('keydown', handleKeyDown)
+    }
+  }, [showPopup])
   const primaryTokens = [
     { name: '--hw-brand-black', value: '#000000', cmyk: 'CMYK 0 0 0 100', bg: 'var(--hw-brand-black)', light: true },
     { name: '--hw-brand-red', value: '#DA0016', cmyk: 'Pantone 186 C · CMYK 12 100 91 3', bg: 'var(--hw-brand-red)', light: true },
@@ -317,6 +334,44 @@ export default function StyleGuide() {
           </div>
         </section>
 
+        {/* Icons */}
+        <section className="panel">
+          <h2 className="h5 eyebrow">Icons</h2>
+          <p className="muted">
+            Custom SVG icons from <code>app/src/components/icons.tsx</code>. All accept <code>size</code> (default 32), <code>color</code> (default <code>currentColor</code>), and <code>className</code> props. Icons marked with an emoji are the canonical SVG replacements for that emoji in widget UI.
+          </p>
+          <div style={{ marginTop: '1rem', display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(88px, 1fr))', gap: '.75rem' }}>
+            {([
+              { icon: <IconCpu />,      name: 'IconCpu' },
+              { icon: <IconMemory />,   name: 'IconMemory' },
+              { icon: <IconBinary />,   name: 'IconBinary' },
+              { icon: <IconStack />,    name: 'IconStack' },
+              { icon: <IconHash />,     name: 'IconHash' },
+              { icon: <IconKey />,      name: 'IconKey' },
+              { icon: <IconLock />,     name: 'IconLock' },
+              { icon: <IconGraph />,    name: 'IconGraph' },
+              { icon: <IconGrid />,     name: 'IconGrid' },
+              { icon: <IconFunction />, name: 'IconFunction' },
+              { icon: <IconInbox />,    name: 'IconInbox' },
+              { icon: <IconSearch />,   name: 'IconSearch' },
+              { icon: <IconGamepad />,  name: 'IconGamepad',  emoji: '🕹️' },
+              { icon: <IconFloppy />,   name: 'IconFloppy',   emoji: '💾' },
+              { icon: <IconPhone />,    name: 'IconPhone',    emoji: '📱' },
+              { icon: <IconDesktop />,  name: 'IconDesktop',  emoji: '🖥️' },
+            ] as { icon: React.ReactNode; name: string; emoji?: string }[]).map(({ icon, name, emoji }) => (
+              <div key={name} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '.3rem', padding: '.6rem .4rem', border: '1px solid var(--hw-border)', borderRadius: 'var(--hw-radius-sm)', textAlign: 'center' }}>
+                {icon}
+                <code style={{ fontSize: '.58rem', lineHeight: 1.3, wordBreak: 'break-all' }}>{name.replace('Icon', '')}</code>
+                {emoji && <span style={{ fontSize: '.65rem', color: 'var(--hw-secondary-black)', opacity: .55 }}>{emoji}</span>}
+              </div>
+            ))}
+          </div>
+          <div className="stack-sm" style={{ marginTop: '1rem', fontSize: '.9rem' }}>
+            <p>Import from <code>../components/icons</code>. Stroke icons use <code>currentColor</code> by default — wrap in a colored container to tint them.</p>
+            <p>Emoji-replacements (🕹️ 💾 📱 🖥️) are the canonical icons for Binary Interpretation Explorer system cards; use the SVG variants in all new widget UI.</p>
+          </div>
+        </section>
+
         <SectionGroup label="Feedback & Status" />
 
         {/* Toasts */}
@@ -366,6 +421,46 @@ export default function StyleGuide() {
             </span>
           </div>
         </section>
+
+        {/* Popup / Modal */}
+        <section className="panel">
+          <h2 className="h5 eyebrow">Popup / Modal</h2>
+          <p className="muted">
+            Centered overlay dialog for contextual detail panels, preset pickers, or explainer content.
+            The overlay dims and blurs the page; clicking outside or pressing Escape closes the popup.
+          </p>
+          <div style={{ marginTop: '1rem' }}>
+            <button className="btn btn--outline" onClick={() => setShowPopup(true)}>Open example popup</button>
+          </div>
+          <div className="stack-sm" style={{ marginTop: '1rem', fontSize: '.9rem' }}>
+            <p><code>.popup-overlay</code> — fixed full-screen backdrop (dimmed + blur). Click to dismiss.</p>
+            <p><code>.panel.popup</code> — the dialog card; inherits panel padding, background, and border. Default max-width 760 px.</p>
+            <p><code>.popup--sm</code> — narrower variant, max-width 540 px. Add alongside <code>.popup</code>.</p>
+            <p><code>.popup__header</code> — flex row; space-between title and close button, <code>margin-bottom: 1rem</code>.</p>
+            <p><code>.popup__close</code> — applied to the <code>.btn.btn--outline.btn--sm</code> close button; prevents it from shrinking.</p>
+            <p>Always set <code>role="dialog"</code>, <code>aria-modal="true"</code>, and <code>aria-labelledby</code> on the <code>.popup</code> element. Lock scroll and add an Escape key listener while the popup is open.</p>
+          </div>
+        </section>
+        {showPopup && (
+          <div className="popup-overlay" role="presentation" onClick={() => setShowPopup(false)}>
+            <section
+              className="panel popup popup--sm"
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby="sg-popup-title"
+              onClick={e => e.stopPropagation()}
+            >
+              <div className="popup__header">
+                <div className="eyebrow" id="sg-popup-title">Example Popup</div>
+                <button type="button" className="btn btn--outline btn--sm popup__close" onClick={() => setShowPopup(false)}>Close</button>
+              </div>
+              <div className="stack-xs" style={{ fontSize: '.9rem' }}>
+                <p className="muted">This is the shared popup pattern used across widget pages. The header uses <code>.eyebrow</code> for the title and <code>.btn.btn--outline.btn--sm</code> for the close button.</p>
+                <p className="muted">Click outside or press <kbd>Escape</kbd> to dismiss.</p>
+              </div>
+            </section>
+          </div>
+        )}
 
         {/* Progress */}
         <section className="panel">
