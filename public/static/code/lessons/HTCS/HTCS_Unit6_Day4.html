@@ -42,27 +42,22 @@
       }
     </style>
 
-    <script type="application/json" id="speaker-notes">
+<script type="application/json" id="speaker-notes">
 [
-  "Cover slide. Day 4 continues from blockchain basics: we know how Bitcoin works — now, how do you securely hold it? Today's central question: what happens when a single secret isn't enough to protect serious value?",
-  "Today has four parts. First we examine why a single private key is a liability. Then we define multi-signature wallets. Third, we trace a real transaction step by step. Finally, we evaluate what multi-sig actually protects against — and what it doesn't.",
-  "Part 1 transition. We've been assuming Bitcoin security is simple — just don't lose your key. That assumption hides a serious problem. Let's look at what the problem actually is.",
-  "Bitcoin is a very valuable currency worth protecting. But there's a huge security flaw: it's only protected by 12 words that must be stored securely. If anyone has access to these 12 words, you risk losing everything — instantly and irreversibly.",
-  "Using your private key in third-party services makes it open to attacks from hackers. You're trusting companies like Coinbase to store these keys and maintain enough security to prevent your funds from being stolen.",
-  "Part 2 transition. The custodial model just relocates the trust problem — you haven't solved it, you've delegated it. What if instead of making the key harder to steal, we required multiple keys to authorize any transaction at all?",
-  "Each signer generates their own seed phrase independently — Alice, Bob, and Carol each have 12 words that no one else sees. That seed deterministically produces their private key, which is then used to derive their public key via elliptic curve multiplication. The wallet's spending script is assembled from the three public keys. No co-signer ever shares a seed or private key; only public keys are combined.",
-  "Interactive: ask students to try each combination. Use the threshold selector to change between 1-of-3, 2-of-3, and 3-of-3 and observe how the required count changes. Key idea — the wallet script names specific public keys. Eve's signature fails not because it is weak, but because her public key is not registered in the spending script.",
-  "To store these keys, it makes sense to put them in different locations. The first key in a phone or hardware wallet for daily use. The second in an offline safe as a cold backup. The third on a multi-sig provider server as a remote co-signer.",
-  "Part 3 transition. We understand the structure — now let's trace what actually happens when you spend bitcoin from a multi-sig wallet, step by step.",
-  "When you buy a cup of coffee, you initiate the transaction and sign it with the key on your phone. But one signature isn't enough — the transaction is only partially signed at this point and cannot broadcast to the network.",
-  "Once the transaction passes all checks, the provider signs on their own behalf. This satisfies the two-key rule. Two signatures, threshold met — the transaction is broadcast to the Bitcoin network.",
-  "Part 4 transition. We've seen how multi-sig works mechanically. Now let's stress-test it: what threats does it actually defend against?",
-  "If you lose your phone, someone could have access to one private key. In a standard single-key Bitcoin wallet, that would be catastrophic. In a multi-sig wallet — would that be enough?",
-  "No. You can still access your own money with your other two keys. The attacker holds one signature — the threshold requires two. Your offline safe and provider server hold the others, unreachable by the thief.",
-  "Multi-sig allows you to recreate credit card fraud protection for crypto wallets. Every transaction requires a co-signature from a party that can independently verify and flag suspicious activity.",
-  "A person with a single key won't be enough to confirm and sign any transactions without another key. No single key has full authority over the wallet — that's the fundamental security guarantee.",
-  "The core insight: multi-sig distributes trust the same way a bank vault requires two officers to open. Bitcoin enforces this natively, in the protocol, without any middleman.",
-  "Next class preview. Ask students: Bitcoin scripts verify signatures — what if the script could verify anything a programming language can express? That's the leap Ethereum made."
+  "Cover slide. Day 4 moves from blockchain mechanics to ownership: how do twelve words become control over real bitcoin, and why might serious wallets require more than one key?",
+  "Agenda. The tighter arc is: create a wallet, use Phantom, compare wallet ownership with custodial/ETF exposure, then introduce multisig as a way to reduce single-key failure.",
+  "Seed phrase slide. This is an example phrase only. The key teaching point: the phrase is not a password hint or login phrase. It is enough to reconstruct the wallet. Anyone with the correct words in the correct order can control the funds.",
+  "Wallet creation flow. Keep this clearer than the formal BIP39 spec: a wallet starts from a random secret, encodes it as recovery words, hashes/stretches those words into a seed, then deterministically derives a tree of keys and addresses. The important phrase is: same words, same wallet.",
+  "Phantom demo slide. Verified against Phantom support: Phantom is available as a Chrome browser extension and supports Bitcoin plus Ethereum, which lets us keep one wallet for the Bitcoin lesson and the later Ethereum testnet lesson. For this class, have students create a wallet with a Secret Recovery Phrase instead of a social login so the seed phrase concept is visible.",
+  "Student checklist slide. Keep this framed as exploration, not a challenge: students find their receive address, watch a tiny BTC transfer, then locate where Phantom shows or backs up the Secret Recovery Phrase. When you demonstrate the phrase location on the teacher wallet, leave it visible long enough for the class to realize the consequence themselves.",
+  "Wallet versus ETF slide. Fold Coinbase and ETF examples together here. A wallet means you hold keys and can sign transactions. Coinbase means the company holds keys for your account. A spot bitcoin ETF or ETP gives price exposure through shares, but students cannot use those shares to sign a Bitcoin transaction or recover bitcoin with a seed phrase. The SEC approved trading of certain spot bitcoin ETP shares, not bitcoin itself.",
+  "Multisig setup slide. Define 2-of-3 and show Alice, Bob, and Carol as separate failure points. M is the required number of signatures; N is the number of registered keys. The important operational detail is that public keys are combined into the spending rule while private keys and seed phrases remain separate.",
+  "Interactive verification. This slide should answer what the network verifies. It does not know Alice as a person. It checks three things: is the signing public key registered in the wallet script, does the signature mathematically match that public key and transaction, and are there enough valid signatures to meet the threshold. Ask students to try Alice alone, Alice plus Bob, Eve alone, and Alice plus Eve.",
+  "Transaction slide. A multisig spend is proposed, partially signed, co-signed, then broadcast. This replaces the two-step transaction explanation with one flow. Emphasize that a partially signed transaction is not enough to move funds.",
+  "Threat model slide. Multisig helps when keys fail independently: one stolen phone key or one lost backup should not be catastrophic in a well-designed 2-of-3 wallet. It does not fix all keys in one place, one person controlling everything, collusion, or poor backups.",
+  "Bitcoin vs smart contract multisig. Bitcoin multisig is enforced through scripts and signatures. Ethereum-style tools such as Safe often use smart contracts or smart accounts. Same threshold concept, different machinery.",
+  "Recap. Students should leave with three sentences: a recovery phrase can recreate a wallet; an ETF or exchange balance is exposure, not direct wallet control; multisig requires M-of-N registered keys to spend.",
+  "Next class preview. Bitcoin scripts verify signatures and limited spending rules. Ethereum expands the idea toward programmable contracts and accounts."
 ]
 </script>
   </head>
@@ -651,7 +646,7 @@
                       <span style={{ fontStyle: 'italic', color: COLORS.accent }}>&amp;</span> Multi-Signatures
                     </Title>
                     <Subtitle style={{ fontSize: 36, marginTop: 40 }}>
-                      When one secret isn&rsquo;t enough to protect serious value.
+                      How twelve words become money - and why one secret may not be enough.
                     </Subtitle>
                   </div>
                   <div style={{ display: 'flex', gap: 48, fontFamily: FONTS.sans, fontSize: 24, letterSpacing: '0.2em', textTransform: 'uppercase', color: COLORS.muted }}>
@@ -687,10 +682,10 @@
         // ── 02 · Agenda ─────────────────────────────────────────────────────────────
         function SlideAgenda() {
           const items = [
-            ['01', 'The single-key problem', 'Why protecting one secret is harder than it sounds.'],
-            ['02', 'Multi-sig wallets', 'How multiple keys share control over one address.'],
-            ['03', 'Signing transactions', 'What happens step by step when you spend.'],
-            ['04', 'Security trade-offs', 'What multi-sig protects against — and what it doesn\'t.'],
+            ['01', 'Create a wallet', 'How randomness becomes 12 recovery words, keys, and addresses.'],
+            ['02', 'Live wallet demo', 'Use a real Bitcoin extension and prove the words are the wallet.'],
+            ['03', 'Multi-sig wallets', 'How multiple keys share control over one address.'],
+            ['04', 'Security trade-offs', 'What multi-sig protects against - and what it doesn\'t.'],
           ];
           return (
             <SlideFrame>
@@ -716,10 +711,10 @@
               <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
                 <div style={{ fontFamily: FONTS.sans, fontSize: 26, letterSpacing: '0.32em', textTransform: 'uppercase', color: COLORS.gold, marginBottom: 36 }}>Part 01</div>
                 <Title color={COLORS.paper} size="display" style={{ lineHeight: 0.95, fontSize: 180 }}>
-                  One Key.
+                  Twelve Words.
                 </Title>
                 <Subtitle color="rgba(245,239,227,0.75)" style={{ fontSize: 40, marginTop: 48, maxWidth: 1100 }}>
-                  Why is a single private key a single point of failure?
+                  How does a Bitcoin wallet get created?
                 </Subtitle>
               </div>
             </SlideFrame>
@@ -753,28 +748,195 @@
           );
         }
 
-        // ── 05 · Custodial Risk ─────────────────────────────────────────────────────
+        // ── 05 · Wallet Creation Flow ───────────────────────────────────────────────
+        function SlideWalletCreationFlow() {
+          const steps = [
+            ['01', 'Random secret', 'The wallet creates a strong random secret on your device. That secret is the starting point.'],
+            ['02', '12-word backup', 'The secret is encoded as words so a human can write it down and restore it later.'],
+            ['03', 'Seed', 'The words are hashed and stretched into a seed. Same words, same seed, every time.'],
+            ['04', 'Key tree', 'The seed deterministically generates many private keys, public keys, and addresses.'],
+            ['05', 'Address', 'An address is safe to share for receiving. The words and private keys are never safe to share.'],
+          ];
+
+          return (
+            <SlideFrame>
+              <Eyebrow>Wallet creation</Eyebrow>
+              <Title style={{ maxWidth: 1280 }}>
+                a wallet is a <em style={{ fontStyle: 'italic', color: COLORS.accent }}>key machine</em> with a human backup.
+              </Title>
+              <div style={{ marginTop: 38, flex: 1, display: 'grid', gridTemplateColumns: '1.2fr 0.8fr', gap: 34, minHeight: 0 }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+                  {steps.map(([n, stepTitle, body]) => (
+                    <div key={n} style={{ display: 'grid', gridTemplateColumns: '76px 220px 1fr', gap: 22, alignItems: 'center', borderTop: `1px solid ${COLORS.ruleFaint}`, paddingTop: 14 }}>
+                      <Numeral n={n} style={{ fontSize: 46 }} />
+                      <div style={{ fontFamily: FONTS.serif, fontSize: 34, lineHeight: 1.05, color: COLORS.ink }}>{stepTitle}</div>
+                      <Body style={{ fontSize: 25, lineHeight: 1.25 }}>{body}</Body>
+                    </div>
+                  ))}
+                </div>
+
+                <div style={{ background: COLORS.ink, borderRadius: 12, padding: '34px 36px', color: COLORS.paper, display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+                  <div>
+                    <div style={{ fontFamily: FONTS.mono, fontSize: 18, letterSpacing: '0.18em', textTransform: 'uppercase', color: COLORS.gold, marginBottom: 22 }}>Key idea</div>
+                    <div style={{ fontFamily: FONTS.serif, fontSize: 50, lineHeight: 1.05 }}>
+                      Same words,<br />
+                      same wallet.
+                    </div>
+                  </div>
+                  <Body color="rgba(245,239,227,0.78)" style={{ fontSize: 30, marginTop: 32 }}>
+                    Determinism is the magic trick and the danger. The phrase can rebuild your wallet on a new computer, or on someone else&rsquo;s.
+                  </Body>
+                </div>
+              </div>
+            </SlideFrame>
+          );
+        }
+
+        // ── 06 · Phantom Demo ───────────────────────────────────────────────────────
+        function SlidePhantomDemo() {
+          const steps = [
+            ['01', 'Install', 'Go to phantom.com/download and add the Chrome extension.'],
+            ['02', 'Create', 'Choose Create New Wallet with a Secret Recovery Phrase.'],
+            ['03', 'Enable Bitcoin', 'Open Active Networks and make sure Bitcoin is turned on.'],
+          ];
+
+          return (
+            <SlideFrame>
+              <Eyebrow>Live demo</Eyebrow>
+              <Title style={{ maxWidth: 1260 }}>
+                create a real Bitcoin wallet with <em style={{ fontStyle: 'italic', color: COLORS.accent }}>Phantom.</em>
+              </Title>
+              <div style={{ marginTop: 46, display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 28 }}>
+                {steps.map(([n, stepTitle, body]) => (
+                  <div key={n} style={{ border: `1px solid ${COLORS.ruleFaint}`, borderRadius: 10, padding: '32px 34px', background: COLORS.paper }}>
+                    <Numeral n={n} />
+                    <div style={{ fontFamily: FONTS.serif, fontSize: 44, lineHeight: 1.05, marginTop: 20, color: COLORS.ink }}>{stepTitle}</div>
+                    <Body style={{ marginTop: 20 }}>{body}</Body>
+                  </div>
+                ))}
+              </div>
+              <Callout kicker="Class rule" tone="danger" style={{ marginTop: 44 }}>
+                Use today&rsquo;s fresh class wallet only. Never type a personal recovery phrase into a classroom computer, projected screen, website, chat, or form.
+              </Callout>
+            </SlideFrame>
+          );
+        }
+
+        // ── 07 · Fund Wallet Demo ───────────────────────────────────────────────────
+        function SlideFundWalletDemo() {
+          const steps = [
+            ['01', 'Find your address', 'Open Receive and copy your Bitcoin address. This is safe to share.'],
+            ['02', 'Send BTC', 'Use a small transfer to watch money arrive at a Bitcoin address.'],
+            ['03', 'Find your seed phrase', 'Open the backup or security area and locate the recovery words.'],
+          ];
+
+          return (
+            <SlideFrame variant="ink" footer={false}>
+              <div style={{ flex: 1, display: 'grid', gridTemplateColumns: '0.85fr 1.15fr', gap: 70, alignItems: 'center' }}>
+                <div>
+                  <Eyebrow color={COLORS.gold}>Student Checklist</Eyebrow>
+                  <Title color={COLORS.paper} size="titleLg" style={{ fontSize: 108, lineHeight: 0.96 }}>
+                    Exploring your bitcoin wallet
+                  </Title>
+                  <Subtitle color="rgba(245,239,227,0.75)" style={{ fontSize: 36, marginTop: 34 }}>
+                    Follow along in the browser extension. We will use a tiny real transfer so the wallet feels real.
+                  </Subtitle>
+                </div>
+
+                <div>
+                  <div style={{ fontFamily: FONTS.mono, fontSize: 18, letterSpacing: '0.18em', textTransform: 'uppercase', color: COLORS.gold, marginBottom: 18 }}>In Phantom</div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
+                    {steps.map(([n, stepTitle, body]) => (
+                      <div key={n} style={{ display: 'grid', gridTemplateColumns: '70px 1fr', gap: 24, alignItems: 'start', border: '1px solid rgba(245,239,227,0.24)', borderRadius: 12, padding: '24px 28px' }}>
+                        <div style={{ fontFamily: FONTS.serif, fontStyle: 'italic', fontSize: 46, lineHeight: 1, color: COLORS.gold }}>{n}</div>
+                        <div>
+                          <div style={{ fontFamily: FONTS.serif, fontSize: 42, lineHeight: 1.05, color: COLORS.paper }}>{stepTitle}</div>
+                          <Body color="rgba(245,239,227,0.72)" style={{ fontSize: 27, lineHeight: 1.25, marginTop: 10 }}>{body}</Body>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                  <Body color="rgba(245,239,227,0.78)" style={{ marginTop: 30 }}>
+                    Your address is for receiving. Your seed phrase is for recovery. Notice how differently the wallet treats those two pieces of information.
+                  </Body>
+                </div>
+              </div>
+            </SlideFrame>
+          );
+        }
+
+        // ── 08 · Custodial Risk ─────────────────────────────────────────────────────
         function SlideCustodialRisk() {
           return (
             <SlideFrame>
-              <Eyebrow>The custodial trade-off</Eyebrow>
+              <Eyebrow>Exposure vs ownership</Eyebrow>
               <Title style={{ maxWidth: 1200 }}>
-                trusting a service means <em style={{ fontStyle: 'italic', color: COLORS.accent }}>trusting their security.</em>
+                buying bitcoin exposure is not the same as <em style={{ fontStyle: 'italic', color: COLORS.accent }}>holding bitcoin.</em>
               </Title>
-              <div style={{ marginTop: 48, flex: 1, display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 32 }}>
-                {/* Self-custody */}
+              <div style={{ marginTop: 44, flex: 1, display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 24 }}>
                 <div style={{ border: `1px solid ${COLORS.ruleFaint}`, borderRadius: 12, padding: '36px 44px' }}>
-                  <div style={{ fontFamily: FONTS.sans, fontSize: 22, letterSpacing: '0.22em', textTransform: 'uppercase', color: COLORS.inkSoft, marginBottom: 20 }}>Self-custody</div>
-                  <div style={{ fontFamily: FONTS.serif, fontSize: 44, lineHeight: 1.05, marginBottom: 28 }}>You hold the key.</div>
-                  <Body>No third party can freeze, seize, or lose your funds. But if you lose the seed phrase &mdash; or someone finds it &mdash; there is no recovery.</Body>
+                  <div style={{ fontFamily: FONTS.sans, fontSize: 22, letterSpacing: '0.22em', textTransform: 'uppercase', color: COLORS.inkSoft, marginBottom: 20 }}>Wallet</div>
+                  <div style={{ fontFamily: FONTS.serif, fontSize: 40, lineHeight: 1.05, marginBottom: 24 }}>You hold the keys.</div>
+                  <Body>You can send bitcoin on-chain. You are responsible for the seed phrase. If the words leak, the wallet can be restored elsewhere.</Body>
                 </div>
-                {/* Custodial */}
                 <div style={{ border: `1px solid ${COLORS.ruleFaint}`, borderRadius: 12, padding: '36px 44px', background: COLORS.creamDark }}>
-                  <div style={{ fontFamily: FONTS.sans, fontSize: 22, letterSpacing: '0.22em', textTransform: 'uppercase', color: COLORS.inkSoft, marginBottom: 20 }}>Custodial (Coinbase, etc.)</div>
-                  <div style={{ fontFamily: FONTS.serif, fontSize: 44, lineHeight: 1.05, marginBottom: 28 }}>They hold the key.</div>
-                  <Body>Convenient to use, easier to recover. But you are trusting the company&rsquo;s security engineers to protect your funds from hackers, insiders, and regulators.</Body>
+                  <div style={{ fontFamily: FONTS.sans, fontSize: 22, letterSpacing: '0.22em', textTransform: 'uppercase', color: COLORS.inkSoft, marginBottom: 20 }}>Exchange</div>
+                  <div style={{ fontFamily: FONTS.serif, fontSize: 40, lineHeight: 1.05, marginBottom: 24 }}>Coinbase holds the keys.</div>
+                  <Body>You have an account balance and an IOU-like claim. It is convenient, but you rely on the company&rsquo;s custody, security, rules, and withdrawal access.</Body>
+                </div>
+                <div style={{ border: `1px solid ${COLORS.gold}`, borderRadius: 12, padding: '36px 44px', background: COLORS.paper }}>
+                  <div style={{ fontFamily: FONTS.sans, fontSize: 22, letterSpacing: '0.22em', textTransform: 'uppercase', color: COLORS.gold, marginBottom: 20 }}>Bitcoin ETF / ETP</div>
+                  <div style={{ fontFamily: FONTS.serif, fontSize: 40, lineHeight: 1.05, marginBottom: 24 }}>You own shares.</div>
+                  <Body>You get price exposure through a brokerage account. You cannot use those shares to sign a Bitcoin transaction or recover coins with a seed phrase.</Body>
                 </div>
               </div>
+            </SlideFrame>
+          );
+        }
+
+        function SlideMultisigSetup() {
+          const signers = [
+            { n: '01', name: 'Alice', key: 'phone wallet', note: 'daily signer' },
+            { n: '02', name: 'Bob', key: 'offline backup', note: 'recovery signer' },
+            { n: '03', name: 'Carol', key: 'trusted co-signer', note: 'separate failure point' },
+          ];
+
+          return (
+            <SlideFrame>
+              <Eyebrow>Multisig setup</Eyebrow>
+              <Title style={{ maxWidth: 1260 }}>
+                a <em style={{ fontStyle: 'italic', color: COLORS.accent }}>2-of-3</em> wallet spreads control across three keys.
+              </Title>
+              <div style={{ marginTop: 46, display: 'grid', gridTemplateColumns: '0.8fr 1.2fr', gap: 36, alignItems: 'stretch' }}>
+                <div style={{ background: COLORS.ink, color: COLORS.paper, borderRadius: 12, padding: '42px 48px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+                  <div>
+                    <div style={{ fontFamily: FONTS.serif, fontSize: 86, lineHeight: 1 }}>
+                      2 <span style={{ color: COLORS.gold }}>of</span> 3
+                    </div>
+                    <Body color="rgba(245,239,227,0.78)" style={{ marginTop: 28, fontSize: 34 }}>
+                      Any two registered keys can spend. One key alone cannot move the bitcoin.
+                    </Body>
+                  </div>
+                  <div style={{ fontFamily: FONTS.mono, fontSize: 20, color: COLORS.gold, marginTop: 44, lineHeight: 1.5 }}>
+                    OP_2 Alice Bob Carol<br />
+                    OP_CHECKMULTISIG
+                  </div>
+                </div>
+
+                <div style={{ display: 'flex', flexDirection: 'column' }}>
+                  {signers.map(({ n, name, key, note }, index) => (
+                    <div key={name} style={{ display: 'grid', gridTemplateColumns: '72px 180px 1fr 220px', gap: 22, alignItems: 'center', padding: '24px 0', borderTop: `1px solid ${COLORS.ruleFaint}`, borderBottom: index === signers.length - 1 ? `1px solid ${COLORS.ruleFaint}` : 'none' }}>
+                      <Numeral n={n} style={{ fontSize: 46 }} />
+                      <div style={{ fontFamily: FONTS.serif, fontSize: 40, lineHeight: 1.05, color: COLORS.ink }}>{name}</div>
+                      <Body size="bodyLg">{key}</Body>
+                      <div style={{ fontFamily: FONTS.mono, fontSize: 18, color: COLORS.muted, letterSpacing: '0.08em', textTransform: 'uppercase' }}>{note}</div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+              <Body style={{ marginTop: 28, color: COLORS.muted, fontStyle: 'italic' }}>
+                The public keys are combined into the spending rule. The private keys and seed phrases stay separate.
+              </Body>
             </SlideFrame>
           );
         }
@@ -796,7 +958,43 @@
           );
         }
 
-        // ── 07 · Multiple Keys ──────────────────────────────────────────────────────
+        // ── 10 · M-of-N Explained ───────────────────────────────────────────────────
+        function SlideMofNExplained() {
+          const setups = [
+            ['2-of-2', 'Both keys must sign. Strong agreement, but one lost key can lock the wallet.'],
+            ['2-of-3', 'Any two keys can sign. A common balance: one backup can be lost without losing funds.'],
+            ['3-of-5', 'Useful for teams. More resilient, but more coordination before spending.'],
+          ];
+
+          return (
+            <SlideFrame>
+              <Eyebrow>M-of-N</Eyebrow>
+              <Title style={{ maxWidth: 1280 }}>
+                multisig turns ownership into a <em style={{ fontStyle: 'italic', color: COLORS.accent }}>threshold rule.</em>
+              </Title>
+              <div style={{ marginTop: 52, display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 36, alignItems: 'stretch' }}>
+                <div style={{ background: COLORS.ink, borderRadius: 12, padding: '40px 46px', color: COLORS.paper }}>
+                  <div style={{ fontFamily: FONTS.serif, fontSize: 84, lineHeight: 1 }}>
+                    M <span style={{ color: COLORS.gold }}>of</span> N
+                  </div>
+                  <Body color="rgba(245,239,227,0.78)" style={{ marginTop: 28, fontSize: 34 }}>
+                    N is the total set of allowed signers. M is the minimum number of those signers required to authorize a transaction.
+                  </Body>
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column' }}>
+                  {setups.map(([name, body], index) => (
+                    <div key={name} style={{ display: 'grid', gridTemplateColumns: '170px 1fr', gap: 28, alignItems: 'center', padding: '26px 0', borderTop: `1px solid ${COLORS.ruleFaint}`, borderBottom: index === setups.length - 1 ? `1px solid ${COLORS.ruleFaint}` : 'none' }}>
+                      <div style={{ fontFamily: FONTS.mono, fontSize: 32, color: COLORS.accent, fontWeight: 600 }}>{name}</div>
+                      <Body>{body}</Body>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </SlideFrame>
+          );
+        }
+
+        // ── 11 · Multiple Keys ──────────────────────────────────────────────────────
         function SlideMultipleKeys() {
           const signers = [
             { initial: 'A', name: 'Alice', seed: 'witch collapse…', priv: '5KJvsn…e8Wz', pub: '02a3f8…d91c4e' },
@@ -826,10 +1024,10 @@
                     <div style={{ padding: '16px 18px', display: 'flex', flexDirection: 'column', gap: 0, background: COLORS.paper }}>
                       <div style={{ fontFamily: FONTS.mono, fontSize: 13, letterSpacing: '0.12em', textTransform: 'uppercase', color: COLORS.muted, marginBottom: 6 }}>Own seed phrase</div>
                       <div style={rowStyle(true)}>{seed}</div>
-                      <div style={arrowStyle}>↓ hashed once</div>
+                      <div style={arrowStyle}>↓ derive root seed</div>
                       <div style={{ fontFamily: FONTS.mono, fontSize: 13, letterSpacing: '0.12em', textTransform: 'uppercase', color: COLORS.muted, marginBottom: 6 }}>Private key <span style={{ color: COLORS.danger, fontSize: 11 }}>— never shared</span></div>
                       <div style={rowStyle(false)}>{priv}</div>
-                      <div style={arrowStyle}>↓ elliptic curve multiply</div>
+                      <div style={arrowStyle}>↓ derive public key</div>
                       <div style={{ fontFamily: FONTS.mono, fontSize: 13, letterSpacing: '0.12em', textTransform: 'uppercase', color: COLORS.muted, marginBottom: 6 }}>Public key <span style={{ color: COLORS.ok, fontSize: 11 }}>— shared openly</span></div>
                       <div style={{ ...rowStyle(false), color: COLORS.ok, borderColor: COLORS.ok }}>{pub}</div>
                     </div>
@@ -906,12 +1104,44 @@
           }
 
           const desc = THRESHOLD_DESCS[threshold];
+          const checkRows = [
+            {
+              n: '01',
+              label: 'Public key is registered',
+              status: !anySelected ? 'waiting' : hasEve ? 'fail' : 'pass',
+              detail: !anySelected
+                ? 'Waiting for selected signatures.'
+                : hasEve
+                  ? "Eve's public key is not in this wallet script."
+                  : 'Every selected signature comes from a registered public key.',
+            },
+            {
+              n: '02',
+              label: 'Signature matches that key',
+              status: !anySelected ? 'waiting' : validCount > 0 ? 'pass' : 'fail',
+              detail: !anySelected
+                ? 'The network checks signature math against public keys.'
+                : validCount > 0
+                  ? `${validCount} signature${validCount !== 1 ? 's' : ''} match registered public keys.`
+                  : 'No selected signature matches a registered public key.',
+            },
+            {
+              n: '03',
+              label: `At least ${threshold} valid signature${threshold !== 1 ? 's' : ''}`,
+              status: !anySelected ? 'waiting' : approved ? 'pass' : 'fail',
+              detail: !anySelected
+                ? 'The threshold has not been tested yet.'
+                : approved
+                  ? `${validCount}/${threshold} valid signatures. The transaction can broadcast.`
+                  : `${validCount}/${threshold} valid signatures. The transaction cannot move yet.`,
+            },
+          ];
 
           return (
             <SlideFrame>
               <Eyebrow style={{ marginBottom: 10 }}>Multi-signature verification</Eyebrow>
               <Title style={{ marginBottom: 14 }}>
-                how does the network verify the <em>right keys</em> signed?
+                the network checks <em>public keys, signatures,</em> and the threshold.
               </Title>
               {/* ── Spending-rule bar ─────────────────────────────────────────── */}
               <div style={{
@@ -922,8 +1152,8 @@
                   fontFamily: FONTS.mono, fontSize: 24, fontWeight: 600,
                   letterSpacing: '0.18em', textTransform: 'uppercase', color: GOLD, whiteSpace: 'nowrap',
                 }}>Spending rule</div>
-                <div style={{ fontFamily: FONTS.sans, fontSize: 20, color: 'rgba(245,239,227,0.65)', flex: 1, lineHeight: 1.3 }}>
-                  {desc[0]}<strong style={{ color: 'rgba(245,239,227,0.95)', fontWeight: 700 }}>{desc[1]}</strong>{desc[2]}
+                <div style={{ fontFamily: FONTS.sans, fontSize: 20, color: 'rgba(245,239,227,0.72)', flex: 1, lineHeight: 1.3 }}>
+                  Wallet script contains Alice, Bob, and Carol&rsquo;s public keys. {desc[0]}<strong style={{ color: 'rgba(245,239,227,0.95)', fontWeight: 700 }}>{desc[1]}</strong>{desc[2]}
                 </div>
                 <div style={{ display: 'flex', gap: 10, flexShrink: 0 }}>
                   {[1, 2, 3].map(m => (
@@ -1008,16 +1238,20 @@
                   <div style={{
                     fontFamily: FONTS.mono, fontSize: 16, letterSpacing: '0.2em',
                     textTransform: 'uppercase', color: COLORS.muted, flexShrink: 0,
-                  }}>Signature verification</div>
+                  }}>Network verification checklist</div>
 
-                  {/* Transaction box */}
-                  <div style={{ background: COLORS.ink, borderRadius: 9, padding: '12px 20px', flexShrink: 0 }}>
-                    <div style={{ fontFamily: FONTS.mono, fontSize: 16, letterSpacing: '0.18em', textTransform: 'uppercase', color: GOLD, marginBottom: 8 }}>Pending Transaction</div>
-                    {[['From','bc1q…9e4f  (this multisig wallet)'],['To','bc1q…3a72'],['Amount','0.5 BTC']].map(([k,v]) => (
-                      <div key={k} style={{ display: 'flex', justifyContent: 'space-between', fontFamily: FONTS.mono, fontSize: 18, color: 'rgba(245,239,227,0.5)', lineHeight: 1.8 }}>
-                        <span>{k}</span><span style={{ color: 'rgba(245,239,227,0.9)' }}>{v}</span>
-                      </div>
-                    ))}
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8, flexShrink: 0 }}>
+                    {checkRows.map((check) => {
+                      const color = check.status === 'pass' ? OK : check.status === 'fail' ? ERR : COLORS.muted;
+                      const bg = check.status === 'pass' ? 'rgba(59,110,74,0.10)' : check.status === 'fail' ? 'rgba(155,42,27,0.10)' : 'rgba(15,31,58,0.04)';
+                      return (
+                        <div key={check.n} style={{ border: `2px solid ${color}`, borderRadius: 9, padding: '12px 12px', background: bg, minHeight: 118 }}>
+                          <div style={{ fontFamily: FONTS.mono, fontSize: 13, color, letterSpacing: '0.12em', textTransform: 'uppercase', marginBottom: 7 }}>Check {check.n}</div>
+                          <div style={{ fontFamily: FONTS.serif, fontSize: 22, lineHeight: 1.05, color: COLORS.ink, fontWeight: 600 }}>{check.label}</div>
+                          <div style={{ fontFamily: FONTS.sans, fontSize: 15, color: COLORS.muted, lineHeight: 1.25, marginTop: 7 }}>{check.detail}</div>
+                        </div>
+                      );
+                    })}
                   </div>
 
                   {/* Check rows */}
@@ -1091,7 +1325,7 @@
           const keys = [
             { n: '01', location: 'Phone or hardware wallet', role: 'Daily use — signs transactions on the go.' },
             { n: '02', location: 'Offline safe', role: 'Cold backup — never touches the internet.' },
-            { n: '03', location: 'Multi-sig provider server', role: 'Remote co-signer — adds fraud detection layer.' },
+            { n: '03', location: 'Trusted co-signer or service', role: 'A second human, device, or provider that can approve only when needed.' },
           ];
           return (
             <SlideFrame>
@@ -1109,7 +1343,7 @@
                 ))}
               </div>
               <Body style={{ marginTop: 32, color: COLORS.muted, fontStyle: 'italic', fontSize: 28 }}>
-                Storing all three keys in the same location defeats the purpose &mdash; it&rsquo;s equivalent to a single key again.
+                If one person controls every key in one place, the wallet is multi-sig in name only.
               </Body>
             </SlideFrame>
           );
@@ -1171,19 +1405,19 @@
         function SlideSigningStep2() {
           return (
             <SlideFrame>
-              <Eyebrow color={COLORS.gold}>Step 02 &mdash; Provider</Eyebrow>
+              <Eyebrow color={COLORS.gold}>Step 02 &mdash; Co-signer</Eyebrow>
               <Title style={{ maxWidth: 1200 }}>
-                the provider <em style={{ fontStyle: 'italic', color: COLORS.accent }}>co-signs</em> to complete it.
+                another signer <em style={{ fontStyle: 'italic', color: COLORS.accent }}>co-signs</em> to complete it.
               </Title>
               <Body size="bodyLg" style={{ marginTop: 36, maxWidth: 1300 }}>
-                The partially signed transaction is sent to your multi-sig provider. They run fraud checks, and if everything looks valid, they add their signature. Two signatures: threshold met. The transaction broadcasts to the network.
+                The partially signed transaction is sent to another co-signer by file, QR code, or a coordinating service. If they agree, they add their signature. Two valid signatures: threshold met. The transaction can broadcast.
               </Body>
               {/* Transaction flow diagram */}
               <div style={{ marginTop: 56, display: 'flex', alignItems: 'center', gap: 0 }}>
                 {[
                   { label: 'PARTIAL TX', sub: '1 signature', faint: true },
                   { arrow: true },
-                  { label: 'PROVIDER', sub: 'sign with KEY_02', highlight: true },
+                  { label: 'CO-SIGNER', sub: 'sign with KEY_02', highlight: true },
                   { arrow: true },
                   { label: 'BROADCAST', sub: 'threshold met', ok: true },
                 ].map((item, i) => item.arrow ? (
@@ -1197,6 +1431,38 @@
                   </div>
                 ))}
               </div>
+            </SlideFrame>
+          );
+        }
+
+        function SlideMultisigTransaction() {
+          const steps = [
+            ['01', 'Propose', 'The wallet creates a transaction: where the bitcoin should go and how much to send.'],
+            ['02', 'Sign once', 'One signer reviews the details and adds a signature. The transaction is still incomplete.'],
+            ['03', 'Co-sign', 'A second registered signer adds another signature. The 2-of-3 threshold is now met.'],
+            ['04', 'Broadcast', 'The completed transaction can be sent to the Bitcoin network.'],
+          ];
+
+          return (
+            <SlideFrame>
+              <Eyebrow>Spending from multisig</Eyebrow>
+              <Title style={{ maxWidth: 1300 }}>
+                a multisig transaction <em style={{ fontStyle: 'italic', color: COLORS.accent }}>collects signatures</em> before it can move.
+              </Title>
+              <div style={{ marginTop: 52, display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 18 }}>
+                {steps.map(([n, stepTitle, body], index) => (
+                  <div key={n} style={{ border: `1px solid ${index === 2 ? COLORS.accent : COLORS.ruleFaint}`, borderRadius: 10, padding: '28px 26px', background: index === 2 ? 'rgba(168,52,30,0.06)' : COLORS.paper }}>
+                    <Numeral n={n} style={{ fontSize: 46 }} />
+                    <div style={{ fontFamily: FONTS.serif, fontSize: 38, lineHeight: 1.05, marginTop: 18, color: COLORS.ink }}>
+                      {stepTitle}
+                    </div>
+                    <Body style={{ marginTop: 18, fontSize: 28, lineHeight: 1.3 }}>{body}</Body>
+                  </div>
+                ))}
+              </div>
+              <Callout kicker="Key idea" style={{ marginTop: 42 }}>
+                A partially signed transaction is harmless until enough valid signatures from registered keys are attached.
+              </Callout>
             </SlideFrame>
           );
         }
@@ -1230,7 +1496,7 @@
                 In a standard single-key Bitcoin wallet, this is catastrophic &mdash; the attacker controls everything. Does the same hold for a multi-sig wallet?
               </Callout>
               <Body size="bodyLg" style={{ marginTop: 40, maxWidth: 1300 }}>
-                Your phone held KEY_01. The attacker now has one valid signature. The threshold requires two. Your offline safe (KEY_02) and provider server (KEY_03) are untouched. What happens?
+                Your phone held KEY_01. The attacker now has one valid signature. The threshold requires two. Your offline safe (KEY_02) and co-signer key (KEY_03) are untouched. What happens?
               </Body>
             </SlideFrame>
           );
@@ -1247,7 +1513,7 @@
                 </Title>
                 <div style={{ marginTop: 48, borderTop: `1px solid rgba(245,239,227,0.25)`, borderBottom: `1px solid rgba(245,239,227,0.25)`, padding: '32px 0', maxWidth: 1300 }}>
                   <Body size="bodyLg" color="rgba(245,239,227,0.85)">
-                    The attacker holds one signature. The threshold requires two. Your remaining keys &mdash; in the safe and on the provider server &mdash; are unreachable by the thief. Your funds are safe. And you can still access them using KEY_02 and KEY_03.
+                    The attacker holds one signature. The threshold requires two. Your remaining keys &mdash; in the safe and with another co-signer &mdash; are unreachable by the thief. Your funds are safe. And you can still access them using KEY_02 and KEY_03.
                   </Body>
                 </div>
               </div>
@@ -1259,15 +1525,46 @@
         function SlideFraudProtection() {
           return (
             <SlideFrame>
-              <Eyebrow>The analogy</Eyebrow>
+              <Eyebrow>The trade-off</Eyebrow>
               <Title style={{ maxWidth: 1300 }}>
-                multi-sig recreates <em style={{ fontStyle: 'italic', color: COLORS.accent }}>credit card protection</em> for your wallet.
+                multi-sig reduces single-key risk. it does <em style={{ fontStyle: 'italic', color: COLORS.accent }}>not</em> remove all risk.
               </Title>
-              <Callout kicker="How it works" style={{ marginTop: 44, maxWidth: 1400 }}>
-                Every credit card transaction requires the issuer to co-authorize the purchase. Multi-sig does the same for Bitcoin: every transaction needs a second party&rsquo;s signature.
+              <Callout kicker="What gets better" style={{ marginTop: 44, maxWidth: 1400 }}>
+                One stolen key may not be enough to steal funds. One lost key may not permanently lock everyone out, depending on the threshold.
               </Callout>
               <Body size="bodyLg" style={{ marginTop: 36, maxWidth: 1300 }}>
-                Unlike credit cards, this protection is enforced by cryptography &mdash; not corporate policy. The provider cannot reverse a transaction after the fact, but they can refuse to co-sign a suspicious one before it broadcasts.
+                What still matters: backups, independent storage, honest signers, and a threshold that matches the group. Bad setup can still lock users out or give one person practical control.
+              </Body>
+            </SlideFrame>
+          );
+        }
+
+        function SlideMultisigThreatModel() {
+          return (
+            <SlideFrame>
+              <Eyebrow>Threat model</Eyebrow>
+              <Title style={{ maxWidth: 1300 }}>
+                multisig helps when failures are <em style={{ fontStyle: 'italic', color: COLORS.accent }}>independent.</em>
+              </Title>
+              <div style={{ marginTop: 48, display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 32, flex: 1 }}>
+                <div style={{ border: `1px solid ${COLORS.ok}`, borderRadius: 12, padding: '38px 44px', background: 'rgba(59,110,74,0.05)' }}>
+                  <div style={{ fontFamily: FONTS.sans, fontSize: 22, letterSpacing: '0.22em', textTransform: 'uppercase', color: COLORS.ok, marginBottom: 22 }}>Helps with</div>
+                  <div style={{ fontFamily: FONTS.serif, fontSize: 42, lineHeight: 1.08, color: COLORS.ink, marginBottom: 26 }}>
+                    One stolen or lost key.
+                  </div>
+                  <Body>If your phone key is compromised, the attacker still needs another registered key. If one backup disappears, the remaining two keys can still recover a 2-of-3 wallet.</Body>
+                </div>
+
+                <div style={{ border: `1px solid ${COLORS.danger}`, borderRadius: 12, padding: '38px 44px', background: COLORS.paper }}>
+                  <div style={{ fontFamily: FONTS.sans, fontSize: 22, letterSpacing: '0.22em', textTransform: 'uppercase', color: COLORS.danger, marginBottom: 22 }}>Does not fix</div>
+                  <div style={{ fontFamily: FONTS.serif, fontSize: 42, lineHeight: 1.08, color: COLORS.ink, marginBottom: 26 }}>
+                    Bad setup.
+                  </div>
+                  <Body>If all keys live in one backpack, one person controls every key, or co-signers collude, the threshold rule stops being meaningful.</Body>
+                </div>
+              </div>
+              <Body style={{ marginTop: 26, color: COLORS.muted, fontStyle: 'italic' }}>
+                Multisig is not magic. It is a way to avoid one fragile point of failure.
               </Body>
             </SlideFrame>
           );
@@ -1297,17 +1594,46 @@
           );
         }
 
-        // ── 18 · Recap ──────────────────────────────────────────────────────────────
+        // ── 18 · Bitcoin vs Smart Contract Multisig ────────────────────────────────
+        function SlideBitcoinVsSmartContract() {
+          return (
+            <SlideFrame>
+              <Eyebrow>Implementation detail</Eyebrow>
+              <Title style={{ maxWidth: 1300 }}>
+                same idea, <em style={{ fontStyle: 'italic', color: COLORS.accent }}>different machinery.</em>
+              </Title>
+              <div style={{ marginTop: 54, display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 32 }}>
+                <div style={{ border: `1px solid ${COLORS.ruleFaint}`, borderRadius: 12, padding: '38px 44px', background: COLORS.paper }}>
+                  <div style={{ fontFamily: FONTS.sans, fontSize: 22, letterSpacing: '0.22em', textTransform: 'uppercase', color: COLORS.inkSoft, marginBottom: 22 }}>Bitcoin</div>
+                  <div style={{ fontFamily: FONTS.serif, fontSize: 44, lineHeight: 1.05, color: COLORS.ink, marginBottom: 24 }}>Enforced by scripts.</div>
+                  <Body>
+                    The spending rule names public keys and requires enough valid signatures before the coins can move. Partially signed transactions can be passed between co-signers.
+                  </Body>
+                </div>
+
+                <div style={{ border: `1px solid ${COLORS.ruleFaint}`, borderRadius: 12, padding: '38px 44px', background: COLORS.creamDark }}>
+                  <div style={{ fontFamily: FONTS.sans, fontSize: 22, letterSpacing: '0.22em', textTransform: 'uppercase', color: COLORS.inkSoft, marginBottom: 22 }}>Ethereum-style systems</div>
+                  <div style={{ fontFamily: FONTS.serif, fontSize: 44, lineHeight: 1.05, color: COLORS.ink, marginBottom: 24 }}>Often enforced by smart contracts.</div>
+                  <Body>
+                    A smart account, such as a Safe, can store owners, thresholds, and policy logic in contract code. Similar threshold idea, different execution environment.
+                  </Body>
+                </div>
+              </div>
+            </SlideFrame>
+          );
+        }
+
+        // ── 19 · Recap ──────────────────────────────────────────────────────────────
         function SlideRecap() {
           return (
             <SlideFrame>
               <Eyebrow>Takeaways</Eyebrow>
               <Title>How to explain <em style={{ fontStyle: 'italic', color: COLORS.accent }}>multi-sig</em> in one minute.</Title>
               <Callout kicker="Mental model" style={{ marginTop: 42 }}>
-                A multi-signature wallet requires M-of-N private keys to authorize any transaction &mdash; eliminating single points of failure without relying on a trusted intermediary.
+                A recovery phrase can recreate a wallet. A multi-signature wallet requires M-of-N registered keys to authorize a spend.
               </Callout>
               <Body size="bodyLg" style={{ marginTop: 36, maxWidth: 1400 }}>
-                The same principle protects corporate bank accounts: no single employee should be able to wire funds alone. Bitcoin can enforce this natively, in the protocol, with no bank required.
+                The security comes from independence: separate keys, separate backups, and signers who do not all fail in the same way at the same time.
               </Body>
             </SlideFrame>
           );
@@ -1333,11 +1659,11 @@
 
         Object.assign(window, {
           SlideCover, SlideAgenda,
-          SlidePart1Divider, SlideSeedPhrase, SlideCustodialRisk,
-          SlidePart2Divider, SlideMultipleKeys, SlideMultisigVerification, SlideKeyDistribution,
-          SlidePart3Divider, SlideSigningStep1, SlideSigningStep2,
-          SlidePart4Divider, SlideLostPhone, SlideRedundancy, SlideFraudProtection, SlideNoSingleAuthority,
-          SlideRecap, SlideNextClass,
+          SlidePart1Divider, SlideSeedPhrase, SlideWalletCreationFlow, SlidePhantomDemo, SlideFundWalletDemo, SlideCustodialRisk, SlideMultisigSetup,
+          SlidePart2Divider, SlideMofNExplained, SlideMultipleKeys, SlideMultisigVerification, SlideKeyDistribution,
+          SlidePart3Divider, SlideSigningStep1, SlideSigningStep2, SlideMultisigTransaction,
+          SlidePart4Divider, SlideLostPhone, SlideRedundancy, SlideFraudProtection, SlideMultisigThreatModel, SlideNoSingleAuthority,
+          SlideBitcoinVsSmartContract, SlideRecap, SlideNextClass,
         });
       }
     </script>
@@ -1355,21 +1681,16 @@
           const SLIDES = [
             ['Cover',           SlideCover],
             ['Agenda',          SlideAgenda],
-            ['Part 01',         SlidePart1Divider],
             ['Seed phrase',     SlideSeedPhrase],
-            ['Custodial risk',  SlideCustodialRisk],
-            ['Part 02',         SlidePart2Divider],
-            ['Multiple keys',   SlideMultipleKeys],
+            ['Wallet flow',     SlideWalletCreationFlow],
+            ['Phantom demo',    SlidePhantomDemo],
+            ['Fund wallet',     SlideFundWalletDemo],
+            ['Wallet vs ETF',   SlideCustodialRisk],
+            ['Multisig setup',  SlideMultisigSetup],
             ['Verify keys',     SlideMultisigVerification],
-            ['Key storage',     SlideKeyDistribution],
-            ['Part 03',         SlidePart3Divider],
-            ['Sign: Step 1',    SlideSigningStep1],
-            ['Sign: Step 2',    SlideSigningStep2],
-            ['Part 04',         SlidePart4Divider],
-            ['Lost phone',      SlideLostPhone],
-            ['Redundancy',      SlideRedundancy],
-            ['Fraud protection',SlideFraudProtection],
-            ['No single key',   SlideNoSingleAuthority],
+            ['Transaction',     SlideMultisigTransaction],
+            ['Threat model',    SlideMultisigThreatModel],
+            ['Bitcoin vs contracts', SlideBitcoinVsSmartContract],
             ['Recap',           SlideRecap],
             ['Next Class',      SlideNextClass],
           ];
