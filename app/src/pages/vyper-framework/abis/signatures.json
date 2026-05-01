@@ -1,0 +1,118 @@
+{
+  "CoinMintable": {
+    "functions": {
+      "transferAdmin": "transferAdmin(address)",
+      "mint": "mint(address,uint256)",
+      "lockMinting": "lockMinting()",
+      "transfer": "transfer(address,uint256) -> bool",
+      "approve": "approve(address,uint256) -> bool",
+      "transferFrom": "transferFrom(address,address,uint256) -> bool",
+      "getAllRecipients": "getAllRecipients() -> address[]",
+      "name": "name() -> string",
+      "symbol": "symbol() -> string",
+      "decimals": "decimals() -> uint8",
+      "totalSupply": "totalSupply() -> uint256",
+      "balanceOf": "balanceOf(address) -> uint256",
+      "allowance": "allowance(address,address) -> uint256",
+      "admin": "admin() -> address",
+      "mintingLocked": "mintingLocked() -> bool"
+    },
+    "events": {
+      "Transfer": "event Transfer(address,address,uint256)",
+      "Approval": "event Approval(address,address,uint256)",
+      "Minted": "event Minted(address,address,uint256)",
+      "MintingLocked": "event MintingLocked(address)",
+      "AdminTransferred": "event AdminTransferred(address,address)"
+    }
+  },
+  "Counter": {
+    "functions": {
+      "increment": "increment() -> uint256",
+      "reset": "reset()",
+      "owner": "owner() -> address",
+      "count": "count() -> uint256"
+    },
+    "events": {
+      "Incremented": "event Incremented(address,uint256)"
+    }
+  },
+  "NFTGraphic": {
+    "functions": {
+      "initialize": "initialize(bytes,string,uint256,uint256,string,string,address)",
+      "balanceOf": "balanceOf(address) -> uint256",
+      "ownerOf": "ownerOf(uint256) -> address",
+      "tokenURI": "tokenURI(uint256) -> string",
+      "getApproved": "getApproved(uint256) -> address",
+      "isApprovedForAll": "isApprovedForAll(address,address) -> bool",
+      "supportsInterface": "supportsInterface(bytes4) -> bool",
+      "getTokenURIData": "getTokenURIData() -> bytes",
+      "getImageData": "getImageData() -> bytes",
+      "getDimensions": "getDimensions() -> uint256,uint256",
+      "approve": "approve(address,uint256)",
+      "setApprovalForAll": "setApprovalForAll(address,bool)",
+      "transferFrom": "transferFrom(address,address,uint256)",
+      "safeTransferFrom": "safeTransferFrom(address,address,uint256,bytes)",
+      "name": "name() -> string",
+      "symbol": "symbol() -> string",
+      "initialized": "initialized() -> bool",
+      "tokenURI_data_format": "tokenURI_data_format() -> string",
+      "imageWidth": "imageWidth() -> uint256",
+      "imageHeight": "imageHeight() -> uint256",
+      "title": "title() -> string",
+      "description": "description() -> string",
+      "minter": "minter() -> address"
+    },
+    "events": {
+      "Transfer": "event Transfer(address,address,uint256)",
+      "Minted": "event Minted(address,string,uint256)"
+    }
+  },
+  "NFTMinter": {
+    "functions": {
+      "transferAdmin": "transferAdmin(address)",
+      "mint": "mint(address,bytes,string,uint256,uint256,string,string) -> address",
+      "getAllRecipients": "getAllRecipients() -> address[]",
+      "admin": "admin() -> address",
+      "implementation": "implementation() -> address",
+      "hasMinted": "hasMinted(address) -> bool",
+      "cloneOf": "cloneOf(address) -> address",
+      "totalMinted": "totalMinted() -> uint256"
+    },
+    "events": {
+      "Minted": "event Minted(address,address,address,uint256)",
+      "AdminTransferred": "event AdminTransferred(address,address)"
+    }
+  },
+  "NFTMinter1155": {
+    "functions": {
+      "transferAdmin": "transferAdmin(address)",
+      "mint": "mint(address,bytes,string,uint256,uint256,string,string) -> uint256",
+      "balanceOf": "balanceOf(address,uint256) -> uint256",
+      "balanceOfBatch": "balanceOfBatch(address[],uint256[]) -> uint256[]",
+      "uri": "uri(uint256) -> string",
+      "supportsInterface": "supportsInterface(bytes4) -> bool",
+      "hasMinted": "hasMinted(address) -> bool",
+      "getCloneOf": "getCloneOf(uint256) -> address",
+      "getMintedBy": "getMintedBy(address) -> uint256[]",
+      "getAllRecipients": "getAllRecipients() -> address[]",
+      "totalMinted": "totalMinted() -> uint256",
+      "setApprovalForAll": "setApprovalForAll(address,bool)",
+      "isApprovedForAll": "isApprovedForAll(address,address) -> bool",
+      "safeTransferFrom": "safeTransferFrom(address,address,uint256,uint256,bytes)",
+      "safeBatchTransferFrom": "safeBatchTransferFrom(address,address,uint256[],uint256[],bytes)",
+      "admin": "admin() -> address",
+      "implementation": "implementation() -> address",
+      "nextTokenId": "nextTokenId() -> uint256",
+      "cloneOfToken": "cloneOfToken(uint256) -> address",
+      "ownerOfToken": "ownerOfToken(uint256) -> address"
+    },
+    "events": {
+      "TransferSingle": "event TransferSingle(address,address,address,uint256,uint256)",
+      "TransferBatch": "event TransferBatch(address,address,address,uint256[],uint256[])",
+      "ApprovalForAll": "event ApprovalForAll(address,address,bool)",
+      "URI": "event URI(string,uint256)",
+      "Minted": "event Minted(address,uint256,address,address,string)",
+      "AdminTransferred": "event AdminTransferred(address,address)"
+    }
+  }
+}
