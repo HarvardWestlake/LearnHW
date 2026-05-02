@@ -78,13 +78,16 @@ export default function App() {
   }, [chain, autoPicked])
 
   return (
-    <main>
-      <header>
-        <h1>Vyper Framework</h1>
+    <>
+      <header className="vf-header">
+        <div>
+          <p className="eyebrow" style={{ marginBottom: '.25rem' }}>Smart Contracts</p>
+          <h1 className="h2">Vyper Framework</h1>
+        </div>
         <ConnectButton />
       </header>
 
-      <nav className="tabs" role="tablist">
+      <nav className="tabs" role="tablist" aria-label="Framework section">
         <button
           role="tab"
           aria-selected={tab === 'app'}
@@ -103,7 +106,7 @@ export default function App() {
         </button>
       </nav>
 
-      <section className="status-line">
+      <p className="status-line">
         {address ? (
           <>
             Connected as <code>{address}</code> on <strong>{chain?.name ?? 'unknown chain'}</strong>.
@@ -111,10 +114,10 @@ export default function App() {
         ) : (
           <>Connect a wallet to get started.</>
         )}
-      </section>
+      </p>
 
       {tab === 'app' && <ApplicationPage />}
       {tab === 'deploy' && <DeploymentPage />}
-    </main>
+    </>
   )
 }

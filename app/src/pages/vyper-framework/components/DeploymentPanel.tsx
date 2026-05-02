@@ -423,11 +423,11 @@ function CategoryDeployView({ category }: { category: DeploymentCategory }) {
 
   return (
     <section className="panel">
-      <h2>Deploy · {category.label}</h2>
+      <h2 className="h5 eyebrow">Deploy · {category.label}</h2>
       {!chain ? (
-        <p className="hint">Connect a wallet to deploy.</p>
+        <p className="muted">Connect a wallet to deploy.</p>
       ) : (
-        <p className="hint">
+        <p className="muted">
           Deploying from <code>{account}</code> to <strong>{chain.name}</strong>. The next
           required step is auto-checked; dependent args auto-fill from prior deploys.
         </p>
@@ -449,8 +449,8 @@ function CategoryDeployView({ category }: { category: DeploymentCategory }) {
       {category.steps.length > 0 && (
         <div className="group">
           <div className="group-header">
-            <h3>{category.label} setup</h3>
-            <p className="hint">Deploy in order. The next step auto-selects as each lands.</p>
+            <h3 className="h6">{category.label} setup</h3>
+            <p className="muted">Deploy in order. The next step auto-selects as each lands.</p>
           </div>
           <table className="deploy-table">
             <thead>
@@ -497,7 +497,7 @@ function CategoryDeployView({ category }: { category: DeploymentCategory }) {
                         <div className="alt-header-body">
                           <strong>{step.label}</strong>
                           {step.description && (
-                            <span className="hint"> · {step.description}</span>
+                            <span className="muted"> · {step.description}</span>
                           )}
                         </div>
                       </td>
@@ -548,8 +548,8 @@ function CategoryDeployView({ category }: { category: DeploymentCategory }) {
       {unplannedRows.length > 0 && (
         <div className="group">
           <div className="group-header">
-            <h3>Other contracts</h3>
-            <p className="hint">
+            <h3 className="h6">Other contracts</h3>
+            <p className="muted">
               Found in your generated ABIs but not placed in a category — deploy manually if
               needed.
             </p>
@@ -678,22 +678,22 @@ function ContractRow({
           <StatusBadge status={row.status} isCurrent={row.isCurrent} />
         </div>
         {row.step?.description && (
-          <div className="hint contract-desc">{row.step.description}</div>
+          <div className="muted contract-desc">{row.step.description}</div>
         )}
         {row.status === 'blocked' && row.step?.dependsOn && (
-          <div className="hint contract-desc">
+          <div className="muted contract-desc">
             Waiting on: {row.step.dependsOn.map((d) => d.contract).join(', ')}
           </div>
         )}
         {row.status === 'done-stale' && (
-          <div className="hint contract-desc warn">
+          <div className="contract-desc warn">
             A dependency was cleared — consider redeploying.
           </div>
         )}
       </td>
       <td>
         {row.inputs.length === 0 ? (
-          <span className="hint">no args</span>
+          <span className="muted">no args</span>
         ) : (
           <div className="csv-field">
             <input
@@ -760,7 +760,7 @@ function ContractRow({
           </div>
         ) : (
           <div className="address-empty">
-            <span className="hint">—</span>
+            <span className="muted">—</span>
             <button
               className="linklike"
               disabled={busy}

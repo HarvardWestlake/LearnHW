@@ -42,17 +42,17 @@ function CoinDispatcher() {
   if (!chain) {
     return (
       <section className="panel">
-        <p>Connect a wallet to interact with the coin.</p>
+        <p className="muted">Connect a wallet to interact with the coin.</p>
       </section>
     )
   }
   if (!coinAddress) {
     return (
       <section className="panel">
-        <h2>Coin</h2>
-        <p className="hint">
+        <h2 className="h5 eyebrow">Coin</h2>
+        <p className="muted">
           <code>CoinMintable</code> isn't deployed on <strong>{chain.name}</strong> yet.
-          Head to the <a href="#/deploy">Deployment</a> tab to deploy it.
+          Head to the <a className="link" href="#/deploy">Deployment</a> tab to deploy it.
         </p>
       </section>
     )
@@ -139,7 +139,7 @@ function CoinHeader({
 
   return (
     <section className="panel">
-      <h2>
+      <h2 className="h4">
         {(name as string) ?? '…'}{' '}
         <span className="coin-symbol">({(symbol as string) ?? '…'})</span>
       </h2>
@@ -176,9 +176,9 @@ function CoinHeader({
             {admin ? (
               <code>{shortAddr(admin)}</code>
             ) : (
-              <span className="hint">—</span>
+              <span className="muted">—</span>
             )}
-            {sameAddr(admin, user) && <span className="hint"> · you</span>}
+            {sameAddr(admin, user) && <span className="muted"> · you</span>}
           </dd>
         </dl>
       </div>
@@ -214,7 +214,7 @@ function AdminCoinView({ coinAddress }: { coinAddress: Address }) {
       {!locked && <MintForm coinAddress={coinAddress} decimals={decN} onMinted={() => refetchRecipients()} />}
       {locked && (
         <section className="panel">
-          <p className="hint">Supply is locked — no new tokens can be minted.</p>
+          <p className="muted">Supply is locked — no new tokens can be minted.</p>
         </section>
       )}
 
@@ -223,12 +223,12 @@ function AdminCoinView({ coinAddress }: { coinAddress: Address }) {
       )}
 
       <section className="panel">
-        <h2>Holders ({list.length})</h2>
+        <h2 className="h5 eyebrow">Holders ({list.length})</h2>
         {list.length === 0 ? (
-          <p className="hint">Nobody holds tokens yet. Mint some above.</p>
+          <p className="muted">Nobody holds tokens yet. Mint some above.</p>
         ) : (
           <>
-            <p className="hint">Newest first. Balances read live from the chain.</p>
+            <p className="muted">Newest first. Balances read live from the chain.</p>
             <table className="holders-table">
               <thead>
                 <tr>
@@ -300,8 +300,8 @@ function MintForm({
 
   return (
     <section className="panel">
-      <h2>Mint tokens</h2>
-      <p className="hint">Admin-only. Amount is in token units (converted internally using {decimals} decimals).</p>
+      <h2 className="h5 eyebrow">Mint tokens</h2>
+      <p className="muted">Admin-only. Amount is in token units (converted internally using {decimals} decimals).</p>
       <div className="coin-form">
         <div className="field">
           <label htmlFor="recipient">Recipient</label>
@@ -315,7 +315,7 @@ function MintForm({
             onChange={(e) => setRecipient(e.target.value)}
             style={
               recipTrimmed.length > 0 && !isAddr(recipTrimmed)
-                ? { borderColor: '#ff8a98' }
+                ? { borderColor: 'var(--hw-red)' }
                 : undefined
             }
           />
@@ -337,7 +337,7 @@ function MintForm({
       </div>
       {writeError && <pre className="error-inline">{writeError.message}</pre>}
       {txHash && (
-        <p className="hint tx-link">
+        <p className="muted tx-link">
           Tx:{' '}
           {txUrl ? (
             <a href={txUrl} target="_blank" rel="noreferrer">
@@ -378,8 +378,8 @@ function LockMintingBox({
 
   return (
     <section className="panel">
-      <h2>Lock supply</h2>
-      <p className="hint">
+      <h2 className="h5 eyebrow">Lock supply</h2>
+      <p className="muted">
         Irreversibly disables <code>mint()</code>. After locking, total supply can never
         grow. Use this once you've distributed all the tokens you plan to.
       </p>
@@ -393,7 +393,7 @@ function LockMintingBox({
         </button>
       ) : (
         <div className="coin-form-inline">
-          <span className="hint">This can't be undone. Confirm?</span>
+          <span className="muted">This can't be undone. Confirm?</span>
           <button
             className="mint-btn lock-btn"
             disabled={busy}
@@ -490,7 +490,7 @@ function UserCoinView({
   if (!user) {
     return (
       <section className="panel">
-        <p>Connect a wallet to see your balance.</p>
+        <p className="muted">Connect a wallet to see your balance.</p>
       </section>
     )
   }
@@ -502,13 +502,13 @@ function UserCoinView({
   return (
     <>
       <section className="panel">
-        <h2>Your balance</h2>
+        <h2 className="h5 eyebrow">Your balance</h2>
         <p className="balance-display">
           <strong>{display}</strong>{' '}
           <span className="coin-symbol">{(symbol as string) ?? ''}</span>
         </p>
         {raw === 0n && (
-          <p className="hint">
+          <p className="muted">
             You have no tokens yet.
             {admin && (
               <>
@@ -568,7 +568,7 @@ function TransferForm({
 
   return (
     <section className="panel">
-      <h2>Send {symbol}</h2>
+      <h2 className="h5 eyebrow">Send {symbol}</h2>
       <div className="coin-form">
         <div className="field">
           <label htmlFor="transfer-recipient">To</label>
@@ -582,7 +582,7 @@ function TransferForm({
             onChange={(e) => setRecipient(e.target.value)}
             style={
               recipTrimmed.length > 0 && !isAddr(recipTrimmed)
-                ? { borderColor: '#ff8a98' }
+                ? { borderColor: 'var(--hw-red)' }
                 : undefined
             }
           />
@@ -617,7 +617,7 @@ function TransferForm({
       </div>
       {writeError && <pre className="error-inline">{writeError.message}</pre>}
       {txHash && (
-        <p className="hint tx-link">
+        <p className="muted tx-link">
           Tx:{' '}
           {txUrl ? (
             <a href={txUrl} target="_blank" rel="noreferrer">

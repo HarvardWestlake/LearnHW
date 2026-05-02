@@ -43,8 +43,8 @@ export function CategoryGrid({ onPick }: { onPick: (id: string) => void }) {
   const existing = useChainDeployments()
   return (
     <section className="panel">
-      <h2>What do you want to deploy?</h2>
-      <p className="hint">
+      <h2 className="h5 eyebrow">What do you want to deploy?</h2>
+      <p className="muted">
         Pick a category to get started. You can switch later from the top of each page.
       </p>
       <div className="category-grid">
@@ -132,10 +132,10 @@ export function ComingSoonView({ category }: { category: DeploymentCategory }) {
         <div className="category-icon coming-icon" aria-hidden>
           <CategoryIcon id={category.id} />
         </div>
-        <h2>{category.label}</h2>
+        <h2 className="h4">{category.label}</h2>
         <p className="category-tagline">{category.tagline}</p>
-        <p className="hint">{category.description}</p>
-        <p className="hint coming-hint">
+        <p className="muted">{category.description}</p>
+        <p className="muted coming-hint">
           Templates for this category haven't shipped yet. Check back, or pick another
           category above.
         </p>

@@ -35,7 +35,7 @@ export class SignatureErrorBoundary extends Component<Props, State> {
 
     return (
       <div className="error-panel">
-        <h2>{isSig ? 'Contract signature mismatch' : 'Something went wrong'}</h2>
+        <h2 className="h4">{isSig ? 'Contract signature mismatch' : 'Something went wrong'}</h2>
 
         {isSig && (
           <>
@@ -76,7 +76,7 @@ export class SignatureErrorBoundary extends Component<Props, State> {
 
         {!isSig && <pre>{error.message}</pre>}
 
-        <button onClick={this.reset}>Dismiss</button>
+        <button className="btn btn--outline btn--sm" onClick={this.reset} style={{ marginTop: '1rem' }}>Dismiss</button>
       </div>
     )
   }

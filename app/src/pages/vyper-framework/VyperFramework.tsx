@@ -11,14 +11,16 @@ const queryClient = new QueryClient()
 
 export default function VyperFramework() {
   return (
-    <div className="vyper-framework-root">
-      <WagmiProvider config={wagmiConfig}>
-        <QueryClientProvider client={queryClient}>
-          <RainbowKitProvider initialChain={defaultChain}>
-            <VyperApp />
-          </RainbowKitProvider>
-        </QueryClientProvider>
-      </WagmiProvider>
-    </div>
+    <main className="page vyper-framework-root">
+      <div className="container container--narrow">
+        <WagmiProvider config={wagmiConfig}>
+          <QueryClientProvider client={queryClient}>
+            <RainbowKitProvider initialChain={defaultChain}>
+              <VyperApp />
+            </RainbowKitProvider>
+          </QueryClientProvider>
+        </WagmiProvider>
+      </div>
+    </main>
   )
 }

@@ -15,9 +15,9 @@ export function ApplicationPage() {
   if (!category) {
     return (
       <section className="panel">
-        <h2>Pick a category</h2>
-        <p className="hint">
-          Head to the <a href="#/deploy">Deployment</a> tab to choose what kind of
+        <h2 className="h5 eyebrow">Pick a category</h2>
+        <p className="muted">
+          Head to the <a className="link" href="#/deploy">Deployment</a> tab to choose what kind of
           contracts you want to work with. Your choice persists across both tabs.
         </p>
       </section>
@@ -56,7 +56,7 @@ function CategoryAppSurface({ category }: { category: DeploymentCategory }) {
     default:
       return (
         <section className="panel">
-          <p className="hint">No application view has been built for this category yet.</p>
+          <p className="muted">No application view has been built for this category yet.</p>
         </section>
       )
   }

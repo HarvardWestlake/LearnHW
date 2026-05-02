@@ -33,14 +33,14 @@ export function CounterPanel() {
   const txUrl = explorerTxUrl(chain, txHash)
 
   if (!chain) {
-    return <section className="panel"><p>Connect a wallet to interact with Counter.</p></section>
+    return <section className="panel"><p className="muted">Connect a wallet to interact with Counter.</p></section>
   }
 
   if (!address) {
     return (
       <section className="panel">
-        <h2>Counter</h2>
-        <p className="hint">
+        <h2 className="h5 eyebrow">Counter</h2>
+        <p className="muted">
           No deployment configured for <strong>{chain.name}</strong>. Deploy it from the
           Deployment tab, or add the address to <code>src/contracts/deployments.ts</code>.
         </p>
@@ -57,27 +57,27 @@ export function CounterPanel() {
 
   return (
     <section className="panel">
-      <h2>Counter</h2>
+      <h2 className="h5 eyebrow">Counter</h2>
       <p>
         Contract: <code>{address}</code>
       </p>
       <p className="count">
         count = <strong>{count !== undefined ? String(count) : '—'}</strong>{' '}
-        {isFetching && <span className="hint">(refreshing)</span>}
+        {isFetching && <span className="muted">(refreshing)</span>}
       </p>
       <div className="row">
-        <button disabled={busy} onClick={() => call('increment')}>
+        <button className="btn" disabled={busy} onClick={() => call('increment')}>
           {busy ? 'waiting…' : 'increment()'}
         </button>
-        <button disabled={busy} onClick={() => call('reset')}>
+        <button className="btn btn--outline" disabled={busy} onClick={() => call('reset')}>
           reset()
         </button>
-        <button disabled={isFetching} onClick={() => refetch()}>
+        <button className="btn btn--ghost" disabled={isFetching} onClick={() => refetch()}>
           refresh
         </button>
       </div>
       {txHash && (
-        <p className="hint tx-link">
+        <p className="muted tx-link">
           Last tx:{' '}
           {txUrl ? (
             <a href={txUrl} target="_blank" rel="noreferrer">

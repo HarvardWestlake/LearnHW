@@ -57,17 +57,17 @@ export function MintPage() {
   if (!chain) {
     return (
       <section className="panel">
-        <p>Connect a wallet to get started.</p>
+        <p className="muted">Connect a wallet to get started.</p>
       </section>
     )
   }
   if (!minter721 && !minter1155) {
     return (
       <section className="panel">
-        <h2>Mint</h2>
-        <p className="hint">
+        <h2 className="h5 eyebrow">Mint</h2>
+        <p className="muted">
           No minter is deployed on <strong>{chain.name}</strong> yet. Head to the{' '}
-          <a href="#/deploy">Deployment</a> tab — deploy <code>NFTGraphic</code> first,
+          <a className="link" href="#/deploy">Deployment</a> tab — deploy <code>NFTGraphic</code> first,
           then either <code>NFTMinter</code> (ERC-721) or <code>NFTMinter1155</code>{' '}
           (ERC-1155).
         </p>
@@ -198,7 +198,7 @@ function Admin721View({ factory, chainId }: { factory: Address; chainId: number 
       />
 
       <section className="panel">
-        <h2>Recipients ({list.length})</h2>
+        <h2 className="h5 eyebrow">Recipients ({list.length})</h2>
         {list.length === 0 ? (
           <p className="hint">No recipients yet — mint the first one above.</p>
         ) : (
@@ -271,14 +271,14 @@ function Recipient721View({
   if (!user) {
     return (
       <section className="panel">
-        <p>Connect a wallet to see your NFTs.</p>
+        <p className="muted">Connect a wallet to see your NFTs.</p>
       </section>
     )
   }
   if (isLoading) {
     return (
       <section className="panel">
-        <p className="hint">Checking…</p>
+        <p className="muted">Checking…</p>
       </section>
     )
   }
@@ -286,7 +286,7 @@ function Recipient721View({
   if (hasMinted && clone) {
     return (
       <section className="panel">
-        <h2>Your reward (ERC-721)</h2>
+        <h2 className="h5 eyebrow">Your reward (ERC-721)</h2>
         <p className="hint">Soulbound to <code>{user}</code>.</p>
         <div className="card-grid card-grid-single">
           <GraphicCard clone={clone as Address} chainId={chainId} recipientHint={user} />
@@ -384,7 +384,7 @@ function Admin1155View({ factory, chainId }: { factory: Address; chainId: number
       />
 
       <section className="panel">
-        <h2>All mints ({totalN})</h2>
+        <h2 className="h5 eyebrow">All mints ({totalN})</h2>
         {totalN === 0 ? (
           <p className="hint">No mints yet — mint the first one above.</p>
         ) : (
@@ -614,7 +614,7 @@ function Recipient1155View({
   if (!user) {
     return (
       <section className="panel">
-        <p>Connect a wallet to see your NFTs.</p>
+        <p className="muted">Connect a wallet to see your NFTs.</p>
       </section>
     )
   }
@@ -625,7 +625,7 @@ function Recipient1155View({
 
   return (
     <section className="panel">
-      <h2>Your collection ({ids.length})</h2>
+      <h2 className="h5 eyebrow">Your collection ({ids.length})</h2>
       <p className="hint">Soulbound to <code>{user}</code>. Newest first.</p>
       <div className="card-grid">
         {ids.map((id) => (
@@ -683,7 +683,7 @@ function EmptyRecipientPanel({
   const adminLink = admin ? explorerAddressUrl(chain, admin) : undefined
   return (
     <section className="panel">
-      <h2>No NFTs yet</h2>
+      <h2 className="h5 eyebrow">No NFTs yet</h2>
       <p className="hint">
         Your wallet (<code>{user}</code>) hasn't been minted to on this contract yet.
       </p>
@@ -1036,8 +1036,8 @@ function MintComposer({
 
   return (
     <section className="panel">
-      <h2>{heading}</h2>
-      <p className="hint">{subtitle(chain?.name ?? `chain ${chainId}`)}</p>
+      <h2 className="h5 eyebrow">{heading}</h2>
+      <p className="muted">{subtitle(chain?.name ?? `chain ${chainId}`)}</p>
 
       <div className="mint-grid">
         <div className="mint-controls">
@@ -1200,12 +1200,12 @@ function RecipientField({
         value={value}
         placeholder={placeholder}
         onChange={(e) => onChange(e.target.value)}
-        style={valid ? undefined : { borderColor: '#ff8a98' }}
+        style={valid ? undefined : { borderColor: 'var(--hw-red)' }}
         spellCheck={false}
         autoCapitalize="off"
       />
       {!valid && (
-        <span className="hint" style={{ color: '#ff8a98' }}>
+        <span className="error-text">
           must be 0x + 40 hex characters
         </span>
       )}
