@@ -46,6 +46,7 @@
 [
   "Cover slide. Day 4 moves from blockchain mechanics to ownership: how do twelve words become control over real bitcoin, and why might serious wallets require more than one key?",
   "Agenda. The tighter arc is: create a wallet, use Phantom, compare wallet ownership with custodial/ETF exposure, then introduce multisig as a way to reduce single-key failure.",
+  "Practical bridge. Make the vocabulary precise before the wallet material starts. A node verifies and relays Bitcoin data. A wallet manages keys, creates addresses, and signs transactions. Bitcoin Core can be both, but running a node is not automatically the same as using it as your wallet. Apps and mining software usually sit on top of a node or a pool API.",
   "Seed phrase slide. This is an example phrase only. The key teaching point: the phrase is not a password hint or login phrase. It is enough to reconstruct the wallet. Anyone with the correct words in the correct order can control the funds.",
   "Wallet creation flow. Keep this clearer than the formal BIP39 spec: a wallet starts from a random secret, encodes it as recovery words, hashes/stretches those words into a seed, then deterministically derives a tree of keys and addresses. The important phrase is: same words, same wallet.",
   "Phantom demo slide. Verified against Phantom support: Phantom is available as a Chrome browser extension and supports Bitcoin plus Ethereum, which lets us keep one wallet for the Bitcoin lesson and the later Ethereum testnet lesson. For this class, have students create a wallet with a Secret Recovery Phrase instead of a social login so the seed phrase concept is visible.",
@@ -57,7 +58,8 @@
   "Threat model slide. Multisig helps when keys fail independently: one stolen phone key or one lost backup should not be catastrophic in a well-designed 2-of-3 wallet. It does not fix all keys in one place, one person controlling everything, collusion, or poor backups.",
   "Bitcoin vs smart contract multisig. Bitcoin multisig is enforced through scripts and signatures. Ethereum-style tools such as Safe often use smart contracts or smart accounts. Same threshold concept, different machinery.",
   "Recap. Students should leave with three sentences: a recovery phrase can recreate a wallet; an ETF or exchange balance is exposure, not direct wallet control; multisig requires M-of-N registered keys to spend.",
-  "Next class preview. Bitcoin scripts verify signatures and limited spending rules. Ethereum expands the idea toward programmable contracts and accounts."
+  "Next class preview. Bitcoin scripts verify signatures and limited spending rules. Ethereum expands the idea toward programmable contracts and accounts.",
+  "Live data tour. Use this as a closing show-and-tell slide. Start with the Bitcoin Core GitHub repo so students see the protocol as public code, then mempool.space, Blockstream Explorer, Clark Moody, Bitnodes, and TxStreet if time allows. For the Litecoin comparison, show litecoin-project/litecoin src/chainparams.cpp line 87: that line sets the 2.5-minute block target spacing."
 ]
 </script>
   </head>
@@ -1657,13 +1659,160 @@
           );
         }
 
+        // ── 20 · Join Bitcoin Software ─────────────────────────────────────────────
+        function SlideJoinBitcoinSoftware() {
+          const paths = [
+            {
+              n: '01',
+              title: 'Node',
+              kicker: 'verifier + relay',
+              body: 'Bitcoin Core connects to peers, downloads blocks, verifies the rules, and relays valid data. That is the node job.',
+              code: 'Is this Bitcoin history valid?',
+            },
+            {
+              n: '02',
+              title: 'Wallet',
+              kicker: 'keychain + signer',
+              body: 'A wallet creates addresses, tracks coins controlled by your keys, and signs transactions. Bitcoin Core can have a wallet, but a node is not automatically a wallet.',
+              code: 'Can I spend these coins?',
+            },
+            {
+              n: '03',
+              title: 'Apps + mining',
+              kicker: 'software on top',
+              body: 'Apps can query a node with JSON-RPC or explorer APIs. Mining software asks a node or pool for block templates, then sends work to ASIC hardware.',
+              code: 'RPC / REST / getblocktemplate',
+            },
+          ];
+
+          return (
+            <SlideFrame>
+              <Eyebrow>Practical bridge</Eyebrow>
+              <Title style={{ maxWidth: 1260 }}>
+                installing Bitcoin Core is not the same as <em style={{ fontStyle: 'italic', color: COLORS.accent }}>having a wallet.</em>
+              </Title>
+
+              <div style={{ marginTop: 46, display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 24 }}>
+                {paths.map(({ n, title, kicker, body, code }) => (
+                  <div key={n} style={{ border: `1px solid ${COLORS.ruleFaint}`, borderRadius: 10, padding: '30px 30px', background: COLORS.paper, display: 'flex', flexDirection: 'column', minHeight: 430 }}>
+                    <Numeral n={n} style={{ fontSize: 46 }} />
+                    <div style={{ fontFamily: FONTS.sans, fontSize: 18, letterSpacing: '0.18em', textTransform: 'uppercase', color: COLORS.gold, marginTop: 20 }}>
+                      {kicker}
+                    </div>
+                    <div style={{ fontFamily: FONTS.serif, fontSize: 44, lineHeight: 1.05, marginTop: 12, color: COLORS.ink }}>
+                      {title}
+                    </div>
+                    <Body style={{ marginTop: 20, fontSize: 28, lineHeight: 1.28 }}>{body}</Body>
+                    <div style={{ marginTop: 'auto', borderTop: `1px solid ${COLORS.ruleFaint}`, paddingTop: 20, fontFamily: FONTS.mono, fontSize: 20, lineHeight: 1.35, color: COLORS.inkSoft }}>
+                      {code}
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              <Callout kicker="Reality check" style={{ marginTop: 38 }}>
+                A node is your rule-checking copy of the network. A wallet is your keychain. Bitcoin Core can be both, but those
+                are two different jobs.
+              </Callout>
+            </SlideFrame>
+          );
+        }
+
+        // ── 20 · Bitcoin Websites ──────────────────────────────────────────────────
+        function SlideBitcoinWebsites() {
+          const sites = [
+            ['github.com/bitcoin/bitcoin', 'Bitcoin Core source code: the rules are software students can inspect.'],
+            ['mempool.space', 'Live blocks, mempool backlog, fee estimates, and recent transactions.'],
+            ['blockstream.info', 'Clean block explorer for a specific transaction, address, or block.'],
+            ['dashboard.clarkmoody.com', 'Big-picture dashboard: supply, halving, hash rate, fees, nodes, and Lightning.'],
+            ['bitnodes.io/nodes/network-map', 'Map of reachable Bitcoin nodes and where network peers are visible.'],
+            ['txstreet.com/v/btc', 'Animated view of transactions waiting for block space.'],
+          ];
+
+          const checklist = [
+            'Open the latest block: height, timestamp, miner or pool, subsidy, and fees.',
+            'Click one transaction: inputs, outputs, fee rate, and confirmations.',
+            'Compare mempool congestion with the recommended sat/vB fee.',
+            'Find supply issued, next halving estimate, hash rate, and difficulty.',
+            'GitHub: Litecoin src/chainparams.cpp:87 changed the block target spacing.',
+            'Show the node map: decentralization is computers running software, not one company.',
+          ];
+
+          return (
+            <SlideFrame>
+              <Eyebrow>Live data tour</Eyebrow>
+              <Title style={{ maxWidth: 1280, fontSize: 66, lineHeight: 1 }}>
+                interesting websites for <em style={{ fontStyle: 'italic', color: COLORS.accent }}>seeing Bitcoin happen.</em>
+              </Title>
+
+              <div style={{ marginTop: 28, flex: 1, display: 'grid', gridTemplateColumns: '1.08fr 0.92fr', gap: 26, minHeight: 0 }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 8, minHeight: 0 }}>
+                  {sites.map(([site, body], index) => (
+                    <div
+                      key={site}
+                      style={{
+                        display: 'grid',
+                        gridTemplateColumns: '58px 340px 1fr',
+                        gap: 18,
+                        alignItems: 'center',
+                        border: `1px solid ${index === 0 ? COLORS.accent : COLORS.ruleFaint}`,
+                        borderRadius: 10,
+                        padding: '10px 18px',
+                        background: index === 0 ? 'rgba(168,52,30,0.06)' : COLORS.paper,
+                      }}
+                    >
+                      <Numeral n={String(index + 1).padStart(2, '0')} style={{ fontSize: 36 }} />
+                      <div style={{ fontFamily: FONTS.mono, fontSize: 22, color: index === 0 ? COLORS.accent : COLORS.ink, lineHeight: 1.15 }}>
+                        {site}
+                      </div>
+                      <Body style={{ fontSize: 22, lineHeight: 1.18 }}>{body}</Body>
+                    </div>
+                  ))}
+                </div>
+
+                <div style={{ background: COLORS.ink, color: COLORS.paper, borderRadius: 12, padding: '24px 30px', display: 'flex', flexDirection: 'column' }}>
+                  <div style={{ fontFamily: FONTS.mono, fontSize: 17, letterSpacing: '0.18em', textTransform: 'uppercase', color: COLORS.gold, marginBottom: 16 }}>
+                    What to show them
+                  </div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 10, flex: 1 }}>
+                    {checklist.map((item, index) => (
+                      <div key={item} style={{ display: 'grid', gridTemplateColumns: '36px 1fr', gap: 14, alignItems: 'start' }}>
+                        <div
+                          style={{
+                            width: 36,
+                            height: 36,
+                            borderRadius: '50%',
+                            border: `2px solid ${COLORS.gold}`,
+                            color: COLORS.gold,
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            fontFamily: FONTS.mono,
+                            fontSize: 16,
+                            flexShrink: 0,
+                          }}
+                        >
+                          {index + 1}
+                        </div>
+                        <Body color="rgba(245,239,227,0.82)" style={{ fontSize: 22, lineHeight: 1.15 }}>
+                          {item}
+                        </Body>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </SlideFrame>
+          );
+        }
+
         Object.assign(window, {
           SlideCover, SlideAgenda,
           SlidePart1Divider, SlideSeedPhrase, SlideWalletCreationFlow, SlidePhantomDemo, SlideFundWalletDemo, SlideCustodialRisk, SlideMultisigSetup,
           SlidePart2Divider, SlideMofNExplained, SlideMultipleKeys, SlideMultisigVerification, SlideKeyDistribution,
           SlidePart3Divider, SlideSigningStep1, SlideSigningStep2, SlideMultisigTransaction,
           SlidePart4Divider, SlideLostPhone, SlideRedundancy, SlideFraudProtection, SlideMultisigThreatModel, SlideNoSingleAuthority,
-          SlideBitcoinVsSmartContract, SlideRecap, SlideNextClass,
+          SlideBitcoinVsSmartContract, SlideRecap, SlideNextClass, SlideJoinBitcoinSoftware, SlideBitcoinWebsites,
         });
       }
     </script>
@@ -1671,7 +1820,7 @@
     <script type="text/babel" data-presets="react">
       {
         function whenReady(cb) {
-          if (window.SlideCover && window.SlideNextClass && window.HTCS_TOKENS) return cb();
+          if (window.SlideCover && window.SlideNextClass && window.SlideJoinBitcoinSoftware && window.SlideBitcoinWebsites && window.HTCS_TOKENS) return cb();
           setTimeout(() => whenReady(cb), 60);
         }
 
@@ -1681,6 +1830,7 @@
           const SLIDES = [
             ['Cover',           SlideCover],
             ['Agenda',          SlideAgenda],
+            ['Node vs wallet',   SlideJoinBitcoinSoftware],
             ['Seed phrase',     SlideSeedPhrase],
             ['Wallet flow',     SlideWalletCreationFlow],
             ['Phantom demo',    SlidePhantomDemo],
@@ -1693,6 +1843,7 @@
             ['Bitcoin vs contracts', SlideBitcoinVsSmartContract],
             ['Recap',           SlideRecap],
             ['Next Class',      SlideNextClass],
+            ['Bitcoin websites', SlideBitcoinWebsites],
           ];
 
           SLIDES.forEach(([label, Comp], i) => {

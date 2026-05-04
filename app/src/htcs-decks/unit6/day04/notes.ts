@@ -1,6 +1,7 @@
 export const DAY4_SPEAKER_NOTES = [
   "Cover slide. Day 4 moves from blockchain mechanics to ownership: how do twelve words become control over real bitcoin, and why might serious wallets require more than one key?",
   "Agenda. The tighter arc is: create a wallet, use Phantom, compare wallet ownership with custodial/ETF exposure, then introduce multisig as a way to reduce single-key failure.",
+  "Practical bridge. Make the vocabulary precise before the wallet material starts. A node verifies and relays Bitcoin data. A wallet manages keys, creates addresses, and signs transactions. Bitcoin Core can be both, but running a node is not automatically the same as using it as your wallet. Apps and mining software usually sit on top of a node or a pool API.",
   "Seed phrase slide. This is an example phrase only. The key teaching point: the phrase is not a password hint or login phrase. It is enough to reconstruct the wallet. Anyone with the correct words in the correct order can control the funds.",
   "Wallet creation flow. Keep this clearer than the formal BIP39 spec: a wallet starts from a random secret, encodes it as recovery words, hashes/stretches those words into a seed, then deterministically derives a tree of keys and addresses. The important phrase is: same words, same wallet.",
   "Phantom demo slide. Verified against Phantom support: Phantom is available as a Chrome browser extension and supports Bitcoin plus Ethereum, which lets us keep one wallet for the Bitcoin lesson and the later Ethereum testnet lesson. For this class, have students create a wallet with a Secret Recovery Phrase instead of a social login so the seed phrase concept is visible.",
@@ -13,4 +14,5 @@ export const DAY4_SPEAKER_NOTES = [
   "Bitcoin vs smart contract multisig. Bitcoin multisig is enforced through scripts and signatures. Ethereum-style tools such as Safe often use smart contracts or smart accounts. Same threshold concept, different machinery.",
   "Recap. Students should leave with three sentences: a recovery phrase can recreate a wallet; an ETF or exchange balance is exposure, not direct wallet control; multisig requires M-of-N registered keys to spend.",
   "Next class preview. Bitcoin scripts verify signatures and limited spending rules. Ethereum expands the idea toward programmable contracts and accounts.",
+  "Live data tour. Use this as a closing show-and-tell slide. Start with the Bitcoin Core GitHub repo so students see the protocol as public code, then mempool.space, Blockstream Explorer, Clark Moody, Bitnodes, and TxStreet if time allows. For the Litecoin comparison, show litecoin-project/litecoin src/chainparams.cpp line 87: that line sets the 2.5-minute block target spacing.",
 ]
