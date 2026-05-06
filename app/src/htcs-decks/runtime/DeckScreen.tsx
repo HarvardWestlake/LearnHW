@@ -245,6 +245,7 @@ export default function DeckScreen({
                   <section
                     key={label}
                     data-label={label}
+                    data-deck-active={active ? '' : undefined}
                     style={{
                       position: 'absolute',
                       inset: 0,

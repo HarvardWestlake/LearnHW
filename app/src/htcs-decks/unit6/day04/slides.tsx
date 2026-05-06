@@ -1472,6 +1472,151 @@ function SlideNextClass() {
   )
 }
 
+function SlideJoinBitcoinSoftware() {
+  const paths = [
+    {
+      n: '01',
+      title: 'Node',
+      kicker: 'verifier + relay',
+      body: 'Bitcoin Core connects to peers, downloads blocks, verifies the rules, and relays valid data. That is the node job.',
+      code: 'Is this Bitcoin history valid?',
+    },
+    {
+      n: '02',
+      title: 'Wallet',
+      kicker: 'keychain + signer',
+      body: 'A wallet creates addresses, tracks coins controlled by your keys, and signs transactions. Bitcoin Core can have a wallet, but a node is not automatically a wallet.',
+      code: 'Can I spend these coins?',
+    },
+    {
+      n: '03',
+      title: 'Apps + mining',
+      kicker: 'software on top',
+      body: 'Apps can query a node with JSON-RPC or explorer APIs. Mining software asks a node or pool for block templates, then sends work to ASIC hardware.',
+      code: 'RPC / REST / getblocktemplate',
+    },
+  ]
+
+  return (
+    <SlideFrame>
+      <Eyebrow>Practical bridge</Eyebrow>
+      <Title style={{ maxWidth: 1260 }}>
+        installing Bitcoin Core is not the same as <em style={{ fontStyle: 'italic', color: COLORS.accent }}>having a wallet.</em>
+      </Title>
+
+      <div style={{ marginTop: 46, display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 24 }}>
+        {paths.map(({ n, title, kicker, body, code }) => (
+          <div key={n} style={{ border: `1px solid ${COLORS.ruleFaint}`, borderRadius: 10, padding: '30px 30px', background: COLORS.paper, display: 'flex', flexDirection: 'column', minHeight: 430 }}>
+            <Numeral n={n} style={{ fontSize: 46 }} />
+            <div style={{ fontFamily: FONTS.sans, fontSize: 18, letterSpacing: '0.18em', textTransform: 'uppercase', color: COLORS.gold, marginTop: 20 }}>
+              {kicker}
+            </div>
+            <div style={{ fontFamily: FONTS.serif, fontSize: 44, lineHeight: 1.05, marginTop: 12, color: COLORS.ink }}>
+              {title}
+            </div>
+            <Body style={{ marginTop: 20, fontSize: 28, lineHeight: 1.28 }}>{body}</Body>
+            <div style={{ marginTop: 'auto', borderTop: `1px solid ${COLORS.ruleFaint}`, paddingTop: 20, fontFamily: FONTS.mono, fontSize: 20, lineHeight: 1.35, color: COLORS.inkSoft }}>
+              {code}
+            </div>
+          </div>
+        ))}
+      </div>
+
+      <Callout kicker="Reality check" style={{ marginTop: 38 }}>
+        A node is your rule-checking copy of the network. A wallet is your keychain. Bitcoin Core can be both, but those
+        are two different jobs.
+      </Callout>
+    </SlideFrame>
+  )
+}
+
+function SlideBitcoinWebsites() {
+  const sites = [
+    ['github.com/bitcoin/bitcoin', 'Bitcoin Core source code: the rules are software students can inspect.'],
+    ['mempool.space', 'Live blocks, mempool backlog, fee estimates, and recent transactions.'],
+    ['blockstream.info', 'Clean block explorer for a specific transaction, address, or block.'],
+    ['dashboard.clarkmoody.com', 'Big-picture dashboard: supply, halving, hash rate, fees, nodes, and Lightning.'],
+    ['bitnodes.io/nodes/network-map', 'Map of reachable Bitcoin nodes and where network peers are visible.'],
+    ['txstreet.com/v/btc', 'Animated view of transactions waiting for block space.'],
+  ]
+
+  const checklist = [
+    'Open the latest block: height, timestamp, miner or pool, subsidy, and fees.',
+    'Click one transaction: inputs, outputs, fee rate, and confirmations.',
+    'Compare mempool congestion with the recommended sat/vB fee.',
+    'Find supply issued, next halving estimate, hash rate, and difficulty.',
+    'GitHub: Litecoin src/chainparams.cpp:87 changed the block target spacing.',
+    'Show the node map: decentralization is computers running software, not one company.',
+  ]
+
+  return (
+    <SlideFrame>
+      <Eyebrow>Live data tour</Eyebrow>
+      <Title style={{ maxWidth: 1280, fontSize: 66, lineHeight: 1 }}>
+        interesting websites for <em style={{ fontStyle: 'italic', color: COLORS.accent }}>seeing Bitcoin happen.</em>
+      </Title>
+
+      <div style={{ marginTop: 28, flex: 1, display: 'grid', gridTemplateColumns: '1.08fr 0.92fr', gap: 26, minHeight: 0 }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 8, minHeight: 0 }}>
+          {sites.map(([site, body], index) => (
+            <div
+              key={site}
+              style={{
+                display: 'grid',
+                gridTemplateColumns: '58px 340px 1fr',
+                gap: 18,
+                alignItems: 'center',
+                border: `1px solid ${index === 0 ? COLORS.accent : COLORS.ruleFaint}`,
+                borderRadius: 10,
+                padding: '10px 18px',
+                background: index === 0 ? 'rgba(168,52,30,0.06)' : COLORS.paper,
+              }}
+            >
+              <Numeral n={String(index + 1).padStart(2, '0')} style={{ fontSize: 36 }} />
+              <div style={{ fontFamily: FONTS.mono, fontSize: 22, color: index === 0 ? COLORS.accent : COLORS.ink, lineHeight: 1.15 }}>
+                {site}
+              </div>
+              <Body style={{ fontSize: 22, lineHeight: 1.18 }}>{body}</Body>
+            </div>
+          ))}
+        </div>
+
+        <div style={{ background: COLORS.ink, color: COLORS.paper, borderRadius: 12, padding: '24px 30px', display: 'flex', flexDirection: 'column' }}>
+          <div style={{ fontFamily: FONTS.mono, fontSize: 17, letterSpacing: '0.18em', textTransform: 'uppercase', color: COLORS.gold, marginBottom: 16 }}>
+            What to show them
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 10, flex: 1 }}>
+            {checklist.map((item, index) => (
+              <div key={item} style={{ display: 'grid', gridTemplateColumns: '36px 1fr', gap: 14, alignItems: 'start' }}>
+                <div
+                  style={{
+                    width: 36,
+                    height: 36,
+                    borderRadius: '50%',
+                    border: `2px solid ${COLORS.gold}`,
+                    color: COLORS.gold,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    fontFamily: FONTS.mono,
+                    fontSize: 16,
+                    flexShrink: 0,
+                  }}
+                >
+                  {index + 1}
+                </div>
+                <Body color="rgba(245,239,227,0.82)" style={{ fontSize: 22, lineHeight: 1.15 }}>
+                  {item}
+                </Body>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    </SlideFrame>
+  )
+}
+
 void [
   SlidePart1Divider,
   SlidePart2Divider,
@@ -1491,6 +1636,7 @@ void [
 export const DAY4_SLIDES: DeckSlideDefinition[] = [
   { label: 'Cover', Component: SlideCover },
   { label: 'Agenda', Component: SlideAgenda },
+  { label: 'Node vs wallet', Component: SlideJoinBitcoinSoftware },
   { label: 'Seed phrase', Component: SlideSeedPhrase },
   { label: 'Wallet flow', Component: SlideWalletCreationFlow },
   { label: 'Phantom demo', Component: SlidePhantomDemo },
@@ -1503,4 +1649,5 @@ export const DAY4_SLIDES: DeckSlideDefinition[] = [
   { label: 'Bitcoin vs contracts', Component: SlideBitcoinVsSmartContract },
   { label: 'Recap', Component: SlideRecap },
   { label: 'Next Class', Component: SlideNextClass },
+  { label: 'Bitcoin websites', Component: SlideBitcoinWebsites },
 ]
