@@ -30,6 +30,8 @@ public/index.html
 .continue/
 .cody/
 .codex/
+CLAUDE.md
+Context/
 
 # Secrets and credentials
 token.txt
