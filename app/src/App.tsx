@@ -1,3 +1,4 @@
+import { lazy, Suspense } from 'react'
 import { Routes, Route, Link, NavLink, Navigate, useLocation } from 'react-router-dom'
 import Home from './pages/Home.tsx'
 import Chem from './pages/Chem.tsx'
@@ -21,6 +22,10 @@ import LectureViewer from './history/LectureViewer.tsx'
 import StyleGuide from './admin/StyleGuide.tsx'
 import MobileFullscreen from './pages/MobileFullscreen.tsx'
 import Cryptography from './pages/overviews/Cryptography.tsx'
+
+// Lazy: keeps the wagmi/RainbowKit/viem bundle out of the main chunk. Only
+// loads when a user opens /code/vyper-framework.
+const VyperFramework = lazy(() => import('./pages/vyper-framework/VyperFramework'))
 
 function HomeIcon() {
   return (
@@ -90,6 +95,14 @@ export default function App() {
         <Route path="code/htcs-lessons/day4-react" element={<HtcsUnit6Day4React />} />
         <Route path="code/htcs-lessons/day5-react" element={<HtcsUnit6Day5React />} />
         <Route path="code/htcs-lessons/:widget" element={<WidgetRoute widgets={HTCS_LESSON_WIDGETS} backTo="/code/htcs-lessons" />} />
+        <Route
+          path="code/vyper-framework"
+          element={
+            <Suspense fallback={<main className="page"><div className="container">Loading Vyper Framework…</div></main>}>
+              <VyperFramework />
+            </Suspense>
+          }
+        />
         <Route path="code/:widget" element={<WidgetRoute widgets={CODE_WIDGETS} backTo="/code" />} />
         <Route path="stats" element={<Stats />} />
         <Route path="stats/overview" element={<Navigate to="/#subject-stats" replace />} />

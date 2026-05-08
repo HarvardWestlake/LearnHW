@@ -1,0 +1,1421 @@
+/* =========================================================================
+   Vyper Framework page — scoped HW-themed styles.
+   Inherits from the global HW design tokens defined in app/src/index.css.
+   Class names that already exist globally (.panel, .btn, .tabs, .tab,
+   .badge, .field, .input, .label, etc.) are NOT redefined here so that
+   this page picks up the canonical HW look automatically.
+
+   Only Vyper-specific component classes (deployment table, flow diagram,
+   pill switcher, NFT card grid, mint composer, etc.) are styled below.
+   All colors come from --hw-* tokens.
+   ========================================================================= */
+
+.vyper-framework-root {
+  /* Soft local background tint for the framework page. */
+  background: transparent;
+  color: var(--hw-brand-black);
+}
+
+/* Header row: title + ConnectButton */
+.vyper-framework-root .vf-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+  margin-bottom: 1.25rem;
+}
+
+/* Connect-status line beneath the tabs. */
+.vyper-framework-root .status-line {
+  color: var(--hw-secondary-black);
+  font-size: var(--step--1);
+  margin: .5rem 0 1.25rem;
+}
+
+/* Treat .hint as a synonym of .muted so existing JSX keeps working. */
+.vyper-framework-root .hint {
+  color: var(--hw-secondary-black-50);
+  font-size: .9rem;
+}
+
+.vyper-framework-root .count {
+  font-size: var(--step-1);
+  margin: .5rem 0;
+}
+
+.vyper-framework-root .row {
+  display: flex;
+  gap: .75rem;
+  flex-wrap: wrap;
+  margin-top: .75rem;
+}
+
+/* Inline tx-link helper. */
+.vyper-framework-root .tx-link a,
+.vyper-framework-root .status a,
+.vyper-framework-root .mono a {
+  color: var(--hw-red);
+  text-decoration: none;
+}
+.vyper-framework-root .tx-link a:hover,
+.vyper-framework-root .status a:hover,
+.vyper-framework-root .mono a:hover {
+  text-decoration: underline;
+}
+
+/* Inline code chips inside the framework page — re-use HW styling. */
+.vyper-framework-root code {
+  background: var(--hw-secondary-khaki-20);
+  padding: .1rem .35rem;
+  border-radius: var(--hw-radius-xs);
+  font-size: 0.92em;
+  color: var(--hw-brand-black);
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+
+/* ---------- Error panels ------------------------------------------------- */
+
+.vyper-framework-root .error-panel {
+  margin-top: 1.5rem;
+  padding: 1.25rem 1.5rem;
+  background: var(--hw-surface);
+  border: 1px solid var(--hw-red);
+  border-left: 4px solid var(--hw-red);
+  border-radius: var(--hw-radius);
+  box-shadow: var(--hw-shadow);
+}
+
+.vyper-framework-root .error-panel h2 {
+  margin-top: 0;
+  color: var(--hw-red);
+  font-size: var(--step-2);
+  font-weight: var(--hw-font-weight-black);
+}
+
+.vyper-framework-root .error-kind {
+  color: var(--hw-red);
+  font-size: .9rem;
+}
+
+.vyper-framework-root .error-dev {
+  margin-top: 1rem;
+  padding: .9rem;
+  background: var(--hw-secondary-khaki-20);
+  border-radius: var(--hw-radius-sm);
+}
+
+.vyper-framework-root .error-dev ul {
+  margin: .5rem 0;
+  padding-left: 1.25rem;
+}
+
+.vyper-framework-root .error-hint {
+  background: var(--hw-brand-black);
+  padding: .5rem .75rem;
+  border-radius: var(--hw-radius-xs);
+  color: var(--hw-secondary-khaki);
+  font-size: .85rem;
+  margin-top: .75rem;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+
+.vyper-framework-root .error-inline {
+  margin-top: .75rem;
+  padding: .6rem .8rem;
+  background: var(--hw-brand-red-20);
+  border-left: 3px solid var(--hw-red);
+  border-radius: var(--hw-radius-xs);
+  color: var(--hw-red);
+  font-size: .85rem;
+  white-space: pre-wrap;
+  word-break: break-word;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+
+/* ---------- Category grid (pre-pick) ------------------------------------- */
+
+.vyper-framework-root .category-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 1rem;
+  margin-top: 1.25rem;
+}
+
+.vyper-framework-root .category-card {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  text-align: left;
+  gap: .45rem;
+  padding: 1.15rem 1.1rem 1rem;
+  background: var(--hw-surface);
+  border: 1px solid var(--hw-border);
+  border-radius: var(--hw-radius);
+  cursor: pointer;
+  transition: border-color 180ms ease, background 180ms ease, transform 120ms ease, box-shadow 180ms ease;
+  color: inherit;
+  font: inherit;
+  min-height: 0;
+}
+
+.vyper-framework-root .category-card:hover {
+  border-color: var(--hw-red);
+  background: var(--hw-surface);
+  transform: translateY(-1px);
+  box-shadow: var(--hw-shadow);
+}
+
+.vyper-framework-root .category-card.coming { opacity: 0.75; }
+.vyper-framework-root .category-card.coming:hover { border-color: var(--hw-gold); }
+
+.vyper-framework-root .category-icon {
+  width: 42px;
+  height: 42px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--hw-red);
+  margin-bottom: .1rem;
+}
+.vyper-framework-root .category-card.coming .category-icon { color: var(--hw-gold); }
+.vyper-framework-root .category-icon svg { width: 100%; height: 100%; }
+
+.vyper-framework-root .category-label {
+  font-size: var(--step-0);
+  font-weight: var(--hw-font-weight-bold);
+  color: var(--hw-brand-black);
+}
+
+.vyper-framework-root .category-tagline {
+  font-size: .9rem;
+  color: var(--hw-secondary-black);
+  margin: 0;
+}
+
+.vyper-framework-root .category-desc {
+  font-size: .8rem;
+  line-height: 1.45;
+  margin: .2rem 0 0;
+}
+
+.vyper-framework-root .category-meta {
+  margin-top: .45rem;
+  font-size: .76rem;
+  color: var(--hw-secondary-black-50);
+  letter-spacing: .02em;
+}
+
+/* ---------- Category switcher (pill row) --------------------------------- */
+
+.vyper-framework-root .category-switcher {
+  display: flex;
+  align-items: center;
+  gap: .7rem;
+  margin-bottom: .9rem;
+  flex-wrap: wrap;
+}
+
+.vyper-framework-root .switcher-label {
+  color: var(--hw-secondary-black);
+  font-size: .72rem;
+  text-transform: uppercase;
+  letter-spacing: .08em;
+  font-weight: var(--hw-font-weight-bold);
+}
+
+.vyper-framework-root .switcher-pills {
+  display: inline-flex;
+  gap: .25rem;
+  padding: 3px;
+  background: var(--hw-surface);
+  border: 1px solid var(--hw-border);
+  border-radius: 999px;
+}
+
+.vyper-framework-root .switcher-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: .4rem;
+  background: transparent;
+  color: var(--hw-secondary-black);
+  padding: .35rem .85rem;
+  border-radius: 999px;
+  border: 0;
+  font-size: .82rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 160ms ease, color 160ms ease;
+  min-height: 0;
+}
+.vyper-framework-root .switcher-pill:hover { color: var(--hw-brand-black); background: var(--hw-secondary-khaki-20); }
+.vyper-framework-root .switcher-pill.active {
+  background: var(--hw-red);
+  color: #fff;
+}
+.vyper-framework-root .switcher-pill.active:hover { background: var(--hw-red); color: #fff; }
+.vyper-framework-root .switcher-pill.active .switcher-pill-icon { color: #fff; }
+
+.vyper-framework-root .switcher-pill-icon {
+  width: 16px;
+  height: 16px;
+  display: inline-flex;
+  color: var(--hw-red);
+}
+.vyper-framework-root .switcher-pill.coming .switcher-pill-icon { color: var(--hw-gold); }
+.vyper-framework-root .switcher-pill-icon svg { width: 100%; height: 100%; }
+
+.vyper-framework-root .switcher-pill-tag {
+  font-size: .65rem;
+  text-transform: uppercase;
+  letter-spacing: .08em;
+  color: var(--hw-gold);
+  padding: .05rem .35rem;
+  border: 1px solid var(--hw-gold);
+  border-radius: var(--hw-radius-xs);
+  background: rgba(237 163 0 / .12);
+  font-weight: var(--hw-font-weight-bold);
+}
+.vyper-framework-root .switcher-pill.active .switcher-pill-tag {
+  color: var(--hw-brand-black);
+  border-color: var(--hw-brand-black);
+  background: rgba(255 255 255 / .85);
+}
+
+/* ---------- Coming-soon placeholder -------------------------------------- */
+
+.vyper-framework-root .coming-soon {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: 1.5rem 1rem 2rem;
+  gap: .4rem;
+}
+
+.vyper-framework-root .coming-icon {
+  width: 64px;
+  height: 64px;
+  color: var(--hw-gold);
+  margin-bottom: .25rem;
+}
+
+.vyper-framework-root .coming-hint {
+  max-width: 46ch;
+  margin-top: .75rem;
+}
+
+/* ---------- Deployment flow diagram -------------------------------------- */
+
+.vyper-framework-root .flow {
+  margin-top: 1rem;
+  padding: 1rem 1.2rem 1.15rem;
+  background: var(--hw-secondary-khaki-20);
+  border: 1px solid var(--hw-border);
+  border-radius: var(--hw-radius);
+}
+
+.vyper-framework-root .flow-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 1rem;
+  margin-bottom: 1rem;
+  flex-wrap: wrap;
+}
+
+.vyper-framework-root .flow-intro h3 {
+  margin: 0 0 .2rem;
+  font-size: .78rem;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  color: var(--hw-secondary-black);
+  font-weight: var(--hw-font-weight-bold);
+}
+
+.vyper-framework-root .flow-intro p.hint {
+  margin: 0;
+  max-width: 56ch;
+  line-height: 1.45;
+}
+
+.vyper-framework-root .flow-controls {
+  display: flex;
+  align-items: center;
+  gap: .35rem;
+  flex-shrink: 0;
+}
+
+.vyper-framework-root .toggle {
+  display: flex;
+  align-items: center;
+  gap: .5rem;
+  font-size: .85rem;
+  color: var(--hw-secondary-black);
+  cursor: pointer;
+  user-select: none;
+  padding: .25rem .4rem;
+  border-radius: var(--hw-radius-xs);
+  font-weight: 500;
+}
+.vyper-framework-root .toggle:hover { color: var(--hw-brand-black); }
+
+.vyper-framework-root .toggle input[type=checkbox] {
+  appearance: none;
+  -webkit-appearance: none;
+  width: 30px;
+  height: 17px;
+  min-height: 17px;
+  background: var(--hw-secondary-khaki);
+  border: 0;
+  border-radius: 999px;
+  position: relative;
+  transition: background 160ms ease;
+  cursor: pointer;
+  margin: 0;
+  padding: 0;
+}
+.vyper-framework-root .toggle input[type=checkbox]::after {
+  content: '';
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 13px;
+  height: 13px;
+  background: #fff;
+  border-radius: 50%;
+  transition: transform 180ms ease;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, .2);
+}
+.vyper-framework-root .toggle input[type=checkbox]:checked { background: var(--hw-red); }
+.vyper-framework-root .toggle input[type=checkbox]:checked::after { transform: translateX(13px); }
+.vyper-framework-root .toggle input[type=checkbox]:focus-visible { box-shadow: var(--hw-focus-ring); }
+
+.vyper-framework-root .icon-btn {
+  background: transparent;
+  color: var(--hw-secondary-black);
+  padding: .3rem;
+  border-radius: var(--hw-radius-xs);
+  border: 1px solid transparent;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: color 160ms ease, background 160ms ease, border-color 160ms ease;
+  min-height: 0;
+}
+.vyper-framework-root .icon-btn:hover {
+  background: var(--hw-secondary-khaki-20);
+  color: var(--hw-brand-black);
+  border-color: var(--hw-border);
+}
+
+/* Track + nodes */
+
+.vyper-framework-root .flow-track {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: .35rem;
+  flex-wrap: wrap;
+  padding: .25rem 0;
+}
+
+.vyper-framework-root .flow-node {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: .4rem;
+  padding: .7rem .9rem .55rem;
+  min-width: 108px;
+  border-radius: var(--hw-radius);
+  background: var(--hw-surface);
+  border: 1px solid var(--hw-border);
+  transition: border-color 220ms ease, background 220ms ease, transform 220ms ease;
+  position: relative;
+  outline: none;
+}
+.vyper-framework-root .flow-node:hover,
+.vyper-framework-root .flow-node:focus-visible {
+  border-color: var(--hw-red);
+  box-shadow: var(--hw-shadow);
+}
+
+.vyper-framework-root .flow-icon {
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--hw-red);
+}
+.vyper-framework-root .flow-icon svg { width: 100%; height: 100%; }
+
+.vyper-framework-root .flow-label {
+  font-size: .78rem;
+  color: var(--hw-secondary-black);
+  text-align: center;
+  letter-spacing: .01em;
+  font-weight: 500;
+}
+
+/* Arrow with an optional flowing dot when active */
+
+.vyper-framework-root .flow-arrow {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 72px;
+  height: 36px;
+  color: var(--hw-secondary-black-50);
+  position: relative;
+  transition: color 220ms ease;
+  outline: none;
+  border-radius: var(--hw-radius-xs);
+}
+
+.vyper-framework-root .flow-arrow:hover,
+.vyper-framework-root .flow-arrow:focus-visible {
+  color: var(--hw-secondary-black);
+}
+
+.vyper-framework-root .flow-arrow svg { width: 100%; height: 24px; }
+
+.vyper-framework-root .flow-arrow::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 12%;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--hw-red);
+  transform: translateY(-50%);
+  opacity: 0;
+  pointer-events: none;
+  box-shadow: 0 0 8px var(--hw-brand-red-20);
+}
+
+/* Active state: flowing dot + pulse on the destination. */
+
+.vyper-framework-root .flow-active .flow-arrow { color: var(--hw-red); }
+
+.vyper-framework-root .flow-active .flow-arrow::after {
+  animation: flow-dot 1.6s cubic-bezier(0.45, 0, 0.55, 1) infinite;
+}
+
+@keyframes flow-dot {
+  0%   { left: 12%; opacity: 0; }
+  20%  { opacity: 1; }
+  80%  { opacity: 1; }
+  100% { left: 84%; opacity: 0; }
+}
+
+.vyper-framework-root .flow-active .flow-node:last-child {
+  animation: flow-pulse 2s ease-in-out infinite;
+  border-color: var(--hw-red);
+}
+.vyper-framework-root .flow-active .flow-node:last-child .flow-icon { color: var(--hw-red); }
+
+@keyframes flow-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 transparent; }
+  50%      { box-shadow: 0 0 0 6px var(--hw-brand-red-20); }
+}
+
+/* Tooltip (used by .flow-node, .toggle, .icon-btn via data-tooltip) */
+
+.vyper-framework-root [data-tooltip] { position: relative; }
+
+.vyper-framework-root [data-tooltip]:hover::before,
+.vyper-framework-root [data-tooltip]:focus-visible::before {
+  content: attr(data-tooltip);
+  position: absolute;
+  bottom: calc(100% + 10px);
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--hw-brand-black);
+  color: #fff;
+  border: 0;
+  border-radius: var(--hw-radius-xs);
+  padding: .5rem .7rem;
+  font-size: .76rem;
+  font-weight: 400;
+  width: max-content;
+  max-width: 260px;
+  white-space: normal;
+  line-height: 1.45;
+  z-index: 20;
+  pointer-events: none;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, .18);
+  opacity: 0;
+  animation: tip-in 120ms ease-out forwards;
+}
+
+.vyper-framework-root [data-tooltip]:hover::after,
+.vyper-framework-root [data-tooltip]:focus-visible::after {
+  content: '';
+  position: absolute;
+  bottom: calc(100% + 4px);
+  left: 50%;
+  transform: translateX(-50%);
+  border: 6px solid transparent;
+  border-top-color: var(--hw-brand-black);
+  z-index: 20;
+  pointer-events: none;
+}
+
+@keyframes tip-in {
+  from { opacity: 0; transform: translate(-50%, 4px); }
+  to   { opacity: 1; transform: translate(-50%, 0); }
+}
+
+/* Responsive: stack the flow vertically on narrow screens. */
+
+@media (max-width: 640px) {
+  .vyper-framework-root .flow-track { flex-direction: column; }
+  .vyper-framework-root .flow-arrow {
+    transform: rotate(90deg);
+    width: 36px;
+    height: 36px;
+  }
+  .vyper-framework-root .flow-arrow::after { display: none; }
+  .vyper-framework-root .flow-active .flow-arrow svg { animation: flow-nudge 1.6s ease-in-out infinite; }
+  @keyframes flow-nudge {
+    0%, 100% { transform: translateY(0); }
+    50%      { transform: translateY(3px); }
+  }
+}
+
+/* ---------- Deployment groups (existing) --------------------------------- */
+
+.vyper-framework-root .group { margin-top: 1.25rem; }
+.vyper-framework-root .group-header { margin-bottom: .35rem; }
+.vyper-framework-root .group-header h3 {
+  margin: 0 0 .15rem;
+  font-size: var(--step-0);
+  font-weight: var(--hw-font-weight-bold);
+  color: var(--hw-brand-black);
+}
+
+.vyper-framework-root .contract-cell {
+  display: flex;
+  align-items: center;
+  gap: .55rem;
+  flex-wrap: wrap;
+}
+
+.vyper-framework-root .contract-desc {
+  margin-top: .2rem;
+  font-size: .8rem;
+}
+
+.vyper-framework-root .contract-desc.warn { color: var(--hw-warning); }
+
+/* Status-flavored inline badges (override default .badge so the same JSX
+   reads in HW colors). Keep the existing class hooks the components use. */
+.vyper-framework-root .badge.ok    { background: var(--hw-success-20); color: var(--hw-secondary-black); border: 1px solid var(--hw-success); }
+.vyper-framework-root .badge.warn  { background: var(--hw-warning-20); color: var(--hw-secondary-black); border: 1px solid var(--hw-warning); }
+.vyper-framework-root .badge.accent{ background: var(--hw-gold);       color: var(--hw-brand-black);    border: 1px solid var(--hw-gold); }
+.vyper-framework-root .badge.muted { background: var(--hw-secondary-khaki-20); color: var(--hw-secondary-black); border: 1px solid var(--hw-border); }
+
+.vyper-framework-root .row-current > td {
+  background: var(--hw-brand-red-20);
+}
+
+/* Alternative group header and OR divider. */
+
+.vyper-framework-root .alt-header > td {
+  background: var(--hw-secondary-khaki-20);
+  border-bottom: 1px solid var(--hw-border);
+  padding: .7rem .75rem .5rem;
+}
+
+.vyper-framework-root .alt-header-body strong {
+  color: var(--hw-brand-black);
+  font-size: .9rem;
+}
+
+.vyper-framework-root .or-divider > td {
+  border-bottom: none;
+  padding: .4rem 0;
+  text-align: center;
+  position: relative;
+}
+
+.vyper-framework-root .or-divider > td::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 25%;
+  right: 25%;
+  height: 1px;
+  background: var(--hw-border);
+  z-index: 0;
+}
+
+.vyper-framework-root .or-divider span {
+  display: inline-block;
+  background: var(--hw-surface);
+  padding: 0 .75rem;
+  color: var(--hw-secondary-black-50);
+  font-size: .72rem;
+  letter-spacing: .16em;
+  font-weight: var(--hw-font-weight-bold);
+  position: relative;
+  z-index: 1;
+}
+
+.vyper-framework-root .alt-option > td:first-child,
+.vyper-framework-root .alt-option > td:nth-child(2) {
+  padding-left: 1.35rem;
+}
+
+.vyper-framework-root .alt-option > td:nth-child(2)::before {
+  content: '';
+  display: inline-block;
+  width: 2px;
+  height: 1.1em;
+  background: var(--hw-red);
+  opacity: .5;
+  margin-right: .55rem;
+  vertical-align: middle;
+  border-radius: 1px;
+}
+
+/* Sticky deploy header with progress stepper + primary action. */
+
+.vyper-framework-root .deploy-sticky {
+  position: sticky;
+  top: .5rem;
+  z-index: 6;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin: 1rem 0 .5rem;
+  padding: .75rem .9rem;
+  background: var(--hw-surface);
+  border: 1px solid var(--hw-border);
+  border-radius: var(--hw-radius);
+  box-shadow: var(--hw-shadow);
+  backdrop-filter: blur(6px);
+}
+
+@media (max-width: 720px) {
+  .vyper-framework-root .deploy-sticky {
+    flex-direction: column;
+    align-items: stretch;
+    gap: .6rem;
+  }
+}
+
+/* Progress stepper. */
+
+.vyper-framework-root .progress-stepper {
+  display: flex;
+  align-items: center;
+  gap: .35rem;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  flex-wrap: wrap;
+  flex: 1;
+  min-width: 0;
+}
+
+.vyper-framework-root .step {
+  display: flex;
+  align-items: center;
+  gap: .55rem;
+  padding: .3rem .55rem;
+  border-radius: var(--hw-radius-sm);
+  border: 1px solid transparent;
+  transition: background 180ms ease, border-color 180ms ease;
+}
+
+.vyper-framework-root .step-done    { color: var(--hw-success); }
+.vyper-framework-root .step-current {
+  color: var(--hw-red);
+  background: var(--hw-brand-red-20);
+  border-color: var(--hw-red);
+}
+.vyper-framework-root .step-current .step-marker { animation: step-pulse 2.2s ease-in-out infinite; }
+.vyper-framework-root .step-upcoming{ color: var(--hw-secondary-black-50); }
+.vyper-framework-root .step-blocked { color: var(--hw-warning); }
+
+@keyframes step-pulse {
+  0%, 100% { transform: scale(1); }
+  50%      { transform: scale(1.09); }
+}
+
+.vyper-framework-root .step-marker { display: inline-flex; flex-shrink: 0; }
+
+.vyper-framework-root .step-text {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.15;
+  min-width: 0;
+}
+
+.vyper-framework-root .step-title {
+  display: inline-flex;
+  align-items: baseline;
+  gap: .4rem;
+  font-size: .85rem;
+  font-weight: 500;
+  color: var(--hw-brand-black);
+}
+.vyper-framework-root .step-done .step-title,
+.vyper-framework-root .step-current .step-title,
+.vyper-framework-root .step-upcoming .step-title,
+.vyper-framework-root .step-blocked .step-title { color: var(--hw-brand-black); }
+
+.vyper-framework-root .step-num {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 .3rem;
+  border-radius: var(--hw-radius-xs);
+  background: var(--hw-secondary-khaki-20);
+  color: var(--hw-secondary-black);
+  font-size: .68rem;
+  font-weight: var(--hw-font-weight-bold);
+  letter-spacing: .02em;
+}
+
+.vyper-framework-root .step-sub {
+  font-size: .72rem;
+  color: var(--hw-secondary-black-50);
+  margin-top: .1rem;
+  letter-spacing: .01em;
+}
+
+.vyper-framework-root .step-line {
+  flex-shrink: 0;
+  width: 28px;
+  height: 2px;
+  background: var(--hw-border);
+  border-radius: 2px;
+  list-style: none;
+}
+
+.vyper-framework-root .step-line.done {
+  background: var(--hw-success);
+}
+
+/* Primary deploy button — slightly compact variant of .btn. */
+
+.vyper-framework-root .deploy-btn-primary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: .6rem 1.1rem;
+  min-height: 44px;
+  font-size: .9rem;
+  font-weight: var(--hw-font-weight-bold);
+  min-width: 180px;
+  white-space: nowrap;
+  background: var(--hw-red);
+  color: #fff;
+  border: 1px solid transparent;
+  border-radius: var(--hw-radius-sm);
+  cursor: pointer;
+  transition: .2s ease;
+}
+.vyper-framework-root .deploy-btn-primary:hover { background: var(--hw-gold); color: #000; transform: translateY(-1px); box-shadow: 0 2px 4px rgba(0,0,0,.1); }
+.vyper-framework-root .deploy-btn-primary:disabled {
+  background: var(--hw-secondary-khaki);
+  color: #fff;
+  cursor: not-allowed;
+  pointer-events: none;
+  transform: none;
+  box-shadow: none;
+}
+
+/* Tables: more breathing room between rows. */
+
+.vyper-framework-root .deploy-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: .75rem;
+  font-size: .92rem;
+  background: var(--hw-surface);
+  border: 1px solid var(--hw-border);
+  border-radius: var(--hw-radius-sm);
+  overflow: hidden;
+}
+
+.vyper-framework-root .deploy-table th,
+.vyper-framework-root .deploy-table td {
+  padding: .85rem .7rem;
+  border-bottom: 1px solid var(--hw-border);
+  text-align: left;
+  vertical-align: top;
+}
+
+.vyper-framework-root .deploy-table th {
+  padding-top: .55rem;
+  padding-bottom: .55rem;
+  background: var(--hw-secondary-khaki-20);
+  color: var(--hw-secondary-black);
+  font-weight: var(--hw-font-weight-bold);
+  font-size: .75rem;
+  text-transform: uppercase;
+  letter-spacing: .06em;
+}
+
+.vyper-framework-root .deploy-table tbody tr:not(.alt-header):not(.or-divider) {
+  transition: background 160ms ease;
+}
+
+.vyper-framework-root .deploy-table tbody tr:not(.alt-header):not(.or-divider):hover {
+  background: var(--hw-secondary-khaki-20);
+}
+
+/* Scoped CSV-style monospace input — different visual weight than .input. */
+
+.vyper-framework-root .csv-input {
+  width: 100%;
+  background: var(--hw-surface);
+  color: var(--hw-brand-black);
+  border: 1px solid var(--hw-border);
+  border-radius: var(--hw-radius-xs);
+  padding: .4rem .55rem;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: .85rem;
+  min-height: 36px;
+  outline: none;
+  transition: border-color .15s ease, box-shadow .15s ease;
+}
+
+.vyper-framework-root .csv-input::placeholder { color: var(--hw-secondary-black-50); }
+.vyper-framework-root .csv-input:focus {
+  border-color: var(--hw-red);
+  box-shadow: var(--hw-focus-ring);
+}
+
+.vyper-framework-root .csv-field {
+  display: flex;
+  flex-direction: column;
+  gap: .3rem;
+}
+
+.vyper-framework-root .csv-schema {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: .75rem;
+  font-size: .7rem;
+  color: var(--hw-secondary-black-50);
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  letter-spacing: .01em;
+}
+
+.vyper-framework-root .csv-schema .mono { color: var(--hw-secondary-black-50); }
+
+/* Status colored text (used in deploy table rows). */
+
+.vyper-framework-root .status { font-size: .85rem; }
+.vyper-framework-root .status.ok    { color: var(--hw-success); }
+.vyper-framework-root .status.err   { color: var(--hw-red); }
+.vyper-framework-root .status.warn  { color: var(--hw-warning); }
+.vyper-framework-root .status.muted { color: var(--hw-secondary-black-50); }
+
+.vyper-framework-root .mono {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+
+/* Linklike action buttons inside tables/cards. */
+
+.vyper-framework-root .linklike {
+  background: transparent;
+  color: var(--hw-red);
+  padding: 0;
+  font-size: .8rem;
+  border: 0;
+  text-decoration: underline;
+  cursor: pointer;
+  min-height: 0;
+  font-weight: 500;
+}
+.vyper-framework-root .linklike:hover:not(:disabled) {
+  color: var(--hw-gold);
+  text-decoration: underline;
+}
+.vyper-framework-root .linklike:disabled {
+  color: var(--hw-secondary-black-50);
+  cursor: not-allowed;
+  text-decoration: none;
+}
+
+.vyper-framework-root .address-edit {
+  display: flex;
+  flex-direction: column;
+  gap: .35rem;
+}
+
+.vyper-framework-root .address-edit-actions {
+  display: flex;
+  gap: .75rem;
+}
+
+.vyper-framework-root .address-empty {
+  display: flex;
+  align-items: center;
+  gap: .6rem;
+}
+
+/* ---------- Mint composer + cards ---------------------------------------- */
+
+.vyper-framework-root .mint-grid {
+  display: grid;
+  grid-template-columns: minmax(260px, 1fr) 1.5fr;
+  gap: 1.5rem;
+  margin-top: 1rem;
+}
+
+@media (max-width: 720px) {
+  .vyper-framework-root .mint-grid { grid-template-columns: 1fr; }
+}
+
+.vyper-framework-root .mint-controls {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.vyper-framework-root .file-drop {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: .35rem;
+  padding: 1.5rem 1rem;
+  border: 2px dashed var(--hw-red);
+  border-radius: var(--hw-radius-sm);
+  background: var(--hw-surface);
+  cursor: pointer;
+  text-align: center;
+  color: var(--hw-red);
+  font-size: .95rem;
+  font-weight: 500;
+  transition: background 160ms ease, border-color 160ms ease;
+}
+
+.vyper-framework-root .file-drop:hover {
+  background: var(--hw-brand-red-20);
+  border-color: var(--hw-red);
+}
+.vyper-framework-root .file-drop input { display: none; }
+.vyper-framework-root .source-size { font-size: .8rem; color: var(--hw-secondary-black); }
+
+.vyper-framework-root .budget {
+  display: flex;
+  flex-direction: column;
+  gap: .4rem;
+}
+.vyper-framework-root .budget-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: .5rem;
+}
+.vyper-framework-root .budget input[type=range] { width: 100%; }
+.vyper-framework-root .budget-scale {
+  display: flex;
+  justify-content: space-between;
+  font-size: .75rem;
+}
+
+.vyper-framework-root .preview {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  background: var(--hw-secondary-khaki-20);
+  border: 1px solid var(--hw-border);
+  border-radius: var(--hw-radius-sm);
+  min-height: 220px;
+}
+
+.vyper-framework-root .mint-preview {
+  max-width: 100%;
+  max-height: 320px;
+  border-radius: var(--hw-radius-xs);
+  image-rendering: auto;
+  background: var(--hw-surface);
+  box-shadow: var(--hw-shadow);
+}
+
+.vyper-framework-root .mint-meter {
+  width: 100%;
+  height: 8px;
+  margin-top: .75rem;
+  background: var(--hw-secondary-khaki-20);
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.vyper-framework-root .mint-meter .fill {
+  height: 100%;
+  background: var(--hw-red);
+  transition: width 120ms ease;
+  border-radius: 999px;
+}
+
+.vyper-framework-root .mint-meter .fill.hot { background: var(--hw-warning); }
+
+.vyper-framework-root .mint-stats {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: .25rem 1rem;
+  margin-top: .75rem;
+  font-size: .85rem;
+  width: 100%;
+}
+
+.vyper-framework-root .mint-stats dt {
+  color: var(--hw-secondary-black-50);
+  text-transform: uppercase;
+  font-size: .7rem;
+  letter-spacing: .06em;
+  align-self: center;
+  font-weight: var(--hw-font-weight-bold);
+}
+.vyper-framework-root .mint-stats dd {
+  margin: 0;
+  color: var(--hw-brand-black);
+}
+
+.vyper-framework-root .mint-footer { margin-top: 1rem; }
+
+/* Primary mint-flow button — same scheme as deploy button. */
+
+.vyper-framework-root .mint-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  align-self: stretch;
+  padding: .65rem 1rem;
+  min-height: 44px;
+  font-size: 1rem;
+  font-weight: var(--hw-font-weight-bold);
+  background: var(--hw-red);
+  color: #fff;
+  border: 1px solid transparent;
+  border-radius: var(--hw-radius-sm);
+  cursor: pointer;
+  transition: .2s ease;
+}
+.vyper-framework-root .mint-btn:hover:not(:disabled) {
+  background: var(--hw-gold);
+  color: #000;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 4px rgba(0,0,0,.1);
+}
+.vyper-framework-root .mint-btn:disabled {
+  background: var(--hw-secondary-khaki);
+  color: #fff;
+  cursor: not-allowed;
+  pointer-events: none;
+  transform: none;
+  box-shadow: none;
+}
+
+/* ERC-721 / ERC-1155 flow switcher. */
+
+.vyper-framework-root .pill-switch {
+  display: inline-flex;
+  gap: 0;
+  padding: 3px;
+  background: var(--hw-surface);
+  border: 1px solid var(--hw-border);
+  border-radius: 999px;
+  margin: 0 0 .75rem;
+}
+
+.vyper-framework-root .pill-switch button {
+  background: transparent;
+  color: var(--hw-secondary-black);
+  padding: .4rem .95rem;
+  border-radius: 999px;
+  font-size: .85rem;
+  font-weight: 500;
+  border: 0;
+  min-height: 0;
+  cursor: pointer;
+  transition: background 160ms ease, color 160ms ease;
+}
+.vyper-framework-root .pill-switch button:hover { color: var(--hw-brand-black); background: var(--hw-secondary-khaki-20); }
+.vyper-framework-root .pill-switch button.active {
+  background: var(--hw-red);
+  color: #fff;
+}
+.vyper-framework-root .pill-switch button.active:hover { background: var(--hw-red); color: #fff; }
+.vyper-framework-root .pill-switch .hint { color: inherit; opacity: 0.7; font-weight: 400; }
+
+/* Token cards grid (shared by 721 single card and 1155 collection). */
+
+.vyper-framework-root .card-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 1rem;
+  margin-top: .75rem;
+}
+.vyper-framework-root .card-grid-single { grid-template-columns: minmax(220px, 360px); }
+
+.vyper-framework-root .card {
+  background: var(--hw-surface);
+  border: 1px solid var(--hw-border);
+  border-radius: var(--hw-radius);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  box-shadow: var(--hw-shadow);
+  transition: border-color 160ms ease, transform 160ms ease, box-shadow 160ms ease;
+}
+.vyper-framework-root .card:hover { border-color: var(--hw-red); transform: translateY(-1px); }
+
+.vyper-framework-root .card-img {
+  aspect-ratio: 1 / 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--hw-secondary-khaki-20);
+  overflow: hidden;
+}
+.vyper-framework-root .card-img img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+.vyper-framework-root .card-loading {
+  color: var(--hw-secondary-black-50);
+  font-size: .85rem;
+}
+.vyper-framework-root .card-skel {
+  min-height: 220px;
+  background: var(--hw-secondary-khaki-20);
+  border: 1px dashed var(--hw-border);
+}
+
+.vyper-framework-root .card-body {
+  padding: .75rem .85rem .9rem;
+  display: flex;
+  flex-direction: column;
+  gap: .4rem;
+}
+
+.vyper-framework-root .card-title {
+  display: flex;
+  align-items: baseline;
+  gap: .5rem;
+  line-height: 1.2;
+}
+.vyper-framework-root .card-id {
+  color: var(--hw-secondary-black-50);
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: .82rem;
+}
+.vyper-framework-root .card-title strong {
+  font-size: .95rem;
+  color: var(--hw-brand-black);
+  font-weight: var(--hw-font-weight-bold);
+}
+
+.vyper-framework-root .card-desc {
+  margin: 0;
+  font-size: .82rem;
+  color: var(--hw-secondary-black);
+  line-height: 1.4;
+  max-height: 3.6em;
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+}
+
+.vyper-framework-root .card-meta {
+  display: flex;
+  gap: .6rem;
+  flex-wrap: wrap;
+  font-size: .75rem;
+  color: var(--hw-secondary-black-50);
+}
+
+.vyper-framework-root .card-addr {
+  font-size: .78rem;
+  color: var(--hw-secondary-black-50);
+}
+
+/* ---------- CoinPanel ----------------------------------------------------- */
+
+.vyper-framework-root .coin-symbol {
+  color: var(--hw-secondary-black-50);
+  font-weight: 500;
+  font-size: .85em;
+  margin-left: .1em;
+}
+
+.vyper-framework-root .coin-header-meta { margin-top: .4rem; }
+
+.vyper-framework-root .coin-meta {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: .25rem 1rem;
+  margin: 0;
+  font-size: .9rem;
+}
+
+.vyper-framework-root .coin-meta dt {
+  color: var(--hw-secondary-black-50);
+  font-size: .72rem;
+  text-transform: uppercase;
+  letter-spacing: .06em;
+  align-self: center;
+  font-weight: var(--hw-font-weight-bold);
+}
+
+.vyper-framework-root .coin-meta dd {
+  margin: 0;
+  color: var(--hw-brand-black);
+}
+
+.vyper-framework-root .coin-form {
+  display: grid;
+  grid-template-columns: 1fr 1fr auto;
+  gap: .75rem;
+  align-items: flex-end;
+}
+
+@media (max-width: 640px) {
+  .vyper-framework-root .coin-form { grid-template-columns: 1fr; }
+}
+
+.vyper-framework-root .coin-form-inline {
+  display: flex;
+  gap: .75rem;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+/* Lock-supply danger button: overrides the red mint-btn with warning gold. */
+.vyper-framework-root .lock-btn {
+  background: var(--hw-warning);
+  color: #fff;
+}
+.vyper-framework-root .lock-btn:hover:not(:disabled) {
+  background: var(--hw-red);
+  color: #fff;
+}
+
+.vyper-framework-root .holders-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: .5rem;
+  font-size: .9rem;
+  background: var(--hw-surface);
+  border: 1px solid var(--hw-border);
+  border-radius: var(--hw-radius-sm);
+  overflow: hidden;
+}
+
+.vyper-framework-root .holders-table th,
+.vyper-framework-root .holders-table td {
+  padding: .6rem .65rem;
+  text-align: left;
+  border-bottom: 1px solid var(--hw-border);
+}
+
+.vyper-framework-root .holders-table th {
+  background: var(--hw-secondary-khaki-20);
+  color: var(--hw-secondary-black);
+  font-size: .72rem;
+  text-transform: uppercase;
+  letter-spacing: .06em;
+  font-weight: var(--hw-font-weight-bold);
+}
+
+.vyper-framework-root .balance-display {
+  font-size: var(--step-3);
+  margin: .5rem 0;
+  font-weight: var(--hw-font-weight-black);
+  color: var(--hw-brand-black);
+}
+
+.vyper-framework-root .card-owner {
+  font-size: .78rem;
+  color: var(--hw-secondary-black);
+}
+
+.vyper-framework-root .card-footer {
+  border-top: 1px solid var(--hw-border);
+  padding: .65rem .85rem;
+}
+
+.vyper-framework-root .remint-open {
+  font-size: .82rem;
+  padding: .2rem 0;
+}
+
+.vyper-framework-root .remint-form {
+  display: flex;
+  flex-direction: column;
+  gap: .45rem;
+}
+
+.vyper-framework-root .remint-actions {
+  display: flex;
+  gap: .75rem;
+  align-items: center;
+}
+
+.vyper-framework-root .remint-btn-go {
+  padding: .4rem .9rem;
+  min-height: 36px;
+  font-size: .85rem;
+  min-width: 100px;
+}
+
+/* ---------- Field overrides ---------------------------------------------- */
+/* Coin/mint forms use plain <label>+<input> markup with class="field".
+   The global .field uses display:grid which works fine, but the inputs
+   should pick up HW input styling. Make sure raw inputs/textarea inside
+   .vyper-framework-root .field carry the HW look.
+   (The global `input[type="text"]` rule already handles most of this; we
+   just tweak font-size + radius to match the rest of the framework.)        */
+
+.vyper-framework-root .field label {
+  font-size: .9rem;
+  color: var(--hw-brand-black);
+  font-weight: var(--hw-font-weight-bold);
+  margin-bottom: 0;
+}
+
+.vyper-framework-root .field input[type="text"],
+.vyper-framework-root .field input[type="number"],
+.vyper-framework-root .field textarea {
+  background: var(--hw-surface);
+  color: var(--hw-brand-black);
+  border: 1px solid var(--hw-border);
+  border-radius: var(--hw-radius-sm);
+  padding: .55rem .7rem;
+  font-family: inherit;
+  font-size: .95rem;
+  resize: vertical;
+  min-height: 44px;
+}
+
+.vyper-framework-root .field textarea { min-height: 96px; }
+
+.vyper-framework-root .field input[type="text"]:focus,
+.vyper-framework-root .field input[type="number"]:focus,
+.vyper-framework-root .field textarea:focus {
+  outline: none;
+  border-color: var(--hw-red);
+  box-shadow: var(--hw-focus-ring);
+}

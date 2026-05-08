@@ -106,6 +106,17 @@ export default function Code() {
           })}
         </div>
 
+        <h2 className="h5 eyebrow" style={{ marginTop: '2rem' }}>Blockchain &amp; Smart Contracts</h2>
+        <div className="widgets-grid">
+          <Link className="widget-card" to="/code/vyper-framework">
+            <div className="title-row">
+              <h3>Vyper Framework — On-chain NFTs &amp; ERC-20</h3>
+            </div>
+            <p>Native React dApp. Deploy Vyper contracts (NFT minter + ERC-20) and mint on-chain images from your wallet on Sepolia, Arbitrum Sepolia, mainnet, or Animechain.</p>
+            <span className="button">Open</span>
+          </Link>
+        </div>
+
         <h2 className="h5 eyebrow" style={{ marginTop: '2rem' }}>Legacy Resources</h2>
         <div className="widgets-grid">
           <a className="widget-card" href="/static/code/index.html">

@@ -9,28 +9,10 @@ export default function StaticEmbed({ title, src }: StaticEmbedProps) {
   useEffect(() => {
     const prev = document.title
     document.title = `${title} · Class Resources`
-    // #region agent log
-    fetch('/ingest/d9d3d22d-7daf-4f71-800f-c73eb656f3aa',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'2bd63b'},body:JSON.stringify({sessionId:'2bd63b',location:'StaticEmbed.tsx:mount',message:'StaticEmbed mounted',data:{title,src},timestamp:Date.now(),hypothesisId:'H1-H3'})}).catch(()=>{});
-    // #endregion
     return () => {
       document.title = prev
-      // #region agent log
-      fetch('/ingest/d9d3d22d-7daf-4f71-800f-c73eb656f3aa',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'2bd63b'},body:JSON.stringify({sessionId:'2bd63b',location:'StaticEmbed.tsx:unmount',message:'StaticEmbed unmounted',data:{title},timestamp:Date.now(),hypothesisId:'H1-H3'})}).catch(()=>{});
-      // #endregion
     }
   }, [title])
-
-  // #region agent log
-  useEffect(() => {
-    const handler = (e: MessageEvent) => {
-      if (e.data?.type === 'widget-nav') {
-        fetch('/ingest/d9d3d22d-7daf-4f71-800f-c73eb656f3aa',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'2bd63b'},body:JSON.stringify({sessionId:'2bd63b',location:'StaticEmbed.tsx:iframe-nav',message:'Iframe navigation detected via postMessage',data:e.data,timestamp:Date.now(),hypothesisId:'H1'})}).catch(()=>{});
-      }
-    }
-    window.addEventListener('message', handler)
-    return () => window.removeEventListener('message', handler)
-  }, [])
-  // #endregion
 
   return (
     <main className="page">
