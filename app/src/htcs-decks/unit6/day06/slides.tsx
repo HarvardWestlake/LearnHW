@@ -495,44 +495,7 @@ function SlideAgenda() {
   )
 }
 
-// --- Slide 3: Bridge from Day 5 ---------------------------------------------
-
-function SlideBridgeFromDay5() {
-  return (
-    <SlideFrame>
-      <Eyebrow>From Day 5 to today</Eyebrow>
-      <Title>
-        Comparing the scripting environments of Bitcoin and Ethereum.
-      </Title>
-      <div style={{ marginTop: 60, flex: 1, display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 56, alignItems: 'start' }}>
-        <div style={{ borderTop: `4px solid ${COLORS.accent}`, paddingTop: 24 }}>
-          <div style={{ fontFamily: FONTS.sans, fontSize: 22, letterSpacing: '0.18em', textTransform: 'uppercase', color: COLORS.muted, marginBottom: 18 }}>
-            Bitcoin (Days 1 through 5)
-          </div>
-          <Body size="bodyLg" style={{ marginBottom: 18 }}>
-            A stack-based instruction set, roughly 100 operations.
-          </Body>
-          <Body size="bodyLg">
-            Supports signature verification, hash checks, time locks, and multi-signer requirements. No loops, no persistent storage, no calls to other scripts.
-          </Body>
-        </div>
-        <div style={{ borderTop: `4px solid ${ETH_PURPLE}`, paddingTop: 24 }}>
-          <div style={{ fontFamily: FONTS.sans, fontSize: 22, letterSpacing: '0.18em', textTransform: 'uppercase', color: COLORS.muted, marginBottom: 18 }}>
-            Ethereum
-          </div>
-          <Body size="bodyLg" style={{ marginBottom: 18 }}>
-            A Turing-complete virtual machine, the EVM.
-          </Body>
-          <Body size="bodyLg">
-            Supports loops, conditionals, function calls, and on-chain storage. Any program a general-purpose language can express can run on it, with each operation paying a fee called gas.
-          </Body>
-        </div>
-      </div>
-    </SlideFrame>
-  )
-}
-
-// --- Slide 4: Part 1 Divider -------------------------------------------------
+// --- Slide 3: Part 1 Divider -------------------------------------------------
 
 function SlidePart1Divider() {
   return (
@@ -1095,22 +1058,21 @@ function SlidePoSLifecycle() {
       kicker: '5 · Finality · ~12.8 minutes',
       title: 'Block becomes permanent.',
       body: (
-        <>Once 2/3 of all staked ETH has attested across two epochs, the block is <em>finalized</em>: it cannot be reversed.</>
+        <>Once 2/3 of all staked ETH has attested across two epochs, the block is <em>finalized</em>: it cannot be reversed. Bitcoin has no formal finality; users wait for ~6 confirmations (~60 min) by convention.</>
       ),
       terms: [
-        { term: 'Validator', def: 'a node that has staked ETH and participates in securing the network.' },
+        { term: 'Finality', def: 'the point at which a block is treated as permanent and cannot be reversed.' },
       ],
     },
     {
       kicker: '6 · Slashing',
-      title: 'Cheaters lose stake.',
+      title: 'A failed attack costs the attacker their own stake.',
       body: (
-        <>An invalid block from an honest proposer is just ignored. <em>Slashing</em> applies only to provable cheating, like signing two conflicting blocks.</>
+        <>An honest mistake is ignored. <em>Slashing</em> applies only to provable cheating, like signing two conflicting blocks: the protocol burns part of the stake and removes the validator. PoW: a failed attack costs spent electricity. PoS: it costs the same asset needed to attack.</>
       ),
       terms: [
         { term: 'Slashing', def: 'a penalty for provable offenses, resulting in a partial or full burn of staked ETH.' },
         { term: 'Double voting', def: 'signing two different blocks in the same slot.' },
-        { term: 'Surround voting', def: 'submitting an attestation that contradicts a previous one.' },
       ],
     },
   ]
@@ -1486,46 +1448,6 @@ function SlideValidatorLottery() {
           </div>
         </div>
       </div>
-    </SlideFrame>
-  )
-}
-
-// --- Slide 10: Slashing & Finality ------------------------------------------
-
-function SlideSlashingAndFinality() {
-  return (
-    <SlideFrame>
-      <Eyebrow>Enforcing validator honesty</Eyebrow>
-      <Title>
-        <em style={{ fontStyle: 'italic', color: COLORS.danger }}>Slashing</em> and <em style={{ fontStyle: 'italic', color: ETH_PURPLE }}>finality.</em>
-      </Title>
-      <div style={{ marginTop: 50, flex: 1, display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 56, alignItems: 'start' }}>
-        <div style={{ borderTop: `4px solid ${COLORS.danger}`, paddingTop: 24 }}>
-          <div style={{ fontFamily: FONTS.sans, fontSize: 22, letterSpacing: '0.18em', textTransform: 'uppercase', color: COLORS.danger, marginBottom: 18 }}>
-            Slashing
-          </div>
-          <Body size="bodyLg" style={{ marginBottom: 14 }}>
-            <em>Slashing</em> is the protocol&apos;s automatic penalty for misbehavior. Signing two conflicting blocks destroys part of the validator&apos;s stake and removes them from the set.
-          </Body>
-          <Body size="bodyLg">
-            A coordinated attack would slash roughly one third of all staked ETH, currently tens of billions of dollars.
-          </Body>
-        </div>
-        <div style={{ borderTop: `4px solid ${ETH_PURPLE}`, paddingTop: 24 }}>
-          <div style={{ fontFamily: FONTS.sans, fontSize: 22, letterSpacing: '0.18em', textTransform: 'uppercase', color: ETH_PURPLE, marginBottom: 18 }}>
-            Finality
-          </div>
-          <Body size="bodyLg" style={{ marginBottom: 14 }}>
-            <em>Finality</em> is the point at which a block is treated as permanent. Ethereum finalizes blocks after two epochs (~12.8 min).
-          </Body>
-          <Body size="bodyLg">
-            Bitcoin has no formal finality. Users wait for ~6 confirmations (~60 min) before treating a transaction as final.
-          </Body>
-        </div>
-      </div>
-      <Callout kicker="What a failed attack costs" tone="warning" padding="18px 0" style={{ marginTop: 28, maxWidth: 1500 }}>
-        PoW: spent electricity. PoS: the attacker&apos;s own stake, the same asset needed to attack.
-      </Callout>
     </SlideFrame>
   )
 }
@@ -1964,103 +1886,40 @@ function SlideWhatIsASmartContract() {
   ]
   return (
     <SlideFrame>
-      <Eyebrow>Definition</Eyebrow>
+      <Eyebrow>Definition and execution</Eyebrow>
       <Title>
-        What is a <em style={{ fontStyle: 'italic', color: ETH_PURPLE }}>smart contract?</em>
+        What is a <em style={{ fontStyle: 'italic', color: ETH_PURPLE }}>smart contract</em>, and how does it run?
       </Title>
-      <div style={{ marginTop: 32, flex: 1, display: 'grid', gridTemplateColumns: '0.85fr 1.15fr', gap: 56, alignItems: 'center' }}>
+      <div style={{ marginTop: 24, flex: 1, display: 'grid', gridTemplateColumns: '0.75fr 1.25fr', gap: 48, alignItems: 'center', minHeight: 0 }}>
         <ReplayableDiagram>
           <VendingMachineDiagram isStatic={isStatic} />
         </ReplayableDiagram>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 22 }}>
-          <div>
-            <Body size="bodyLg" style={{ marginBottom: 14 }}>
-              A <em>smart contract</em> is a program stored on the Ethereum blockchain. It has its own address and can hold ETH.
-            </Body>
-            <Body size="bodyLg">
-              Informal analogy: a vending machine. The user supplies an input, the contract produces the agreed output, no human intervention.
-            </Body>
-          </div>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+          <Body size="body">
+            A <em>smart contract</em> is a program stored on the Ethereum blockchain. It has its own address, can hold ETH, and is callable by any user. Informal analogy: a vending machine — supply the input, the contract produces the output.
+          </Body>
+          <Body size="body">
+            Every node runs the same <em>EVM</em> (Ethereum Virtual Machine, a deterministic instruction set) on the same input, and must reach the same resulting state. That replicated execution is what makes the contract trustless.
+          </Body>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginTop: 4 }}>
             {properties.map(([label, text]) => (
               <div
                 key={label}
                 style={{
-                  padding: '14px 18px',
+                  padding: '10px 14px',
                   border: `1px solid ${COLORS.rule}`,
-                  borderRadius: 8,
+                  borderRadius: 6,
                   background: COLORS.cream,
-                  display: 'flex',
-                  flexDirection: 'column',
-                  gap: 6,
                 }}
               >
-                <div style={{ fontFamily: FONTS.sans, fontSize: 16, letterSpacing: '0.18em', textTransform: 'uppercase', color: ETH_PURPLE, fontWeight: 600 }}>
+                <div style={{ fontFamily: FONTS.sans, fontSize: 14, letterSpacing: '0.18em', textTransform: 'uppercase', color: ETH_PURPLE, fontWeight: 600, marginBottom: 2 }}>
                   {label}
                 </div>
-                <Body size="body">{text}</Body>
+                <div style={{ fontFamily: FONTS.serif, fontSize: 18, lineHeight: 1.3, color: COLORS.inkSoft }}>{text}</div>
               </div>
             ))}
           </div>
         </div>
-      </div>
-    </SlideFrame>
-  )
-}
-
-// --- Slide 17: The EVM ------------------------------------------------------
-
-function SlideTheEVM() {
-  const isStatic = useIsStaticDeck()
-  return (
-    <SlideFrame>
-      <Eyebrow>How contracts execute</Eyebrow>
-      <Title>
-        The <em style={{ fontStyle: 'italic', color: ETH_PURPLE }}>Ethereum Virtual Machine.</em>
-      </Title>
-      <div style={{ marginTop: 60, flex: 1, display: 'grid', gridTemplateColumns: '1fr', gap: 30, alignItems: 'center' }}>
-        <ReplayableDiagram>
-          <svg width="100%" height="380" viewBox="0 0 1500 380" preserveAspectRatio="xMidYMid meet">
-            {/* Transaction box */}
-            <g className={motionClass('u6d6-pop', isStatic)} style={cssVars({ '--delay': '120ms' })}>
-              <rect x="40" y="120" width="280" height="140" rx="10" fill={COLORS.creamDark} stroke={COLORS.rule} strokeWidth="2" />
-              <text x="180" y="170" textAnchor="middle" fontFamily={FONTS.sans} fontSize="20" letterSpacing="0.18em" fill={COLORS.muted}>TRANSACTION</text>
-              <text x="180" y="210" textAnchor="middle" fontFamily={FONTS.serif} fontSize="34" fill={COLORS.ink}>buyCoffee()</text>
-              <text x="180" y="240" textAnchor="middle" fontFamily={FONTS.mono} fontSize="20" fill={ETH_PURPLE}>+ 0.01 ETH</text>
-            </g>
-
-            {/* Arrow 1 line */}
-            <line className={motionClass('u6d6-draw', isStatic)} style={cssVars({ '--dash': 200, '--delay': '420ms' })} x1="340" y1="190" x2="500" y2="190" stroke={ETH_PURPLE} strokeWidth="3" />
-            {/* Arrow 1 head */}
-            <polygon className={motionClass('u6d6-pop', isStatic)} style={cssVars({ '--delay': '1140ms' })} points="488,182 500,190 488,198" fill={ETH_PURPLE} />
-
-            {/* EVM box */}
-            <g className={motionClass('u6d6-pop', isStatic)} style={cssVars({ '--delay': '1300ms' })}>
-              <rect x="520" y="50" width="460" height="280" rx="12" fill={COLORS.ink} stroke={ETH_PURPLE} strokeWidth="3" />
-              <text x="750" y="100" textAnchor="middle" fontFamily={FONTS.sans} fontSize="22" letterSpacing="0.24em" fill={COLORS.gold}>EVM</text>
-              <text x="750" y="160" textAnchor="middle" fontFamily={FONTS.serif} fontSize="40" fill={COLORS.paper}>execute opcodes</text>
-              <text x="750" y="210" textAnchor="middle" fontFamily={FONTS.mono} fontSize="20" fill="rgba(245,239,227,0.55)">PUSH · SLOAD · ADD · SSTORE</text>
-              <text x="750" y="265" textAnchor="middle" fontFamily={FONTS.serif} fontStyle="italic" fontSize="24" fill="rgba(245,239,227,0.7)">deterministic · replicated · metered</text>
-            </g>
-
-            {/* Arrow 2 line */}
-            <line className={motionClass('u6d6-draw', isStatic)} style={cssVars({ '--dash': 200, '--delay': '1860ms' })} x1="1000" y1="190" x2="1160" y2="190" stroke={ETH_PURPLE} strokeWidth="3" />
-            {/* Arrow 2 head */}
-            <polygon className={motionClass('u6d6-pop', isStatic)} style={cssVars({ '--delay': '2580ms' })} points="1148,182 1160,190 1148,198" fill={ETH_PURPLE} />
-
-            {/* World state */}
-            <g className={motionClass('u6d6-pop', isStatic)} style={cssVars({ '--delay': '2740ms' })}>
-              <rect x="1180" y="120" width="280" height="140" rx="10" fill={ETH_LIGHT} stroke={ETH_PURPLE} strokeWidth="2" />
-              <text x="1320" y="170" textAnchor="middle" fontFamily={FONTS.sans} fontSize="20" letterSpacing="0.18em" fill={COLORS.muted}>WORLD STATE</text>
-              <text x="1320" y="210" textAnchor="middle" fontFamily={FONTS.serif} fontSize="32" fill={COLORS.ink}>balances</text>
-              <text x="1320" y="240" textAnchor="middle" fontFamily={FONTS.mono} fontSize="20" fill={ETH_PURPLE_DARK}>updated</text>
-            </g>
-          </svg>
-        </ReplayableDiagram>
-
-        <Callout kicker="Why every node runs the contract" padding="18px 0" style={{ maxWidth: 1500 }}>
-          Every node executes the contract on its own copy of the EVM and must reach the same resulting state. This replicated execution, not any single server, is what makes contract behavior trustless.
-        </Callout>
       </div>
     </SlideFrame>
   )
@@ -2106,57 +1965,6 @@ function SlideSolidity1() {
             <span><strong>public</strong>, <strong>private</strong>: same access modifiers as Java.</span>,
             <span><strong>view</strong>: function does not modify state. Costs no gas.</span>,
             <span><strong>pragma</strong>: selects the compiler version.</span>,
-          ]} />
-        </div>
-      </div>
-    </SlideFrame>
-  )
-}
-
-// --- Slide 19: Solidity #2 — VendingMachine ---------------------------------
-
-function SlideSolidity2() {
-  const lines: CodeLine[] = [
-    { code: 'contract CoffeeShop {' },
-    { code: '    address public owner;', comment: '// instance var' },
-    { code: '    uint256 public coffeePrice = 0.01 ether;' },
-    { code: '    mapping(address => uint256) public coffees;', comment: '// HashMap<addr, int>' },
-    { code: '' },
-    { code: '    constructor() {' },
-    { code: '        owner = msg.sender;', comment: '// who deployed' },
-    { code: '    }' },
-    { code: '' },
-    { code: '    function buyCoffee() public payable {' },
-    { code: '        require(msg.value >= coffeePrice, "Not enough ETH");' },
-    { code: '        coffees[msg.sender] += 1;' },
-    { code: '    }' },
-    { code: '' },
-    { code: '    function withdraw() public {' },
-    { code: '        require(msg.sender == owner, "Only owner");' },
-    { code: '        payable(owner).transfer(address(this).balance);' },
-    { code: '    }' },
-    { code: '}' },
-  ]
-  return (
-    <SlideFrame>
-      <Eyebrow>Solidity example 2</Eyebrow>
-      <Title>
-        A contract that <em style={{ fontStyle: 'italic', color: ETH_PURPLE }}>receives payment.</em>
-      </Title>
-      <div style={{ marginTop: 36, flex: 1, display: 'grid', gridTemplateColumns: '1.3fr 0.9fr', gap: 50, alignItems: 'start' }}>
-        <ReplayableDiagram>
-          <CodeBlock title="CoffeeShop.sol" lines={lines} animate />
-        </ReplayableDiagram>
-        <div style={{ paddingTop: 8 }}>
-          <Body size="bodyLg" style={{ marginBottom: 18 }}>
-            Customers call <span style={{ fontFamily: FONTS.mono, fontSize: '0.9em' }}>buyCoffee</span> with ETH attached. The contract records each customer&apos;s coffee count. Only the deployer can withdraw collected ETH.
-          </Body>
-          <BulletList items={[
-            <span><strong>mapping(address ⇒ uint256)</strong>: on-chain key-value store. Like Java&apos;s <code style={{ fontFamily: FONTS.mono, fontSize: '0.9em' }}>HashMap&lt;Address, Long&gt;</code>.</span>,
-            <span><strong>payable</strong>: function can receive ETH. Java methods cannot.</span>,
-            <span><strong>msg.sender</strong>, <strong>msg.value</strong>: caller&apos;s address and ETH attached. Built into the language.</span>,
-            <span><strong>require(cond, msg)</strong>: if <code style={{ fontFamily: FONTS.mono, fontSize: '0.9em' }}>cond</code> is false, the transaction reverts. Like Java&apos;s <code style={{ fontFamily: FONTS.mono, fontSize: '0.9em' }}>throw</code>, but undoes state changes.</span>,
-            <span><strong>constructor</strong>: runs once at deployment, same as in Java.</span>,
           ]} />
         </div>
       </div>
@@ -2229,21 +2037,21 @@ function SlideDemoVendingMachine() {
 
   const handleBuy = (amount: number) => {
     if (amount < 0.01) {
-      pushEvent('revert', `require failed: msg.value (${amount} ETH) < coffeePrice (0.01 ETH)`)
+      pushEvent('revert', 'Reverted with reason "Not enough ETH". State unchanged.')
       return
     }
     setContractBalance((b) => b + amount)
     setMyCoffees((c) => c + 1)
-    pushEvent('success', `buyCoffee() called with ${amount} ETH. coffees[caller] now ${myCoffees + 1}.`)
+    pushEvent('success', `buyCoffee() succeeded with ${amount} ETH. coffees[caller] now ${myCoffees + 1}.`)
   }
 
   const handleWithdraw = () => {
     if (!isOwner) {
-      pushEvent('revert', 'require failed: msg.sender != owner')
+      pushEvent('revert', 'Reverted with reason "Only owner". State unchanged.')
       return
     }
     if (contractBalance === 0) {
-      pushEvent('revert', 'Nothing to withdraw. Contract balance is 0.')
+      pushEvent('revert', 'withdraw() succeeded, but contract balance was 0.')
       return
     }
     pushEvent('success', `withdraw() transferred ${contractBalance.toFixed(2)} ETH to owner.`)
@@ -2257,31 +2065,48 @@ function SlideDemoVendingMachine() {
     setIsOwner(true)
   }
 
+  const codeLines: Array<{ code: string; comment?: string }> = [
+    { code: 'contract CoffeeShop {' },
+    { code: '  address owner;' },
+    { code: '  uint256 coffeePrice = 0.01 ether;' },
+    { code: '  mapping(address => uint256) coffees;', comment: '// like HashMap<Address, Long>' },
+    { code: '' },
+    { code: '  constructor() {', comment: '// runs once at deployment' },
+    { code: '    owner = msg.sender;', comment: '// caller of the deploy tx' },
+    { code: '  }' },
+    { code: '' },
+    { code: '  function buyCoffee() public payable {', comment: '// payable: receives ETH' },
+    { code: '    require(msg.value >= coffeePrice, "Not enough ETH");' },
+    { code: '    coffees[msg.sender] += 1;' },
+    { code: '  }' },
+    { code: '' },
+    { code: '  function withdraw() public {' },
+    { code: '    require(msg.sender == owner, "Only owner");', comment: '// reverts if false' },
+    { code: '    payable(owner).transfer(address(this).balance);' },
+    { code: '  }' },
+    { code: '}' },
+  ]
   return (
     <SlideFrame>
-      <Eyebrow>Live demonstration</Eyebrow>
+      <Eyebrow>Solidity example 2 · live demonstration</Eyebrow>
       <Title>
-        Running the <em style={{ fontStyle: 'italic', color: ETH_PURPLE }}>CoffeeShop</em> contract.
+        A contract that <em style={{ fontStyle: 'italic', color: ETH_PURPLE }}>receives payment</em>: CoffeeShop.
       </Title>
-      <div style={{ marginTop: 28, flex: 1, display: 'grid', gridTemplateColumns: '1.05fr 0.95fr', gap: 36, alignItems: 'stretch', minHeight: 0 }}>
+      <div style={{ marginTop: 24, flex: 1, display: 'grid', gridTemplateColumns: '1.05fr 0.95fr', gap: 36, alignItems: 'stretch', minHeight: 0 }}>
         {/* Left: deployed contract code */}
         <div style={{ background: COLORS.ink, borderRadius: 10, padding: '22px 26px', fontFamily: FONTS.mono, fontSize: 17, color: '#E6E1D2', lineHeight: 1.5 }}>
-          <div style={{ fontFamily: FONTS.sans, fontSize: 16, letterSpacing: '0.18em', textTransform: 'uppercase', color: COLORS.gold, marginBottom: 14 }}>Deployed contract</div>
-          <div>contract CoffeeShop {'{'}</div>
-          <div>{'  '}address owner;</div>
-          <div>{'  '}uint256 coffeePrice = 0.01 ether;</div>
-          <div>{'  '}mapping(address =&gt; uint256) coffees;</div>
-          <div>&nbsp;</div>
-          <div>{'  '}function buyCoffee() public payable {'{'}</div>
-          <div>{'    '}require(msg.value &gt;= coffeePrice, &quot;Not enough ETH&quot;);</div>
-          <div>{'    '}coffees[msg.sender] += 1;</div>
-          <div>{'  '}{'}'}</div>
-          <div>&nbsp;</div>
-          <div>{'  '}function withdraw() public {'{'}</div>
-          <div>{'    '}require(msg.sender == owner, &quot;Only owner&quot;);</div>
-          <div>{'    '}payable(owner).transfer(address(this).balance);</div>
-          <div>{'  '}{'}'}</div>
-          <div>{'}'}</div>
+          <div style={{ fontFamily: FONTS.sans, fontSize: 16, letterSpacing: '0.18em', textTransform: 'uppercase', color: COLORS.gold, marginBottom: 12, display: 'flex', justifyContent: 'space-between' }}>
+            <span>Deployed contract</span>
+            <span style={{ color: 'rgba(184,137,59,0.6)' }}>solidity</span>
+          </div>
+          {codeLines.map((line, i) => (
+            <div key={i} style={{ whiteSpace: 'pre' }}>
+              <span>{line.code || ' '}</span>
+              {line.comment ? (
+                <span style={{ color: 'rgba(184,137,59,0.7)', fontStyle: 'italic' }}>  {line.comment}</span>
+              ) : null}
+            </div>
+          ))}
         </div>
         {/* Right: interactive UI */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
@@ -2987,28 +2812,24 @@ function SlideNextClass() {
 export const DAY6_SLIDES: DeckSlideDefinition[] = [
   { label: 'Cover', Component: SlideCover },
   { label: 'Agenda', Component: SlideAgenda },
-  { label: 'Bridge from Day 5', Component: SlideBridgeFromDay5 },
   { label: 'Part 01', Component: SlidePart1Divider },
   { label: 'PoW Recap', Component: SlidePoWRecap },
   { label: 'Energy Problem', Component: SlideEnergyProblem },
   { label: '51% Attack', Component: Slide51PercentAttack },
   { label: 'Litecoin Reorg (April 2026)', Component: SlideLitecoinReorg },
   { label: 'PoS Introduction', Component: SlidePoSIntroduction },
+  { label: 'Validator Lottery', Component: SlideValidatorLottery },
   { label: 'PoS Lifecycle', Component: SlidePoSLifecycle },
   { label: 'PoW vs PoS Demo', Component: SlideDemoPoWvsPoS },
-  { label: 'Validator Lottery', Component: SlideValidatorLottery },
-  { label: 'Slashing & Finality', Component: SlideSlashingAndFinality },
   { label: 'Part 02', Component: SlidePart2Divider },
   { label: 'PoW vs PoS Table', Component: SlidePoWvsPoSTable },
   { label: 'The Merge', Component: SlideTheMerge },
   { label: 'Part 03', Component: SlidePart3Divider },
   { label: 'BTC vs ETH Scripts', Component: SlideBitcoinVsEthereumScripts },
   { label: 'What Is a Smart Contract', Component: SlideWhatIsASmartContract },
-  { label: 'The EVM', Component: SlideTheEVM },
   { label: 'Solidity 1', Component: SlideSolidity1 },
-  { label: 'Solidity 2', Component: SlideSolidity2 },
-  { label: 'Solidity 3', Component: SlideSolidity3 },
   { label: 'Vending Machine Demo', Component: SlideDemoVendingMachine },
+  { label: 'Solidity 3', Component: SlideSolidity3 },
   { label: 'Gas and Fees', Component: SlideGasAndFees },
   { label: 'Part 04', Component: SlidePart4Divider },
   { label: 'ERC-20 + Etherscan Demo', Component: SlideDemoERC20Etherscan },
