@@ -1,14 +1,100 @@
+# Dependencies
+node_modules/
+.pnp.*
 
+# Build output
+dist/
+build/
+.next/
+out/
+target/
+**/target/
+bin/
+**/bin/
+/CodeGradeACS.jar
+.firebase/
+public/app/assets/
+public/assets/
+public/index.html
+
+# Environment
+.env
+.env.*
+!.env.example
+!.env.sample
+
+# AI tools and local assistant state
+.claude/
+.cursor/
+.aider*
+.continue/
+.cody/
+.codex/
+CLAUDE.md
+AGENTS.md
+Context/
+
+# Secrets and credentials
+token.txt
+*.pem
+*.key
+*.p12
+*.pfx
+*.crt
+*.cer
+*.jks
+*.keystore
+*.secret
+credentials.json
+*credentials*.json
+*secret*.json
+firebase-adminsdk*.json
+service-account*.json
+google-services.json
+GoogleService-Info.plist
+.npmrc
+.aws/
+.ssh/
+.docker/config.json
+id_rsa
+id_dsa
+id_ecdsa
+id_ed25519
+secrets/
+**/secrets/
+credentials/
+**/credentials/
+
+# IDE and local app config
+.idea/
+**/.obsidian/
+
+# OS files
+.DS_Store
+Thumbs.db
 *.Identifier
 
-.DS_Store
+# Logs and coverage
+*.log
+coverage/
+.nyc_output/
 
-.cursor/
+# Python
+__pycache__/
+**/__pycache__/
+*.pyc
 
-.firebase/
+# Java
+*.class
 
-public/app/assets/
+# Terraform
+.terraform/
+*.tfstate
+*.tfstate.backup
 
-public/assets/
+# Project-local source assets (not committed)
+*.pptx
 
-public/index.html
+# Project-local generated files
+.learninggoals
+.books
