@@ -1,4 +1,4 @@
-import { lazy, Suspense } from 'react'
+import { lazy, Suspense, type ReactNode } from 'react'
 import { Routes, Route, Link, NavLink, Navigate, useLocation } from 'react-router-dom'
 import Home from './pages/Home.tsx'
 import Chem from './pages/Chem.tsx'
@@ -8,25 +8,50 @@ import Code from './pages/Code.tsx'
 import Stats from './pages/Stats.tsx'
 import StaticEmbed from './pages/StaticEmbed.tsx'
 import WidgetRoute from './pages/WidgetRoute.tsx'
-import ArrayListVisualizer from './pages/ArrayListVisualizer.tsx'
-import BinaryExplorer from './pages/BinaryExplorer.tsx'
-import QuadraticExplorer from './pages/QuadraticExplorer.tsx'
-import Sha1FlowExplorer from './pages/Sha1FlowExplorer.tsx'
-import HtcsUnit6Day4React from './pages/HtcsUnit6Day4React.tsx'
-import HtcsUnit6Day5React from './pages/HtcsUnit6Day5React.tsx'
-import HtcsUnit6Day6React from './pages/HtcsUnit6Day6React.tsx'
 import { CODE_WIDGETS, HISTORY_WIDGETS, HTCS_LESSON_WIDGETS, MATH_WIDGETS, STATS_WIDGETS } from './pages/widgetMaps'
 import HtcsLessons from './pages/HtcsLessons.tsx'
 import History from './history/History.tsx'
-import WorldGlobe from './history/WorldGlobe.tsx'
-import LectureViewer from './history/LectureViewer.tsx'
 import StyleGuide from './admin/StyleGuide.tsx'
 import MobileFullscreen from './pages/MobileFullscreen.tsx'
-import Cryptography from './pages/overviews/Cryptography.tsx'
 
 // Lazy: keeps the wagmi/RainbowKit/viem bundle out of the main chunk. Only
 // loads when a user opens /code/vyper-framework.
 const VyperFramework = lazy(() => import('./pages/vyper-framework/VyperFramework'))
+
+// Lazy: each HTCS deck pulls in a 1.6k–2.8k LOC slides module plus the deck
+// runtime. Loading them on demand keeps them out of the main bundle.
+const HtcsUnit6Day4React = lazy(() => import('./pages/HtcsUnit6Day4React.tsx'))
+const HtcsUnit6Day5React = lazy(() => import('./pages/HtcsUnit6Day5React.tsx'))
+const HtcsUnit6Day6React = lazy(() => import('./pages/HtcsUnit6Day6React.tsx'))
+
+// Lazy: WorldGlobe and LectureViewer pull in globe.gl + three + three-globe
+// (~1 MB minified). Keep them out of the main bundle.
+const WorldGlobe = lazy(() => import('./history/WorldGlobe.tsx'))
+const LectureViewer = lazy(() => import('./history/LectureViewer.tsx'))
+
+// Lazy: each visualizer is a self-contained interactive page. Small chunks
+// individually, but together they add a couple hundred KB to index.
+const ArrayListVisualizer = lazy(() => import('./pages/ArrayListVisualizer.tsx'))
+const BinaryExplorer = lazy(() => import('./pages/BinaryExplorer.tsx'))
+const QuadraticExplorer = lazy(() => import('./pages/QuadraticExplorer.tsx'))
+const Sha1FlowExplorer = lazy(() => import('./pages/Sha1FlowExplorer.tsx'))
+const Cryptography = lazy(() => import('./pages/overviews/Cryptography.tsx'))
+
+function DeckLoading() {
+  return (
+    <main style={{ position: 'fixed', inset: 0, background: '#000', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: '"Inter Tight", Helvetica, Arial, sans-serif', letterSpacing: '0.04em' }}>
+      Loading slides…
+    </main>
+  )
+}
+
+function PageLoading() {
+  return <main className="page"><div className="container">Loading…</div></main>
+}
+
+function lazyRoute(node: ReactNode, fallback: ReactNode = <PageLoading />) {
+  return <Suspense fallback={fallback}>{node}</Suspense>
+}
 
 function HomeIcon() {
   return (
@@ -85,25 +110,24 @@ export default function App() {
         <Route path="/" element={<Home />} />
         <Route path="math" element={<Math />} />
         <Route path="math/overview" element={<Navigate to="/#subject-math" replace />} />
-        <Route path="math/quadratic-explorer" element={<QuadraticExplorer />} />
+        <Route path="math/quadratic-explorer" element={lazyRoute(<QuadraticExplorer />)} />
         <Route path="math/:widget" element={<WidgetRoute widgets={MATH_WIDGETS} backTo="/math" />} />
         <Route path="code" element={<Code />} />
-        <Route path="code/overview" element={<Cryptography />} />
-        <Route path="code/array-list" element={<ArrayListVisualizer />} />
-        <Route path="code/binary-explorer" element={<BinaryExplorer />} />
-        <Route path="code/sha1-flow-explorer" element={<Sha1FlowExplorer />} />
+        <Route path="code/overview" element={lazyRoute(<Cryptography />)} />
+        <Route path="code/array-list" element={lazyRoute(<ArrayListVisualizer />)} />
+        <Route path="code/binary-explorer" element={lazyRoute(<BinaryExplorer />)} />
+        <Route path="code/sha1-flow-explorer" element={lazyRoute(<Sha1FlowExplorer />)} />
         <Route path="code/htcs-lessons" element={<HtcsLessons />} />
-        <Route path="code/htcs-lessons/day4-react" element={<HtcsUnit6Day4React />} />
-        <Route path="code/htcs-lessons/day5-react" element={<HtcsUnit6Day5React />} />
-        <Route path="code/htcs-lessons/day6-react" element={<HtcsUnit6Day6React />} />
+        <Route path="code/htcs-lessons/day4-react" element={lazyRoute(<HtcsUnit6Day4React />, <DeckLoading />)} />
+        <Route path="code/htcs-lessons/day5-react" element={lazyRoute(<HtcsUnit6Day5React />, <DeckLoading />)} />
+        <Route path="code/htcs-lessons/day6-react" element={lazyRoute(<HtcsUnit6Day6React />, <DeckLoading />)} />
         <Route path="code/htcs-lessons/:widget" element={<WidgetRoute widgets={HTCS_LESSON_WIDGETS} backTo="/code/htcs-lessons" />} />
         <Route
           path="code/vyper-framework"
-          element={
-            <Suspense fallback={<main className="page"><div className="container">Loading Vyper Framework…</div></main>}>
-              <VyperFramework />
-            </Suspense>
-          }
+          element={lazyRoute(
+            <VyperFramework />,
+            <main className="page"><div className="container">Loading Vyper Framework…</div></main>,
+          )}
         />
         <Route path="code/:widget" element={<WidgetRoute widgets={CODE_WIDGETS} backTo="/code" />} />
         <Route path="stats" element={<Stats />} />
@@ -120,8 +144,8 @@ export default function App() {
         <Route path="mobile" element={<MobileFullscreen />} />
         <Route path="history" element={<History />} />
         <Route path="history/overview" element={<Navigate to="/#subject-history" replace />} />
-        <Route path="history/world" element={<WorldGlobe />} />
-        <Route path="history/lecture" element={<LectureViewer />} />
+        <Route path="history/world" element={lazyRoute(<WorldGlobe />, <main className="page"><div className="container">Loading globe…</div></main>)} />
+        <Route path="history/lecture" element={lazyRoute(<LectureViewer />, <main className="page"><div className="container">Loading globe…</div></main>)} />
         <Route path="history/widgets/:widget" element={<WidgetRoute widgets={HISTORY_WIDGETS} backTo="/history" />} />
         <Route path="*" element={<Home />} />
       </Routes>
