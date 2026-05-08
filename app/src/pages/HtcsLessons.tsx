@@ -6,11 +6,13 @@ const HTCS_LESSONS = [
   { slug: 'htcs-unit-6-day-3', title: 'Unit 6 Day 3', subtitle: 'Proof of Work' },
   { slug: 'htcs-unit-6-day-4', title: 'Unit 6 Day 4', subtitle: 'Bitcoin Wallets & Multi-Signatures' },
   { slug: 'htcs-unit-6-day-5', title: 'Unit 6 Day 5', subtitle: 'Lightning Networks' },
+  { slug: 'htcs-unit-6-day-6', title: 'Unit 6 Day 6', subtitle: 'Smart Contracts & Ethereum' },
 ]
 
 const OPEN_OVERRIDES: Partial<Record<string, string>> = {
   'htcs-unit-6-day-4': '/code/htcs-lessons/day4-react',
   'htcs-unit-6-day-5': '/code/htcs-lessons/day5-react',
+  'htcs-unit-6-day-6': '/code/htcs-lessons/day6-react',
 }
 
 export default function HtcsLessons() {

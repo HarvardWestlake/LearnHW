@@ -13,6 +13,7 @@ import QuadraticExplorer from './pages/QuadraticExplorer.tsx'
 import Sha1FlowExplorer from './pages/Sha1FlowExplorer.tsx'
 import HtcsUnit6Day4React from './pages/HtcsUnit6Day4React.tsx'
 import HtcsUnit6Day5React from './pages/HtcsUnit6Day5React.tsx'
+import HtcsUnit6Day6React from './pages/HtcsUnit6Day6React.tsx'
 import { CODE_WIDGETS, HISTORY_WIDGETS, HTCS_LESSON_WIDGETS, MATH_WIDGETS, STATS_WIDGETS } from './pages/widgetMaps'
 import HtcsLessons from './pages/HtcsLessons.tsx'
 import History from './history/History.tsx'
@@ -89,6 +90,7 @@ export default function App() {
         <Route path="code/htcs-lessons" element={<HtcsLessons />} />
         <Route path="code/htcs-lessons/day4-react" element={<HtcsUnit6Day4React />} />
         <Route path="code/htcs-lessons/day5-react" element={<HtcsUnit6Day5React />} />
+        <Route path="code/htcs-lessons/day6-react" element={<HtcsUnit6Day6React />} />
         <Route path="code/htcs-lessons/:widget" element={<WidgetRoute widgets={HTCS_LESSON_WIDGETS} backTo="/code/htcs-lessons" />} />
         <Route path="code/:widget" element={<WidgetRoute widgets={CODE_WIDGETS} backTo="/code" />} />
         <Route path="stats" element={<Stats />} />
