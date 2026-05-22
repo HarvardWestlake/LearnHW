@@ -2,5 +2,11 @@ import DeckRoutePage from '../htcs-decks/runtime/DeckRoutePage'
 import { day5Deck } from '../htcs-decks/unit6/day05/deck'
 
 export default function HtcsUnit6Day5React() {
-  return <DeckRoutePage deck={day5Deck} basePath="/code/htcs-lessons/day5-react" />
+  return (
+    <DeckRoutePage
+      deck={day5Deck}
+      basePath="/teaching-resources/lessons/computer-science/day5-react"
+      backTo="/teaching-resources/lessons/computer-science"
+    />
+  )
 }

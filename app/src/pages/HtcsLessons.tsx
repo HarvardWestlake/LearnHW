@@ -10,21 +10,21 @@ const HTCS_LESSONS = [
 ]
 
 const OPEN_OVERRIDES: Partial<Record<string, string>> = {
-  'htcs-unit-6-day-4': '/code/htcs-lessons/day4-react',
-  'htcs-unit-6-day-5': '/code/htcs-lessons/day5-react',
-  'htcs-unit-6-day-6': '/code/htcs-lessons/day6-react',
+  'htcs-unit-6-day-4': '/teaching-resources/lessons/computer-science/day4-react',
+  'htcs-unit-6-day-5': '/teaching-resources/lessons/computer-science/day5-react',
+  'htcs-unit-6-day-6': '/teaching-resources/lessons/computer-science/day6-react',
 }
 
 export default function HtcsLessons() {
   return (
     <main className="page">
       <div className="container widgets-page">
-        <h1 className="h1">Honors Topics in Computer Science</h1>
+        <h1 className="h1">Computer Science Lessons</h1>
         <p className="muted" style={{ marginTop: '.25rem' }}>
-          Lesson presentations for the HTCS course.
+          Lesson presentations for computer science courses.
         </p>
 
-        <h2 className="h5 eyebrow">Unit 6</h2>
+        <h2 className="h5 eyebrow">Honors Topics in Computer Science · Unit 6</h2>
         <div className="widgets-grid">
           {HTCS_LESSONS.map(lesson => {
             const src = HTCS_LESSON_WIDGETS[lesson.slug].src

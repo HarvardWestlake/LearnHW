@@ -66,7 +66,7 @@ function readInitialIndex(slideParam: number, total: number, storageKey: string)
 export default function DeckRoutePage({
   deck,
   basePath,
-  backTo = '/code/htcs-lessons',
+  backTo = '/teaching-resources/lessons/computer-science',
 }: DeckRoutePageProps) {
   const [searchParams] = useSearchParams()
   const inPresenter = searchParams.has('presenter')

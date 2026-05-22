@@ -50,6 +50,17 @@ export default function Home() {
           {SUBJECTS.map(s => <SubjectCard key={s.key} subject={s} />)}
         </div>
 
+        <h2 className="h5 eyebrow">Teaching Resources</h2>
+        <div className="widgets-grid">
+          <Link className="widget-card" to="/teaching-resources">
+            <div className="title-row">
+              <h3>Teaching Resources</h3>
+            </div>
+            <p>Classroom lessons and teaching materials organized outside the subject tool pages.</p>
+            <span className="button">Open</span>
+          </Link>
+        </div>
+
         <h2 className="h5 eyebrow">Admin</h2>
         <div className="widgets-grid">
           <Link className="widget-card" to="/admin">

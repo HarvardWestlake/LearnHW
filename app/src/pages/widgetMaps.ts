@@ -32,7 +32,7 @@ export const HTCS_LESSON_WIDGETS: Record<string, WidgetInfo> = {
   'htcs-unit-6-day-3': { title: 'HTCS Unit 6 Day 3', src: '/static/code/lessons/HTCS/HTCS_Unit6_Day3.html' },
   'htcs-unit-6-day-4': { title: 'HTCS Unit 6 Day 4', src: '/static/code/lessons/HTCS/HTCS_Unit6_Day4.html' },
   'htcs-unit-6-day-5': { title: 'HTCS Unit 6 Day 5', src: '/static/code/lessons/HTCS/HTCS_Unit6_Day5.html' },
-  'htcs-unit-6-day-6': { title: 'HTCS Unit 6 Day 6', src: '/code/htcs-lessons/day6-react' },
+  'htcs-unit-6-day-6': { title: 'HTCS Unit 6 Day 6', src: '/teaching-resources/lessons/computer-science/day6-react' },
 }
 
 export const CODE_WIDGETS: Record<string, WidgetInfo> = {

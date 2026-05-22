@@ -1,11 +1,14 @@
 import { lazy, Suspense, type ReactNode } from 'react'
-import { Routes, Route, Link, NavLink, Navigate, useLocation } from 'react-router-dom'
+import { Routes, Route, Link, NavLink, Navigate, useLocation, useParams } from 'react-router-dom'
 import Home from './pages/Home.tsx'
 import Chem from './pages/Chem.tsx'
 import Econ from './pages/Econ.tsx'
 import Math from './pages/Math.tsx'
 import Code from './pages/Code.tsx'
 import Stats from './pages/Stats.tsx'
+import InterdisciplinaryOutcomes from './pages/InterdisciplinaryOutcomes.tsx'
+import Lessons from './pages/Lessons.tsx'
+import TeachingResources from './pages/TeachingResources.tsx'
 import StaticEmbed from './pages/StaticEmbed.tsx'
 import WidgetRoute from './pages/WidgetRoute.tsx'
 import { CODE_WIDGETS, HISTORY_WIDGETS, HTCS_LESSON_WIDGETS, MATH_WIDGETS, STATS_WIDGETS } from './pages/widgetMaps'
@@ -65,11 +68,24 @@ const PAGE_NAMES: Record<string, string> = {
   '/': 'Home',
   '/math': 'Math',
   '/code': 'Computer Science',
-  '/code/htcs-lessons': 'HTCS Lessons',
   '/stats': 'Statistics',
   '/chem': 'Chemistry',
   '/econ': 'Economics',
   '/history': 'History',
+  '/teaching-resources': 'Teaching Resources',
+  '/teaching-resources/lessons': 'Lessons',
+  '/teaching-resources/lessons/computer-science': 'Computer Science Lessons',
+  '/teaching-resources/lessons/interdisciplinary-outcomes': 'Interdisciplinary Outcomes',
+}
+
+function RedirectWithSearch({ to }: { to: string }) {
+  const { search } = useLocation()
+  return <Navigate to={`${to}${search}`} replace />
+}
+
+function LegacyHtcsWidgetRedirect() {
+  const { widget } = useParams()
+  return <RedirectWithSearch to={`/teaching-resources/lessons/computer-science/${widget ?? ''}`} />
 }
 
 function TopNav() {
@@ -92,6 +108,7 @@ function TopNav() {
         </div>
         <Link to="/" className="hw-brand" style={{ textAlign: 'center' }}>Harvard‑Westlake</Link>
         <nav className="hw-nav" style={{ justifyContent: 'flex-end' }}>
+          <NavLink to="/teaching-resources" className={({ isActive }) => `hw-nav__link${isActive ? ' active' : ''}`}>Teaching Resources</NavLink>
           <NavLink to="/mobile" className={({ isActive }) => `hw-nav__link${isActive ? ' active' : ''}`}>Mobile Fullscreen</NavLink>
         </nav>
       </div>
@@ -101,7 +118,10 @@ function TopNav() {
 
 export default function App() {
   const { pathname } = useLocation()
-  const hideChrome = pathname.startsWith('/code/htcs-lessons/day') && pathname.endsWith('-react')
+  const hideChrome = (
+    (pathname.startsWith('/code/htcs-lessons/day') || pathname.startsWith('/teaching-resources/lessons/computer-science/day'))
+    && pathname.endsWith('-react')
+  )
 
   return (
     <>
@@ -117,11 +137,11 @@ export default function App() {
         <Route path="code/array-list" element={lazyRoute(<ArrayListVisualizer />)} />
         <Route path="code/binary-explorer" element={lazyRoute(<BinaryExplorer />)} />
         <Route path="code/sha1-flow-explorer" element={lazyRoute(<Sha1FlowExplorer />)} />
-        <Route path="code/htcs-lessons" element={<HtcsLessons />} />
-        <Route path="code/htcs-lessons/day4-react" element={lazyRoute(<HtcsUnit6Day4React />, <DeckLoading />)} />
-        <Route path="code/htcs-lessons/day5-react" element={lazyRoute(<HtcsUnit6Day5React />, <DeckLoading />)} />
-        <Route path="code/htcs-lessons/day6-react" element={lazyRoute(<HtcsUnit6Day6React />, <DeckLoading />)} />
-        <Route path="code/htcs-lessons/:widget" element={<WidgetRoute widgets={HTCS_LESSON_WIDGETS} backTo="/code/htcs-lessons" />} />
+        <Route path="code/htcs-lessons" element={<RedirectWithSearch to="/teaching-resources/lessons/computer-science" />} />
+        <Route path="code/htcs-lessons/day4-react" element={<RedirectWithSearch to="/teaching-resources/lessons/computer-science/day4-react" />} />
+        <Route path="code/htcs-lessons/day5-react" element={<RedirectWithSearch to="/teaching-resources/lessons/computer-science/day5-react" />} />
+        <Route path="code/htcs-lessons/day6-react" element={<RedirectWithSearch to="/teaching-resources/lessons/computer-science/day6-react" />} />
+        <Route path="code/htcs-lessons/:widget" element={<LegacyHtcsWidgetRedirect />} />
         <Route
           path="code/vyper-framework"
           element={lazyRoute(
@@ -147,6 +167,14 @@ export default function App() {
         <Route path="history/world" element={lazyRoute(<WorldGlobe />, <main className="page"><div className="container">Loading globe…</div></main>)} />
         <Route path="history/lecture" element={lazyRoute(<LectureViewer />, <main className="page"><div className="container">Loading globe…</div></main>)} />
         <Route path="history/widgets/:widget" element={<WidgetRoute widgets={HISTORY_WIDGETS} backTo="/history" />} />
+        <Route path="teaching-resources" element={<TeachingResources />} />
+        <Route path="teaching-resources/lessons" element={<Lessons />} />
+        <Route path="teaching-resources/lessons/interdisciplinary-outcomes" element={<InterdisciplinaryOutcomes />} />
+        <Route path="teaching-resources/lessons/computer-science" element={<HtcsLessons />} />
+        <Route path="teaching-resources/lessons/computer-science/day4-react" element={lazyRoute(<HtcsUnit6Day4React />, <DeckLoading />)} />
+        <Route path="teaching-resources/lessons/computer-science/day5-react" element={lazyRoute(<HtcsUnit6Day5React />, <DeckLoading />)} />
+        <Route path="teaching-resources/lessons/computer-science/day6-react" element={lazyRoute(<HtcsUnit6Day6React />, <DeckLoading />)} />
+        <Route path="teaching-resources/lessons/computer-science/:widget" element={<WidgetRoute widgets={HTCS_LESSON_WIDGETS} backTo="/teaching-resources/lessons/computer-science" />} />
         <Route path="*" element={<Home />} />
       </Routes>
       {!hideChrome ? (
