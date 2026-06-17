@@ -18,6 +18,13 @@ export default function TeachingResources() {
             <p>Browse classroom lesson presentations by subject and course.</p>
             <span className="button">Open</span>
           </Link>
+          <Link className="widget-card" to="/admin">
+            <div className="title-row">
+              <h3>Style Guide</h3>
+            </div>
+            <p>UI components, tokens, and patterns used across the app.</p>
+            <span className="button">Open</span>
+          </Link>
         </div>
       </div>
     </main>
