@@ -49,17 +49,6 @@ export default function Home() {
         <div className="widgets-grid">
           {SUBJECTS.map(s => <SubjectCard key={s.key} subject={s} />)}
         </div>
-
-        <h2 className="h5 eyebrow">Admin</h2>
-        <div className="widgets-grid">
-          <Link className="widget-card" to="/admin">
-            <div className="title-row">
-              <h3>Style Guide</h3>
-            </div>
-            <p>UI components, tokens, and patterns used across the app.</p>
-            <span className="button">Open</span>
-          </Link>
-        </div>
       </div>
     </main>
   )

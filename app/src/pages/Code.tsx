@@ -7,33 +7,6 @@ export default function Code() {
       <div className="container widgets-page">
         <h1 className="h1">Computer Science</h1>
 
-        <h2 className="h5 eyebrow" style={{ marginTop: '2rem' }}>Classes</h2>
-        <div className="widgets-grid">
-          <div className="widget-card" style={{ opacity: 0.5, cursor: 'default', pointerEvents: 'none' }}>
-            <div className="title-row">
-              <h3>Advanced Computer Science</h3>
-            </div>
-            <p>Lesson materials and resources for the Advanced Computer Science course.</p>
-            <span className="button" style={{ background: 'var(--hw-secondary-khaki)', color: 'var(--hw-brand-black)' }}>Coming Soon</span>
-          </div>
-
-          <div className="widget-card" style={{ opacity: 0.5, cursor: 'default', pointerEvents: 'none' }}>
-            <div className="title-row">
-              <h3>Design and Data Structures</h3>
-            </div>
-            <p>Lesson materials and resources for the Design and Data Structures course.</p>
-            <span className="button" style={{ background: 'var(--hw-secondary-khaki)', color: 'var(--hw-brand-black)' }}>Coming Soon</span>
-          </div>
-
-          <Link className="widget-card" to="/code/htcs-lessons">
-            <div className="title-row">
-              <h3>Honors Topics in Computer Science</h3>
-            </div>
-            <p>Browse lesson presentations for the HTCS course, organized by unit and day.</p>
-            <span className="button">Open</span>
-          </Link>
-        </div>
-
         <h2 className="h5 eyebrow" style={{ marginTop: '2rem' }}>Memory &amp; Data Structures</h2>
         <div className="widgets-grid">
           <Link className="widget-card" to="/code/array-list">
